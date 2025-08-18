@@ -390,6 +390,43 @@
     </style>
 </head>
 <body>
+    @php
+        // Get user info for global variables - check all relevant guards
+        $user = Auth::guard('admin')->user() ?: Auth::guard('smartprep')->user() ?: Auth::user();
+        
+        // Check if user is actually logged in
+        $isLoggedIn = Auth::guard('admin')->check() || Auth::guard('smartprep')->check() || Auth::check();
+        
+        // Determine user role
+        $userRole = 'guest';
+        if ($isLoggedIn && $user) {
+            if (Auth::guard('admin')->check()) {
+                $userRole = 'admin';
+            } elseif (Auth::guard('smartprep')->check()) {
+                $userRole = $user->role ?? 'user';
+            } else {
+                $userRole = $user->role ?? 'user';
+            }
+        }
+    @endphp
+
+    <!-- Global Variables for JavaScript -->
+    <script>
+        // Global variables accessible throughout the page
+        window.myId = @json($isLoggedIn && $user ? $user->id : null);
+        window.myName = @json($isLoggedIn && $user ? $user->name : 'Guest');
+        window.isAuthenticated = @json($isLoggedIn && (bool) $user);
+        window.userRole = @json($userRole);
+        window.csrfToken = @json(csrf_token());
+        
+        console.log('Navbar Global variables initialized:', { 
+            myId: window.myId, 
+            myName: window.myName, 
+            isAuthenticated: window.isAuthenticated, 
+            userRole: window.userRole 
+        });
+    </script>
+
     <!-- Top Navigation Bar -->
     <nav class="navbar navbar-expand-lg top-navbar">
         <div class="container">
@@ -425,7 +462,7 @@
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-2"></i>{{ Auth::guard('smartprep')->user()->name }}
+                            <i class="fas fa-user-circle me-2"></i>{{ Auth::guard('admin')->user()->name ?? Auth::guard('smartprep')->user()->name ?? 'User' }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="/"><i class="fas fa-home me-2"></i>Home</a></li>
@@ -484,7 +521,11 @@
                             <i class="fas fa-save me-2"></i>Save Changes
                         </button>
                         <button class="btn btn-success" onclick="submitWebsiteRequest()">
-                            <i class="fas fa-paper-plane me-2"></i>Submit Website Request
+                            @if($userRole === 'admin')
+                                <i class="fas fa-save me-2"></i>Save Settings
+                            @else
+                                <i class="fas fa-paper-plane me-2"></i>Submit Website Request
+                            @endif
                         </button>
                     </div>
                 </div>
@@ -610,7 +651,7 @@
                         @csrf
                         <div class="form-group mb-3">
                             <label class="form-label">Brand Name</label>
-                            <input type="text" class="form-control" name="brand_name" value="Ascendo Review and Training Center" placeholder="Brand name">
+                            <input type="text" class="form-control" name="brand_name" value="{{ $navbarBrandName ?? 'Ascendo Review and Training Center' }}" placeholder="Brand name">
                         </div>
                         
                         <div class="form-group mb-3">
@@ -1028,7 +1069,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <button class="preview-btn" onclick="refreshPreview()">
                                 <i class="fas fa-sync-alt me-1"></i>Refresh
                             </button>
-                            <a href="http://localhost/A.R.T.C/public/" class="preview-btn" target="_blank">
+                            <a href="{{ url('/') }}" class="preview-btn" target="_blank">
                                 <i class="fas fa-external-link-alt me-1"></i>Open in New Tab
                             </a>
                         </div>
@@ -1042,7 +1083,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <iframe 
                         class="preview-iframe" 
-                        src="http://localhost/A.R.T.C/public/" 
+                        src="{{ url('/') }}" 
                         title="A.R.T.C Site Preview"
                         id="previewFrame"
                         onload="hideLoading()"
@@ -1448,10 +1489,46 @@ document.addEventListener('DOMContentLoaded', function() {
                     autoSaveTimeout = setTimeout(() => {
                         if (this.name && this.value) {
                             console.log('Auto-saving:', this.name, this.value);
-                            // Implement actual auto-save logic here
+                            autoSaveField(this.name, this.value);
                         }
                     }, 3000);
                 });
+            });
+        }
+
+        // Auto-save individual field
+        function autoSaveField(fieldName, fieldValue) {
+            // Determine which endpoint to use based on field name
+            let endpoint = '/smartprep/admin/settings';
+            if (fieldName.includes('brand_name') || fieldName.includes('navbar')) {
+                endpoint = '/smartprep/admin/settings/navbar';
+            } else if (fieldName.includes('hero') || fieldName.includes('homepage')) {
+                endpoint = '/smartprep/admin/settings/homepage';
+            }
+
+            const formData = new FormData();
+            formData.append('_token', '{{ csrf_token() }}');
+            formData.append(fieldName, fieldValue);
+
+            fetch(endpoint, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Auto-saved successfully:', fieldName);
+                    // Update the iframe preview
+                    refreshPreview();
+                } else {
+                    console.error('Auto-save failed:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Auto-save error:', error);
             });
         }
 
@@ -1469,20 +1546,50 @@ document.addEventListener('DOMContentLoaded', function() {
                 refreshPreview();
             }
         });
+        
+        // Add missing loadProgramsModal function to prevent errors
+        function loadProgramsModal() {
+            // Use the SmartPrep API endpoint with full URL to avoid resolution issues
+            const apiUrl = '{{ url("smartprep/api/programs") }}';
+            
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Programs loaded successfully:', data);
+                    // Handle programs data if needed
+                })
+                .catch(error => {
+                    console.error('Error loading programs:', error);
+                    // Don't show error to user in this context since it's not critical
+                });
+        }
+        
+        // Call loadProgramsModal on page load if needed
+        // Uncomment if you want to load programs on page initialization
+        // loadProgramsModal();
     </script>
 
     <!-- Website Request Modal -->
     <div class="modal fade" id="websiteRequestModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <form method="POST" action="{{ route('smartprep.dashboard.submit-customized-website') }}" id="customizedWebsiteForm">
+                <form method="POST" action="{{ $userRole === 'admin' ? route('smartprep.admin.settings.save') : route('smartprep.dashboard.submit-customized-website') }}" id="customizedWebsiteForm">
                     @csrf
                     <!-- Hidden fields to store customization data -->
                     <input type="hidden" name="customization_data" id="customizationData">
                     
                     <div class="modal-header">
                         <h5 class="modal-title">
-                            <i class="fas fa-rocket me-2"></i>Submit Website Request
+                            @if($userRole === 'admin')
+                                <i class="fas fa-cog me-2"></i>Save Settings
+                            @else
+                                <i class="fas fa-rocket me-2"></i>Submit Website Request
+                            @endif
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
@@ -1490,7 +1597,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="mb-4">
                             <div class="alert alert-info">
                                 <i class="fas fa-info-circle me-2"></i>
-                                <strong>Ready to create your website!</strong> Your customizations have been saved and will be applied to your new website once approved.
+                                @if($userRole === 'admin')
+                                    <strong>Save template settings!</strong> Your customizations will be saved to the database and applied to the website template.
+                                @else
+                                    <strong>Ready to create your website!</strong> Your customizations have been saved and will be applied to your new website once approved.
+                                @endif
                             </div>
                         </div>
                         
@@ -1526,7 +1637,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Contact Email *</label>
-                                <input type="email" class="form-control form-control-modern" name="contact_email" required value="{{ Auth::guard('smartprep')->user()->email }}">
+                                <input type="email" class="form-control form-control-modern" name="contact_email" required value="{{ Auth::guard('admin')->user()->email ?? Auth::guard('smartprep')->user()->email ?? '' }}">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Contact Phone</label>
@@ -1548,7 +1659,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             <i class="fas fa-times me-2"></i>Cancel
                         </button>
                         <button type="submit" class="btn btn-success">
-                            <i class="fas fa-paper-plane me-2"></i>Submit Website Request
+                            @if($userRole === 'admin')
+                                <i class="fas fa-save me-2"></i>Save Settings
+                            @else
+                                <i class="fas fa-paper-plane me-2"></i>Submit Website Request
+                            @endif
                         </button>
                     </div>
                 </form>

@@ -6,12 +6,16 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Models\UiSetting;
 
 class CustomizeWebsiteController extends Controller
 {
     public function current()
     {
-        return view('smartprep.dashboard.customize-website');
+        // Get current navbar brand name from database using correct model methods
+        $navbarBrandName = UiSetting::get('navbar', 'brand_name', 'Ascendo Review and Training Center');
+        
+        return view('smartprep.dashboard.customize-website', compact('navbarBrandName'));
     }
 
     public function old()

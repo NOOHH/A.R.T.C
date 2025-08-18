@@ -120,8 +120,16 @@ class SettingsHelper
 
     public static function getHomepageStyles()
     {
+        // First check database settings, then fallback to JSON file
+        $dbSettings = \App\Models\UiSetting::getSection('homepage');
+        $dbHomepage = $dbSettings ? $dbSettings->toArray() : [];
+        
+        // Get JSON file settings as fallback
         $settings = self::getSettings();
-        $homepage = $settings['homepage'] ?? [];
+        $jsonHomepage = $settings['homepage'] ?? [];
+        
+        // Merge database settings with JSON settings (database takes priority)
+        $homepage = array_merge($jsonHomepage, $dbHomepage);
         
         $styles = '';
         
@@ -159,7 +167,26 @@ class SettingsHelper
             }
         }
         
-        // Text color
+        // Text color for hero section
+        $styles .= "
+            .hero-title, .hero-subtitle {
+                color: " . ($homepage['text_color'] ?? '#ffffff') . " !important;
+            }
+        ";
+        
+        // Button colors
+        $styles .= "
+            .btn-primary, .enroll-btn {
+                background-color: " . ($homepage['button_color'] ?? '#28a745') . " !important;
+                border-color: " . ($homepage['button_color'] ?? '#28a745') . " !important;
+            }
+            .btn-primary:hover, .enroll-btn:hover {
+                background-color: " . self::darkenColor($homepage['button_color'] ?? '#28a745', 15) . " !important;
+                border-color: " . self::darkenColor($homepage['button_color'] ?? '#28a745', 15) . " !important;
+            }
+        ";
+        
+        // Legacy support for old field names
         $styles .= "
             .enroll-link {
                 color: " . ($homepage['text_color'] ?? '#ffffff') . " !important;

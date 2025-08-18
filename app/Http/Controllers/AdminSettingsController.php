@@ -53,6 +53,8 @@ class AdminSettingsController extends Controller
             'homepage_text_color' => 'nullable|string|max:7',
             'homepage_background_image' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:5120', // 5MB max
             'homepage_title' => 'nullable|string|max:255',
+            'hero_title' => 'nullable|string|max:255',
+            'hero_subtitle' => 'nullable|string|max:1000',
             'remove_background_image' => 'nullable|boolean',
         ]);
 
@@ -64,6 +66,8 @@ class AdminSettingsController extends Controller
             'gradient_color' => $request->input('homepage_gradient_color', $settings['homepage']['gradient_color'] ?? ''),
             'text_color' => $request->input('homepage_text_color', $settings['homepage']['text_color'] ?? '#ffffff'),
             'title' => $request->input('homepage_title', $settings['homepage']['title'] ?? 'ENROLL NOW'),
+            'hero_title' => $request->input('hero_title', $settings['homepage']['hero_title'] ?? 'Review Smarter. Learn Better. Succeed Faster.'),
+            'hero_subtitle' => $request->input('hero_subtitle', $settings['homepage']['hero_subtitle'] ?? 'At Ascendo Review and Training Center, we guide future licensed professionals toward exam success with expert-led reviews and flexible learning options.'),
         ]);
 
         // Handle image removal first
@@ -1050,8 +1054,20 @@ class AdminSettingsController extends Controller
 
     public function getHomepageSettings()
     {
-        $settings = UiSetting::getSection('homepage');
-        return response()->json($settings);
+        $settings = $this->getCurrentSettings();
+        $homepageSettings = $settings['homepage'] ?? [];
+        
+        // Map JSON settings to expected field names for the JavaScript
+        $mappedSettings = [
+            'hero_bg_color' => $homepageSettings['background_color'] ?? '#667eea',
+            'hero_text_color' => $homepageSettings['text_color'] ?? '#ffffff',
+            'hero_title' => $homepageSettings['hero_title'] ?? 'Review Smarter. Learn Better. Succeed Faster.',
+            'hero_subtitle' => $homepageSettings['hero_subtitle'] ?? 'At Ascendo Review and Training Center, we guide future licensed professionals toward exam success with expert-led reviews and flexible learning options.',
+            'hero_button_text' => $homepageSettings['title'] ?? 'ENROLL NOW',
+            'hero_button_color' => '#4CAF50', // Default button color
+        ];
+        
+        return response()->json($mappedSettings);
     }
     
     public function saveHomepageSettings(Request $request)
@@ -1078,21 +1094,18 @@ class AdminSettingsController extends Controller
                 'about_subtitle' => 'nullable|string|max:500',
             ]);
             
-            // Save all homepage settings
-            $settings = [
-                'hero_bg_color', 'hero_text_color', 'hero_title', 'hero_subtitle', 
-                'hero_button_text', 'hero_button_color',
-                'programs_bg_color', 'programs_text_color', 'programs_title', 'programs_subtitle',
-                'modalities_bg_color', 'modalities_text_color', 'modalities_title', 'modalities_subtitle',
-                'about_bg_color', 'about_text_color', 'about_title', 'about_subtitle'
-            ];
+            $settings = $this->getCurrentSettings();
             
-            foreach ($settings as $setting) {
-                if ($request->has($setting)) {
-                    $type = str_contains($setting, 'color') ? 'color' : 'text';
-                    UiSetting::set('homepage', $setting, $request->input($setting), $type);
-                }
-            }
+            // Update homepage settings in JSON file
+            $settings['homepage'] = array_merge($settings['homepage'] ?? [], [
+                'background_color' => $request->input('hero_bg_color', $settings['homepage']['background_color'] ?? '#667eea'),
+                'text_color' => $request->input('hero_text_color', $settings['homepage']['text_color'] ?? '#ffffff'),
+                'hero_title' => $request->input('hero_title', $settings['homepage']['hero_title'] ?? 'Review Smarter. Learn Better. Succeed Faster.'),
+                'hero_subtitle' => $request->input('hero_subtitle', $settings['homepage']['hero_subtitle'] ?? 'At Ascendo Review and Training Center, we guide future licensed professionals toward exam success with expert-led reviews and flexible learning options.'),
+                'title' => $request->input('hero_button_text', $settings['homepage']['title'] ?? 'ENROLL NOW'),
+            ]);
+            
+            $this->saveSettings($settings);
             
             return response()->json(['success' => true]);
             

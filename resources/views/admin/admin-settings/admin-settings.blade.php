@@ -472,11 +472,11 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label">Main Title</label>
-                                                <textarea class="form-control" name="hero_title" rows="3">Review Smarter. Learn Better. Succeed Faster.</textarea>
+                                                <textarea class="form-control" name="hero_title" rows="3">{{ $settings['homepage']['hero_title'] ?? 'Review Smarter. Learn Better. Succeed Faster.' }}</textarea>
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label">Subtitle</label>
-                                                <textarea class="form-control" name="hero_subtitle" rows="3">At Ascendo Review and Training Center, we guide future licensed professionals toward exam success with expert-led reviews and flexible learning options.</textarea>
+                                                <textarea class="form-control" name="hero_subtitle" rows="3">{{ $settings['homepage']['hero_subtitle'] ?? 'At Ascendo Review and Training Center, we guide future licensed professionals toward exam success with expert-led reviews and flexible learning options.' }}</textarea>
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label">Button Text</label>

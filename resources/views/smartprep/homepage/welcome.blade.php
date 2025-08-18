@@ -3,25 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartPrep - Multi-Tenant Learning Management Platform</title>
+    <title>{{ $uiSettings['general']['site_name'] ?? 'SmartPrep' }} - {{ $uiSettings['general']['site_tagline'] ?? 'Multi-Tenant Learning Management Platform' }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #2563eb;
-            --secondary-color: #059669;
-            --accent-color: #0891b2;
-            --gradient-primary: linear-gradient(135deg, #2563eb 0%, #0891b2 100%);
-            --gradient-secondary: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            --primary-color: {{ $uiSettings['branding']['primary_color'] ?? '#2563eb' }};
+            --secondary-color: {{ $uiSettings['branding']['secondary_color'] ?? '#059669' }};
+            --accent-color: {{ $uiSettings['branding']['accent_color'] ?? '#0891b2' }};
+            --gradient-primary: linear-gradient(135deg, {{ $uiSettings['branding']['primary_color'] ?? '#2563eb' }} 0%, {{ $uiSettings['branding']['accent_color'] ?? '#0891b2' }} 100%);
+            --gradient-secondary: linear-gradient(135deg, {{ $uiSettings['branding']['secondary_color'] ?? '#059669' }} 0%, #10b981 100%);
             --text-dark: #1f2937;
             --text-light: #6b7280;
             --surface: #f8fafc;
             --surface-dark: #1e293b;
+            --font-family: {{ $uiSettings['branding']['font_family'] ?? 'Inter' }};
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; line-height: 1.6; color: var(--text-dark); overflow-x: hidden; }
+        body { font-family: var(--font-family), sans-serif; line-height: 1.6; color: var(--text-dark); overflow-x: hidden; }
 
         /* Navigation */
         .navbar-custom {
@@ -536,7 +537,7 @@
     <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
         <div class="container">
             <a class="navbar-brand" href="{{ url('/') }}">
-                <i class="fas fa-graduation-cap"></i>SmartPrep
+                <i class="fas fa-graduation-cap"></i>{{ $uiSettings['navbar']['brand_name'] ?? 'SmartPrep' }}
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -593,8 +594,8 @@
             <div class="row align-items-center">
                 <div class="col-lg-6">
                     <div class="hero-content fade-in-up">
-                        <h1 class="hero-title">Transform Education with SmartPrep</h1>
-                        <p class="hero-subtitle">Empower your educational institution with our cutting-edge multi-tenant learning management platform. Build professional training websites that scale with your success.</p>
+                        <h1 class="hero-title">{{ $uiSettings['homepage']['hero_title'] ?? 'Transform Education with SmartPrep' }}</h1>
+                        <p class="hero-subtitle">{{ $uiSettings['homepage']['hero_subtitle'] ?? 'Empower your educational institution with our cutting-edge multi-tenant learning management platform. Build professional training websites that scale with your success.' }}</p>
                         <div>
                             @auth('smartprep')
                                 <a href="{{ route('smartprep.dashboard') }}" class="btn btn-hero me-3">
@@ -602,7 +603,7 @@
                                 </a>
                             @else
                                 <a href="{{ route('smartprep.register') }}" class="btn btn-hero me-3">
-                                    <i class="fas fa-rocket me-2"></i>Create Account
+                                    <i class="fas fa-rocket me-2"></i>{{ $uiSettings['homepage']['cta_primary_text'] ?? 'Create Account' }}
                                 </a>
                                 <a href="{{ route('smartprep.login') }}" class="btn btn-outline-light btn-lg">
                                     <i class="fas fa-sign-in-alt me-2"></i>Login

@@ -14,10 +14,12 @@ class HomepageController extends Controller
                           ->orderBy('created_at', 'desc')
                           ->get();
         
-        // Get homepage title from settings
-        $settings = \App\Helpers\SettingsHelper::getSettings();
-        $homepageTitle = $settings['homepage']['title'] ?? 'ENROLL NOW';
+        // Get homepage content from the proper method that includes database settings
+        $homepageContent = \App\Helpers\SettingsHelper::getHomepageContent();
         
-        return view('welcome.homepage', compact('programs', 'homepageTitle'));
+        // For backward compatibility
+        $homepageTitle = $homepageContent['hero_button_text'] ?? 'ENROLL NOW';
+        
+        return view('welcome.homepage', compact('programs', 'homepageTitle', 'homepageContent'));
     }
 }

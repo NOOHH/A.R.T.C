@@ -7,11 +7,20 @@
     <title>@yield('title', App\Helpers\UIHelper::getSiteTitle())</title>
     
     @php
-        // Get user info for global variables
-        $user = Auth::user();
+        // Get user info for global variables - check all relevant guards
+        // Use try-catch to handle database connection issues in multi-tenant setup
+        $user = null;
+        $isLoggedIn = false;
         
-        // Check if user is actually logged in via Laravel Auth or valid session
-        $isLoggedIn = Auth::check() || session('logged_in') === true;
+        try {
+            $user = Auth::user() ?: Auth::guard('smartprep')->user() ?: Auth::guard('admin')->user();
+            
+            // Check if user is actually logged in via Laravel Auth or valid session
+            $isLoggedIn = Auth::check() || Auth::guard('smartprep')->check() || Auth::guard('admin')->check() || session('logged_in') === true;
+        } catch (Exception $e) {
+            // If database query fails, fallback to session data
+            $isLoggedIn = session('logged_in') === true;
+        }
         
         // If Laravel Auth user is not available but session indicates logged in, fallback to session data
         if (!$user && $isLoggedIn) {
@@ -427,7 +436,7 @@
                 <img src="{{ \App\Helpers\SettingsHelper::getLogoUrl() }}" 
                      alt="Logo" class="logo me-2" style="height: 40px;"
                      onerror="this.src='{{ asset('images/ARTC_Logo.png') }}'">
-                <strong>{{ $navbar['navbar_brand_name'] ?? 'Ascendo Review and Training Center' }}</strong>
+                <strong>{{ $navbar['brand_name'] ?? 'Ascendo Review and Training Center' }}</strong>
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
@@ -541,7 +550,7 @@
             <div class="footer-top d-flex justify-content-between align-items-center flex-wrap py-4">
                 <div class="footer-logo mb-3 mb-md-0">
                     <img src="{{ asset('images/ARTC_Logo.png') }}" alt="ARTC Logo" style="height: 40px;">
-                    <span class="footer-title ms-2">Ascendo Review <br>and Training Center</span>
+                    <span class="footer-title ms-2">{{ $navbar['brand_name'] ?? 'Ascendo Review and Training Center' }}</span>
                 </div>
                 <div class="footer-social">
                     <a href="#" class="footer-social-icon"><i class="bi bi-youtube"></i></a>

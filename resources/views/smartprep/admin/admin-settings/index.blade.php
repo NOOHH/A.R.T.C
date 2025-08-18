@@ -504,7 +504,7 @@
                         <h5><i class="fas fa-cog me-2"></i>General Settings</h5>
                     </div>
                     
-                    <form id="generalForm" method="POST" action="{{ route('smartprep.admin.settings.save') }}">
+                    <form id="generalForm" method="POST" action="{{ route('smartprep.admin.settings.update.general') }}">
                         @csrf
                         
                         @if(session('success'))
@@ -528,28 +528,34 @@
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Site Title</label>
-                            <input type="text" class="form-control" name="site_name" value="{{ $settings['site_name'] ?? 'Ascendo Review and Training Center' }}" placeholder="Enter site title">
+                            <input type="text" class="form-control" name="site_name" value="{{ $settings['general']['site_name'] ?? 'SmartPrep Admin' }}" placeholder="Enter site title">
                             <small class="form-text text-muted">Appears in browser tab and search results</small>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Site Tagline</label>
-                            <input type="text" class="form-control" name="site_tagline" value="{{ $settings['site_tagline'] ?? 'Review Smarter. Learn Better. Succeed Faster.' }}" placeholder="Enter tagline">
+                            <input type="text" class="form-control" name="site_tagline" value="{{ $settings['general']['site_tagline'] ?? 'Admin Management System' }}" placeholder="Enter tagline">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Contact Email</label>
-                            <input type="email" class="form-control" name="contact_email" value="{{ $settings['contact_email'] ?? 'admin@artc.com' }}" placeholder="Contact email">
+                            <input type="email" class="form-control" name="contact_email" value="{{ $settings['general']['contact_email'] ?? 'admin@smartprep.com' }}" placeholder="Contact email">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Phone Number</label>
-                            <input type="text" class="form-control" name="contact_phone" value="{{ $settings['contact_phone'] ?? '+1 (555) 123-4567' }}" placeholder="Phone number">
+                            <input type="text" class="form-control" name="contact_phone" value="{{ $settings['general']['contact_phone'] ?? '+1 (555) 123-4567' }}" placeholder="Phone number">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Address</label>
-                            <textarea class="form-control" name="contact_address" rows="3" placeholder="Physical address">{{ $settings['contact_address'] ?? '123 Education Street, Learning City, LC 12345' }}</textarea>
+                            <textarea class="form-control" name="contact_address" rows="3" placeholder="Physical address">{{ $settings['general']['contact_address'] ?? '123 Admin Street, Admin City, AC 12345' }}</textarea>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label class="form-label">Preview URL</label>
+                            <input type="url" class="form-control" name="preview_url" value="{{ $settings['general']['preview_url'] ?? 'http://127.0.0.1:8000/' }}" placeholder="http://127.0.0.1:8000/">
+                            <small class="form-text text-muted">URL for the live preview iframe</small>
                         </div>
                         
                         <button type="submit" class="btn btn-primary">
@@ -564,7 +570,7 @@
                         <h5><i class="fas fa-palette me-2"></i>Branding & Design</h5>
                     </div>
                     
-                    <form id="brandingForm" method="POST" action="{{ route('smartprep.admin.settings.save') }}">
+                    <form id="brandingForm" method="POST" action="{{ route('smartprep.admin.settings.update.branding') }}">
                         @csrf
                         
                         @if(session('success'))
@@ -577,48 +583,48 @@
                         <div class="form-group mb-3">
                             <label class="form-label">Primary Color</label>
                             <div class="color-picker-group">
-                                <input type="color" class="color-input" value="{{ $settings['primary_color'] ?? '#667eea' }}" onchange="updatePreviewColor('primary', this.value)">
-                                <input type="text" class="form-control" name="primary_color" value="{{ $settings['primary_color'] ?? '#667eea' }}">
+                                <input type="color" class="color-input" value="{{ $settings['branding']['primary_color'] ?? '#667eea' }}" onchange="updatePreviewColor('primary', this.value)">
+                                <input type="text" class="form-control" name="primary_color" value="{{ $settings['branding']['primary_color'] ?? '#667eea' }}">
                             </div>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Secondary Color</label>
                             <div class="color-picker-group">
-                                <input type="color" class="color-input" value="{{ $settings['secondary_color'] ?? '#764ba2' }}" onchange="updatePreviewColor('secondary', this.value)">
-                                <input type="text" class="form-control" name="secondary_color" value="{{ $settings['secondary_color'] ?? '#764ba2' }}">
+                                <input type="color" class="color-input" value="{{ $settings['branding']['secondary_color'] ?? '#764ba2' }}" onchange="updatePreviewColor('secondary', this.value)">
+                                <input type="text" class="form-control" name="secondary_color" value="{{ $settings['branding']['secondary_color'] ?? '#764ba2' }}">
                             </div>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Background Color</label>
                             <div class="color-picker-group">
-                                <input type="color" class="color-input" value="{{ $settings['background_color'] ?? '#ffffff' }}" onchange="updatePreviewColor('background', this.value)">
-                                <input type="text" class="form-control" name="background_color" value="{{ $settings['background_color'] ?? '#ffffff' }}">
+                                <input type="color" class="color-input" value="{{ $settings['branding']['background_color'] ?? '#ffffff' }}" onchange="updatePreviewColor('background', this.value)">
+                                <input type="text" class="form-control" name="background_color" value="{{ $settings['branding']['background_color'] ?? '#ffffff' }}">
                             </div>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Logo URL</label>
-                            <input type="text" class="form-control" name="logo_url" value="{{ $settings['logo_url'] ?? '' }}" placeholder="Enter logo URL or path">
+                            <input type="text" class="form-control" name="logo_url" value="{{ $settings['branding']['logo_url'] ?? '' }}" placeholder="Enter logo URL or path">
                             <small class="form-text text-muted">Enter the URL or path to your logo image</small>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Favicon URL</label>
-                            <input type="text" class="form-control" name="favicon_url" value="{{ $settings['favicon_url'] ?? '' }}" placeholder="Enter favicon URL or path">
+                            <input type="text" class="form-control" name="favicon_url" value="{{ $settings['branding']['favicon_url'] ?? '' }}" placeholder="Enter favicon URL or path">
                             <small class="form-text text-muted">32x32px ICO or PNG format</small>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Custom Font</label>
                             <select class="form-control" name="font_family">
-                                <option value="Inter" {{ ($settings['font_family'] ?? 'Inter') == 'Inter' ? 'selected' : '' }}>Inter (Default)</option>
-                                <option value="Roboto" {{ ($settings['font_family'] ?? '') == 'Roboto' ? 'selected' : '' }}>Roboto</option>
-                                <option value="Open Sans" {{ ($settings['font_family'] ?? '') == 'Open Sans' ? 'selected' : '' }}>Open Sans</option>
-                                <option value="Lato" {{ ($settings['font_family'] ?? '') == 'Lato' ? 'selected' : '' }}>Lato</option>
-                                <option value="Poppins" {{ ($settings['font_family'] ?? '') == 'Poppins' ? 'selected' : '' }}>Poppins</option>
-                                <option value="Montserrat" {{ ($settings['font_family'] ?? '') == 'Montserrat' ? 'selected' : '' }}>Montserrat</option>
+                                <option value="Inter" {{ ($settings['branding']['font_family'] ?? 'Inter') == 'Inter' ? 'selected' : '' }}>Inter (Default)</option>
+                                <option value="Roboto" {{ ($settings['branding']['font_family'] ?? '') == 'Roboto' ? 'selected' : '' }}>Roboto</option>
+                                <option value="Open Sans" {{ ($settings['branding']['font_family'] ?? '') == 'Open Sans' ? 'selected' : '' }}>Open Sans</option>
+                                <option value="Lato" {{ ($settings['branding']['font_family'] ?? '') == 'Lato' ? 'selected' : '' }}>Lato</option>
+                                <option value="Poppins" {{ ($settings['branding']['font_family'] ?? '') == 'Poppins' ? 'selected' : '' }}>Poppins</option>
+                                <option value="Montserrat" {{ ($settings['branding']['font_family'] ?? '') == 'Montserrat' ? 'selected' : '' }}>Montserrat</option>
                             </select>
                         </div>
                         
@@ -634,7 +640,7 @@
                         <h5><i class="fas fa-bars me-2"></i>Navigation Bar</h5>
                     </div>
                     
-                    <form id="navbarForm" method="POST" action="{{ route('smartprep.admin.settings.save') }}">
+                    <form id="navbarForm" method="POST" action="{{ route('smartprep.admin.settings.update.navbar') }}">
                         @csrf
                         
                         @if(session('success'))
@@ -646,33 +652,33 @@
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Brand Name</label>
-                            <input type="text" class="form-control" name="navbar_brand_name" value="{{ $settings['navbar_brand_name'] ?? 'Ascendo Review and Training Center' }}" placeholder="Brand name">
+                            <input type="text" class="form-control" name="navbar_brand_name" value="{{ $settings['navbar']['brand_name'] ?? 'SmartPrep Admin' }}" placeholder="Brand name">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Brand Image URL</label>
-                            <input type="text" class="form-control" name="navbar_brand_image" value="{{ $settings['navbar_brand_image'] ?? '' }}" placeholder="Logo URL for navigation bar">
+                            <input type="text" class="form-control" name="navbar_brand_image" value="{{ $settings['navbar']['brand_image'] ?? '' }}" placeholder="Logo URL for navigation bar">
                             <small class="form-text text-muted">Enter the URL or path to your logo image</small>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Navigation Style</label>
                             <select class="form-control" name="navbar_style">
-                                <option value="fixed-top" {{ ($settings['navbar_style'] ?? 'fixed-top') == 'fixed-top' ? 'selected' : '' }}>Fixed Top</option>
-                                <option value="sticky-top" {{ ($settings['navbar_style'] ?? '') == 'sticky-top' ? 'selected' : '' }}>Sticky Top</option>
-                                <option value="static" {{ ($settings['navbar_style'] ?? '') == 'static' ? 'selected' : '' }}>Static</option>
+                                <option value="fixed-top" {{ ($settings['navbar']['style'] ?? 'fixed-top') == 'fixed-top' ? 'selected' : '' }}>Fixed Top</option>
+                                <option value="sticky-top" {{ ($settings['navbar']['style'] ?? '') == 'sticky-top' ? 'selected' : '' }}>Sticky Top</option>
+                                <option value="static" {{ ($settings['navbar']['style'] ?? '') == 'static' ? 'selected' : '' }}>Static</option>
                             </select>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Menu Items (JSON Format)</label>
-                            <textarea class="form-control" name="navbar_menu_items" rows="6" placeholder='[{"label":"Home","link":"/"}, {"label":"Programs","link":"/programs"}]'>{{ $settings['navbar_menu_items'] ?? '[{"label":"Home","link":"/"}, {"label":"Review Programs","link":"/programs"}, {"label":"About Us","link":"/about"}]' }}</textarea>
+                            <textarea class="form-control" name="navbar_menu_items" rows="6" placeholder='[{"label":"Home","link":"/"}, {"label":"Programs","link":"/programs"}]'>{{ $settings['navbar']['menu_items'] ?? '[{"label":"Dashboard","link":"/dashboard"}, {"label":"Users","link":"/users"}, {"label":"Settings","link":"/settings"}]' }}</textarea>
                             <small class="form-text text-muted">Enter menu items in JSON format</small>
                         </div>
                         
                         <div class="form-group mb-3">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="show_login_button" value="1" {{ ($settings['show_login_button'] ?? '1') == '1' ? 'checked' : '' }}>
+                                <input class="form-check-input" type="checkbox" name="show_login_button" value="1" {{ ($settings['navbar']['show_login_button'] ?? '1') == '1' ? 'checked' : '' }}>
                                 <label class="form-check-label">Show Login Button</label>
                             </div>
                         </div>
@@ -689,16 +695,60 @@
                         <h5><i class="fas fa-home me-2"></i>Homepage Content</h5>
                     </div>
                     
-                    <form id="homepageForm" onsubmit="updateHomepage(event)" enctype="multipart/form-data">
+                    <form id="homepageForm" method="POST" action="{{ route('smartprep.admin.settings.update.homepage') }}" enctype="multipart/form-data" onsubmit="updateHomepage(event)">
                         @csrf
                         <div class="form-group mb-3">
                             <label class="form-label">Hero Title</label>
-                            <input type="text" class="form-control" name="hero_title" value="Review Smarter. Learn Better. Succeed Faster." placeholder="Main headline">
+                            <input type="text" class="form-control" name="hero_title" value="{{ $settings['homepage']['hero_title'] ?? 'Review Smarter. Learn Better. Succeed Faster.' }}" placeholder="Main headline">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Hero Subtitle</label>
-                            <textarea class="form-control" name="hero_subtitle" rows="3" placeholder="Hero description">Your premier destination for comprehensive review programs and professional training.</textarea>
+                            <textarea class="form-control" name="hero_subtitle" rows="3" placeholder="Hero description">{{ $settings['homepage']['hero_subtitle'] ?? 'Your premier destination for comprehensive review programs and professional training.' }}</textarea>
+                        </div>
+                        
+                        <!-- Color Customization Section -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-palette me-2"></i>Homepage Colors</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Homepage Background Color</label>
+                                    <div class="color-picker-group">
+                                        <input type="color" class="color-input" value="{{ $settings['homepage']['background_color'] ?? '#667eea' }}" onchange="updatePreviewColor('homepage_background', this.value)">
+                                        <input type="text" class="form-control" name="homepage_background_color" value="{{ $settings['homepage']['background_color'] ?? '#667eea' }}">
+                                    </div>
+                                    <small class="form-text text-muted">Main background color for the homepage</small>
+                                </div>
+                                
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Homepage Gradient Color (Optional)</label>
+                                    <div class="color-picker-group">
+                                        <input type="color" class="color-input" value="{{ $settings['homepage']['gradient_color'] ?? '#764ba2' }}" onchange="updatePreviewColor('homepage_gradient', this.value)">
+                                        <input type="text" class="form-control" name="homepage_gradient_color" value="{{ $settings['homepage']['gradient_color'] ?? '#764ba2' }}">
+                                    </div>
+                                    <small class="form-text text-muted">Creates a gradient effect with the background color</small>
+                                </div>
+                                
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Hero Text Color</label>
+                                    <div class="color-picker-group">
+                                        <input type="color" class="color-input" value="{{ $settings['homepage']['text_color'] ?? '#ffffff' }}" onchange="updatePreviewColor('homepage_text', this.value)">
+                                        <input type="text" class="form-control" name="homepage_text_color" value="{{ $settings['homepage']['text_color'] ?? '#ffffff' }}">
+                                    </div>
+                                    <small class="form-text text-muted">Color for hero title and subtitle text</small>
+                                </div>
+                                
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Button Primary Color</label>
+                                    <div class="color-picker-group">
+                                        <input type="color" class="color-input" value="{{ $settings['homepage']['button_color'] ?? '#28a745' }}" onchange="updatePreviewColor('homepage_button', this.value)">
+                                        <input type="text" class="form-control" name="homepage_button_color" value="{{ $settings['homepage']['button_color'] ?? '#28a745' }}">
+                                    </div>
+                                    <small class="form-text text-muted">Color for CTA buttons</small>
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="form-group mb-3">
@@ -715,32 +765,32 @@
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Primary CTA Button Text</label>
-                            <input type="text" class="form-control" name="cta_primary_text" value="Get Started" placeholder="Primary button text">
+                            <input type="text" class="form-control" name="cta_primary_text" value="{{ $settings['homepage']['cta_primary_text'] ?? 'Get Started' }}" placeholder="Primary button text">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Primary CTA Button Link</label>
-                            <input type="text" class="form-control" name="cta_primary_link" value="/programs" placeholder="Primary button link">
+                            <input type="text" class="form-control" name="cta_primary_link" value="{{ $settings['homepage']['cta_primary_link'] ?? '/programs' }}" placeholder="Primary button link">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Secondary CTA Button Text</label>
-                            <input type="text" class="form-control" name="cta_secondary_text" value="Learn More" placeholder="Secondary button text">
+                            <input type="text" class="form-control" name="cta_secondary_text" value="{{ $settings['homepage']['cta_secondary_text'] ?? 'Learn More' }}" placeholder="Secondary button text">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Secondary CTA Button Link</label>
-                            <input type="text" class="form-control" name="cta_secondary_link" value="/about" placeholder="Secondary button link">
+                            <input type="text" class="form-control" name="cta_secondary_link" value="{{ $settings['homepage']['cta_secondary_link'] ?? '/about' }}" placeholder="Secondary button link">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Features Section Title</label>
-                            <input type="text" class="form-control" name="features_title" value="Why Choose Us?" placeholder="Features section title">
+                            <input type="text" class="form-control" name="features_title" value="{{ $settings['homepage']['features_title'] ?? 'Why Choose Us?' }}" placeholder="Features section title">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Copyright Text</label>
-                            <input type="text" class="form-control" name="copyright" value="© Copyright Ascendo Review and Training Center. All Rights Reserved." placeholder="Footer copyright">
+                            <input type="text" class="form-control" name="copyright" value="{{ $settings['homepage']['copyright'] ?? '© Copyright Ascendo Review and Training Center. All Rights Reserved.' }}" placeholder="Footer copyright">
                         </div>
                         
                         <button type="submit" class="btn btn-primary">
@@ -1040,7 +1090,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <button class="preview-btn" onclick="refreshPreview()">
                                 <i class="fas fa-sync-alt me-1"></i>Refresh
                             </button>
-                            <a href="http://localhost/A.R.T.C/public/" class="preview-btn" target="_blank">
+                            <a href="http://127.0.0.1:8000/" class="preview-btn" target="_blank" id="openInNewTabLink">
                                 <i class="fas fa-external-link-alt me-1"></i>Open in New Tab
                             </a>
                         </div>
@@ -1054,7 +1104,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <iframe 
                         class="preview-iframe" 
-                        src="http://localhost/A.R.T.C/public/" 
+                        src="http://127.0.0.1:8000/" 
                         title="A.R.T.C Site Preview"
                         id="previewFrame"
                         onload="hideLoading()"
@@ -1095,6 +1145,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Enable auto-save for important changes
             enableAutoSave();
+            
+            // Initialize preview URL from settings
+            initializePreviewUrl();
         });
 
         // Form submission handlers
@@ -1143,30 +1196,82 @@ document.addEventListener('DOMContentLoaded', function() {
             const originalText = submitBtn.innerHTML;
             const formData = new FormData(event.target);
             
+            // Debug: Log form data
+            console.log('Form submission debug:', {
+                settingType: settingType,
+                formData: Object.fromEntries(formData.entries()),
+                heroTitle: formData.get('hero_title'),
+                heroTitleLength: formData.get('hero_title') ? formData.get('hero_title').length : 0
+            });
+            
             // Update button state
             submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${loadingText}`;
             submitBtn.disabled = true;
             
             try {
-                // Simulate API call - replace with actual endpoint
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                // Get CSRF token
+                const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                 
-                // Success state
-                submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Settings Updated Successfully!';
-                showNotification(`${settingType.charAt(0).toUpperCase() + settingType.slice(1)} settings have been updated successfully!`, 'success');
-                
-                // Refresh preview if needed
-                if (['branding', 'navbar', 'homepage'].includes(settingType)) {
-                    refreshPreview();
+                // Determine the correct endpoint based on setting type
+                let endpoint;
+                switch(settingType) {
+                    case 'general':
+                        endpoint = '{{ route("smartprep.admin.settings.update.general") }}';
+                        break;
+                    case 'branding':
+                        endpoint = '{{ route("smartprep.admin.settings.update.branding") }}';
+                        break;
+                    case 'navbar':
+                        endpoint = '{{ route("smartprep.admin.settings.update.navbar") }}';
+                        break;
+                    case 'homepage':
+                        endpoint = '{{ route("smartprep.admin.settings.update.homepage") }}';
+                        break;
+                    default:
+                        endpoint = '{{ route("smartprep.admin.settings.save") }}';
                 }
                 
-                // Reset button after 2 seconds
-                setTimeout(() => {
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                }, 2000);
+                // Make actual AJAX call
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': token,
+                        'Accept': 'application/json',
+                    },
+                    body: formData
+                });
+                
+                console.log('Response debug:', {
+                    status: response.status,
+                    ok: response.ok,
+                    headers: Object.fromEntries(response.headers.entries())
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Response result:', result);
+                    
+                    // Success state
+                    submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Settings Updated Successfully!';
+                    showNotification(`${settingType.charAt(0).toUpperCase() + settingType.slice(1)} settings have been updated successfully!`, 'success');
+                    
+                    // Refresh preview if needed
+                    if (['branding', 'navbar', 'homepage'].includes(settingType)) {
+                        refreshPreview();
+                    }
+                    
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    }, 2000);
+                } else {
+                    throw new Error('Server error: ' + response.status);
+                }
                 
             } catch (error) {
+                console.error('Error updating settings:', error);
+                
                 // Error state
                 submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Update Failed';
                 showNotification('Failed to update settings. Please try again.', 'danger');
@@ -1279,7 +1384,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Preview control functions
-        function refreshPreview() {
+        async function refreshPreview() {
             const iframe = document.getElementById('previewFrame');
             const loading = document.getElementById('previewLoading');
             
@@ -1287,10 +1392,89 @@ document.addEventListener('DOMContentLoaded', function() {
                 loading.style.display = 'flex';
                 iframe.style.opacity = '0.5';
                 
-                // Reload iframe
-                iframe.src = iframe.src;
+                try {
+                    // Fetch current UI settings from API
+                    const response = await fetch('{{ route("smartprep.api.ui-settings") }}');
+                    if (response.ok) {
+                        const settings = await response.json();
+                        applySettingsToPreview(settings.data);
+                        
+                        // Update iframe src with configurable preview URL
+                        const previewUrl = settings.data.general?.preview_url || 'http://127.0.0.1:8000/';
+                        iframe.src = previewUrl;
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch UI settings:', error);
+                    // Fallback to default URL
+                    iframe.src = 'http://127.0.0.1:8000/';
+                }
                 
                 showNotification('Refreshing A.R.T.C preview...', 'info');
+            }
+        }
+        
+        // Apply settings to preview iframe
+        function applySettingsToPreview(settings) {
+            try {
+                const iframe = document.getElementById('previewFrame');
+                if (iframe && iframe.contentDocument) {
+                    const iframeDoc = iframe.contentDocument;
+                    const root = iframeDoc.documentElement;
+                    
+                    // Apply branding colors
+                    if (settings.branding) {
+                        if (settings.branding.primary_color) {
+                            root.style.setProperty('--primary-color', settings.branding.primary_color);
+                        }
+                        if (settings.branding.secondary_color) {
+                            root.style.setProperty('--secondary-color', settings.branding.secondary_color);
+                        }
+                        if (settings.branding.background_color) {
+                            root.style.setProperty('--background-color', settings.branding.background_color);
+                        }
+                        if (settings.branding.font_family) {
+                            root.style.setProperty('--font-family', settings.branding.font_family);
+                        }
+                    }
+                    
+                    // Apply navbar settings
+                    if (settings.navbar) {
+                        const navbar = iframeDoc.querySelector('.navbar-brand');
+                        if (navbar && settings.navbar.brand_name) {
+                            // Find the strong element that contains the brand name
+                            const brandText = navbar.querySelector('strong');
+                            if (brandText) {
+                                brandText.textContent = settings.navbar.brand_name;
+                            } else {
+                                // If no strong element exists, create one
+                                const strong = iframeDoc.createElement('strong');
+                                strong.textContent = settings.navbar.brand_name;
+                                navbar.appendChild(strong);
+                            }
+                        }
+                    }
+                    
+                    // Apply homepage settings
+                    if (settings.homepage) {
+                        const heroTitle = iframeDoc.querySelector('.hero-title');
+                        if (heroTitle && settings.homepage.hero_title) {
+                            heroTitle.textContent = settings.homepage.hero_title;
+                        }
+                        
+                        const heroSubtitle = iframeDoc.querySelector('.hero-subtitle');
+                        if (heroSubtitle && settings.homepage.hero_subtitle) {
+                            heroSubtitle.textContent = settings.homepage.hero_subtitle;
+                        }
+                    }
+                }
+                
+                // Update "Open in New Tab" link with configurable preview URL
+                const openInNewTabLink = document.getElementById('openInNewTabLink');
+                if (openInNewTabLink && settings.general?.preview_url) {
+                    openInNewTabLink.href = settings.general.preview_url;
+                }
+            } catch (e) {
+                console.log('Cross-origin iframe access restricted - normal behavior');
             }
         }
         
@@ -1304,6 +1488,31 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 500);
         }
         
+        // Initialize preview URL from settings
+        async function initializePreviewUrl() {
+            try {
+                const response = await fetch('{{ route("smartprep.api.ui-settings") }}');
+                if (response.ok) {
+                    const settings = await response.json();
+                    const previewUrl = settings.data.general?.preview_url || 'http://127.0.0.1:8000/';
+                    
+                    // Update iframe src
+                    const iframe = document.getElementById('previewFrame');
+                    if (iframe) {
+                        iframe.src = previewUrl;
+                    }
+                    
+                    // Update "Open in New Tab" link
+                    const openInNewTabLink = document.getElementById('openInNewTabLink');
+                    if (openInNewTabLink) {
+                        openInNewTabLink.href = previewUrl;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to initialize preview URL:', error);
+            }
+        }
+        
         function showError() {
             const loading = document.getElementById('previewLoading');
             if (loading) {
@@ -1311,7 +1520,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="text-center text-danger">
                         <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
                         <div>Preview failed to load</div>
-                        <small>A.R.T.C server may be offline</small>
+                        <small>SmartPrep server may be offline</small>
                     </div>
                 `;
             }
@@ -1356,7 +1565,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Global settings management
         async function saveAllSettings() {
-            showNotification('Saving all A.R.T.C settings...', 'info');
+            showNotification('Saving all SmartPrep settings...', 'info');
             
             // Simulate saving all forms
             const forms = document.querySelectorAll('form');
@@ -1373,17 +1582,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             showNotification(`Successfully saved ${successCount} setting sections!`, 'success');
-            refreshPreview();
+            refreshPreview(); // Refresh preview after saving all settings
         }
         
         async function publishChanges() {
-            showNotification('Publishing changes to A.R.T.C live site...', 'info');
+            showNotification('Publishing changes to SmartPrep live site...', 'info');
             
             try {
                 // Simulate publishing process
                 await new Promise(resolve => setTimeout(resolve, 2000));
-                showNotification('Changes published successfully! A.R.T.C is now live with your updates.', 'success');
-                refreshPreview();
+                showNotification('Changes published successfully! SmartPrep is now live with your updates.', 'success');
+                refreshPreview(); // Refresh preview after publishing
             } catch (error) {
                 showNotification('Failed to publish changes. Please try again.', 'danger');
             }
@@ -1419,7 +1628,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Ctrl+R or Cmd+R to refresh preview
             if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
                 e.preventDefault();
-                refreshPreview();
+                refreshPreview(); // Refresh preview with keyboard shortcut
             }
         });
     </script>

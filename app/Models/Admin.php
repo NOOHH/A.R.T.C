@@ -10,8 +10,11 @@ class Admin extends Authenticatable
 {
     use Notifiable;
     
-    // Tell Laravel the custom primary key name
-    protected $primaryKey = 'admin_id';
+    // Force this model to always use the main database connection
+    protected $connection = 'mysql';
+    
+    // Tell Laravel the primary key name (table actually uses 'id', not 'admin_id')
+    protected $primaryKey = 'id';
     
     // If your PK is NOT a UUID or string, this should remain true (default)
     public $incrementing = true;
@@ -20,10 +23,9 @@ class Admin extends Authenticatable
     protected $keyType = 'int';
 
     protected $fillable = [
-        'admin_name',
+        'name',
         'email',
         'password',
-        'avatar',
     ];
 
     protected $hidden = [

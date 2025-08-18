@@ -86,5 +86,7 @@ class Kernel extends HttpKernel
     'smartprep.db' => \App\Http\Middleware\Smartprep\UseMainDatabase::class,
     // SmartPrep authentication middleware
     'smartprep.auth' => \App\Http\Middleware\Smartprep\Authenticate::class,
+    // Debug middleware for SmartPrep requests
+    'debug.smartprep' => \App\Http\Middleware\DebugSmartprepRequests::class,
     ];
 }

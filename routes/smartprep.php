@@ -15,9 +15,27 @@ use App\Http\Controllers\Smartprep\Admin\ClientsController;
 use App\Http\Controllers\Smartprep\Dashboard\ClientDashboardController;
 use App\Http\Controllers\Smartprep\Dashboard\CustomizeWebsiteController;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 // Public routes
 Route::get('/', [HomepageController::class, 'welcome'])->name('home');
+
+// API endpoint for UI settings (for live preview)
+Route::get('/api/ui-settings', function () {
+    return response()->json([
+        'success' => true,
+        'data' => \App\Helpers\UiSettingsHelper::getAll()
+    ]);
+})->name('api.ui-settings');
+
+// API endpoint for programs (needed by frontend JavaScript)
+Route::get('/api/programs', function () {
+    $programs = \App\Models\Program::where('is_archived', false)
+                                   ->select('program_id', 'program_name', 'program_description')
+                                   ->get();
+    
+    return response()->json($programs);
+})->name('smartprep.api.programs');
 
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.submit');
@@ -49,7 +67,7 @@ Route::post('/password/confirm', [ConfirmPasswordController::class, 'confirm'])
     ->name('password.confirm.submit');
 
 // Auth-protected routes
-Route::middleware('smartprep.auth')->group(function () {
+Route::middleware(['smartprep.auth', 'debug.smartprep'])->group(function () {
     // Admin
     Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
     Route::get('/admin/website-requests', [WebsiteRequestsController::class, 'index'])->name('admin.website-requests');
@@ -57,6 +75,10 @@ Route::middleware('smartprep.auth')->group(function () {
     Route::post('/admin/website-requests/{request}/reject', [WebsiteRequestsController::class, 'reject'])->name('admin.reject-request');
     Route::get('/admin/settings', [AdminSettingsController::class, 'index'])->name('admin.settings');
     Route::post('/admin/settings', [AdminSettingsController::class, 'save'])->name('admin.settings.save');
+    Route::post('/admin/settings/general', [AdminSettingsController::class, 'updateGeneral'])->name('admin.settings.update.general');
+    Route::post('/admin/settings/navbar', [AdminSettingsController::class, 'updateNavbar'])->name('admin.settings.update.navbar');
+    Route::post('/admin/settings/homepage', [AdminSettingsController::class, 'updateHomepage'])->name('admin.settings.update.homepage');
+    Route::post('/admin/settings/branding', [AdminSettingsController::class, 'updateBranding'])->name('admin.settings.update.branding');
     Route::get('/admin/clients', [ClientsController::class, 'index'])->name('admin.clients');
     Route::get('/admin/clients/create', [ClientsController::class, 'create'])->name('admin.clients.create');
     Route::get('/admin/clients/{id}/edit', [ClientsController::class, 'edit'])->name('admin.clients.edit');

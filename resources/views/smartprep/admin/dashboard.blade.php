@@ -409,7 +409,11 @@
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-2"></i>Admin
+                            <i class="fas fa-user-circle me-2"></i>
+                            @php
+                                $currentUser = Auth::guard('admin')->user() ?: Auth::guard('smartprep')->user() ?: Auth::user();
+                            @endphp
+                            {{ $currentUser ? $currentUser->name : 'Admin' }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="/"><i class="fas fa-home me-2"></i>View Site</a></li>

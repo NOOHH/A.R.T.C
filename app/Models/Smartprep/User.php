@@ -8,6 +8,9 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable
 {
     use Notifiable;
+    
+    // Force this model to always use the main database connection
+    protected $connection = 'mysql';
 
     protected $table = 'users';
     protected $primaryKey = 'id';
