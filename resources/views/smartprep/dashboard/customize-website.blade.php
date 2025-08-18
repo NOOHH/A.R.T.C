@@ -1496,6 +1496,45 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
+        // Specific preview element updates for faster feedback
+        function updatePreviewElement(fieldName, fieldValue) {
+            const iframe = document.getElementById('previewFrame');
+            
+            try {
+                if (iframe && iframe.contentDocument) {
+                    const iframeDoc = iframe.contentDocument;
+                    
+                    // Handle navbar brand name updates
+                    if (fieldName === 'brand_name') {
+                        // Update all elements with navbar brand name
+                        const brandElements = iframeDoc.querySelectorAll('.navbar-brand strong, .footer-title');
+                        brandElements.forEach(element => {
+                            element.textContent = fieldValue;
+                        });
+                        
+                        console.log(`Updated navbar brand name to: ${fieldValue}`);
+                        return; // Don't refresh iframe for brand name changes
+                    }
+                    
+                    // Handle hero title updates
+                    if (fieldName === 'hero_title') {
+                        const heroElements = iframeDoc.querySelectorAll('.hero-title, h1.display-4');
+                        heroElements.forEach(element => {
+                            element.textContent = fieldValue;
+                        });
+                        
+                        console.log(`Updated hero title to: ${fieldValue}`);
+                        return; // Don't refresh iframe for hero title changes
+                    }
+                }
+            } catch (e) {
+                console.log('Cross-origin iframe access restricted - falling back to iframe refresh');
+            }
+            
+            // Fallback to full iframe refresh for other changes or if direct update fails
+            refreshPreview();
+        }
+
         // Auto-save individual field
         function autoSaveField(fieldName, fieldValue) {
             // Determine which endpoint to use based on field name
@@ -1521,8 +1560,8 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success) {
                     console.log('Auto-saved successfully:', fieldName);
-                    // Update the iframe preview
-                    refreshPreview();
+                    // Update specific elements in preview or refresh iframe
+                    updatePreviewElement(fieldName, fieldValue);
                 } else {
                     console.error('Auto-save failed:', data.message);
                 }
