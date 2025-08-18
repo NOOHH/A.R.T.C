@@ -75,6 +75,9 @@ class AdminSettingsController extends Controller
             'homepage_gradient_color' => 'nullable|string|max:7',
             'homepage_text_color' => 'nullable|string|max:7',
             'homepage_button_color' => 'nullable|string|max:7',
+            'homepage_primary_color' => 'nullable|string|max:7',
+            'homepage_secondary_color' => 'nullable|string|max:7',
+            'homepage_overlay_color' => 'nullable|string|max:7',
             'cta_primary_text' => 'nullable|string|max:100',
             'cta_primary_link' => 'nullable|string|max:255',
             'cta_secondary_text' => 'nullable|string|max:100',
@@ -90,6 +93,9 @@ class AdminSettingsController extends Controller
         UiSetting::set('homepage', 'gradient_color', $request->input('homepage_gradient_color', '#764ba2'), 'color');
         UiSetting::set('homepage', 'text_color', $request->input('homepage_text_color', '#ffffff'), 'color');
         UiSetting::set('homepage', 'button_color', $request->input('homepage_button_color', '#28a745'), 'color');
+        UiSetting::set('homepage', 'primary_color', $request->input('homepage_primary_color', '#667eea'), 'color');
+        UiSetting::set('homepage', 'secondary_color', $request->input('homepage_secondary_color', '#764ba2'), 'color');
+        UiSetting::set('homepage', 'overlay_color', $request->input('homepage_overlay_color', '#000000'), 'color');
         UiSetting::set('homepage', 'cta_primary_text', $request->input('cta_primary_text', 'Get Started'), 'text');
         UiSetting::set('homepage', 'cta_primary_link', $request->input('cta_primary_link', '/programs'), 'text');
         UiSetting::set('homepage', 'cta_secondary_text', $request->input('cta_secondary_text', 'Learn More'), 'text');
@@ -106,6 +112,9 @@ class AdminSettingsController extends Controller
             'gradient_color' => $request->input('homepage_gradient_color', $settings['homepage']['gradient_color'] ?? '#764ba2'),
             'text_color' => $request->input('homepage_text_color', $settings['homepage']['text_color'] ?? '#ffffff'),
             'button_color' => $request->input('homepage_button_color', $settings['homepage']['button_color'] ?? '#28a745'),
+            'primary_color' => $request->input('homepage_primary_color', $settings['homepage']['primary_color'] ?? '#667eea'),
+            'secondary_color' => $request->input('homepage_secondary_color', $settings['homepage']['secondary_color'] ?? '#764ba2'),
+            'overlay_color' => $request->input('homepage_overlay_color', $settings['homepage']['overlay_color'] ?? '#000000'),
             'cta_primary_text' => $request->input('cta_primary_text', $settings['homepage']['cta_primary_text'] ?? 'Get Started'),
             'cta_primary_link' => $request->input('cta_primary_link', $settings['homepage']['cta_primary_link'] ?? '/programs'),
             'cta_secondary_text' => $request->input('cta_secondary_text', $settings['homepage']['cta_secondary_text'] ?? 'Learn More'),

@@ -3,7 +3,7 @@
     <a href="{{ route('home') }}" class="brand-link">
       <img src="{{ asset('images/ARTC_logo.png') }}" alt="Logo">
       <div class="brand-text">
-        Ascendo Review<br>and Training Center
+        {{ $navbar ?? 'Ascendo Review and Training Center' }}
       </div>
     </a>
   </div>

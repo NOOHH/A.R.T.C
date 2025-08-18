@@ -736,6 +736,54 @@
                             <small class="form-text text-muted">Recommended: 1920x1080px</small>
                         </div>
                         
+                        <!-- Homepage Color Customization -->
+                        <h6 class="mt-4 mb-3"><i class="fas fa-palette me-2"></i>Homepage Colors</h6>
+                        
+                        <div class="form-group mb-3">
+                            <label class="form-label">Primary Color</label>
+                            <div class="color-picker-group">
+                                <input type="color" class="color-input" value="#667eea" onchange="updatePreviewColor('homepage_primary', this.value)">
+                                <input type="text" class="form-control color-text" name="homepage_primary_color" value="#667eea" placeholder="#667eea">
+                            </div>
+                            <small class="form-text text-muted">Main brand color for buttons and accents</small>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label class="form-label">Secondary Color</label>
+                            <div class="color-picker-group">
+                                <input type="color" class="color-input" value="#764ba2" onchange="updatePreviewColor('homepage_secondary', this.value)">
+                                <input type="text" class="form-control color-text" name="homepage_secondary_color" value="#764ba2" placeholder="#764ba2">
+                            </div>
+                            <small class="form-text text-muted">Secondary color for highlights and gradients</small>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label class="form-label">Background Color</label>
+                            <div class="color-picker-group">
+                                <input type="color" class="color-input" value="#ffffff" onchange="updatePreviewColor('homepage_background', this.value)">
+                                <input type="text" class="form-control color-text" name="homepage_background_color" value="#ffffff" placeholder="#ffffff">
+                            </div>
+                            <small class="form-text text-muted">Main background color</small>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label class="form-label">Text Color</label>
+                            <div class="color-picker-group">
+                                <input type="color" class="color-input" value="#333333" onchange="updatePreviewColor('homepage_text', this.value)">
+                                <input type="text" class="form-control color-text" name="homepage_text_color" value="#333333" placeholder="#333333">
+                            </div>
+                            <small class="form-text text-muted">Main text color</small>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label class="form-label">Hero Overlay Color</label>
+                            <div class="color-picker-group">
+                                <input type="color" class="color-input" value="#000000" onchange="updatePreviewColor('homepage_overlay', this.value)">
+                                <input type="text" class="form-control color-text" name="homepage_overlay_color" value="#000000" placeholder="#000000">
+                            </div>
+                            <small class="form-text text-muted">Dark overlay on hero background image</small>
+                        </div>
+                        
                         <div class="form-group mb-3">
                             <label class="form-label">Login Page Image</label>
                             <input type="file" class="form-control" name="login_image" accept="image/*">
@@ -1231,6 +1279,39 @@ document.addEventListener('DOMContentLoaded', function() {
                         case 'background':
                             root.style.setProperty('--background-color', color);
                             break;
+                        case 'homepage_primary':
+                            root.style.setProperty('--homepage-primary-color', color);
+                            // Also update common CSS variables
+                            root.style.setProperty('--primary-color', color);
+                            root.style.setProperty('--bs-primary', color);
+                            break;
+                        case 'homepage_secondary':
+                            root.style.setProperty('--homepage-secondary-color', color);
+                            root.style.setProperty('--secondary-color', color);
+                            root.style.setProperty('--bs-secondary', color);
+                            break;
+                        case 'homepage_background':
+                            root.style.setProperty('--homepage-background-color', color);
+                            root.style.setProperty('--bs-body-bg', color);
+                            // Update body background directly
+                            const body = iframeDoc.body;
+                            if (body) body.style.backgroundColor = color;
+                            break;
+                        case 'homepage_text':
+                            root.style.setProperty('--homepage-text-color', color);
+                            root.style.setProperty('--bs-body-color', color);
+                            // Update body text color directly
+                            const bodyText = iframeDoc.body;
+                            if (bodyText) bodyText.style.color = color;
+                            break;
+                        case 'homepage_overlay':
+                            root.style.setProperty('--homepage-overlay-color', color);
+                            // Update hero overlay if present
+                            const heroOverlays = iframeDoc.querySelectorAll('.hero-overlay, .overlay');
+                            heroOverlays.forEach(overlay => {
+                                overlay.style.backgroundColor = color;
+                            });
+                            break;
                     }
                 }
             } catch (e) {
@@ -1506,10 +1587,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Handle navbar brand name updates
                     if (fieldName === 'brand_name') {
-                        // Update all elements with navbar brand name
-                        const brandElements = iframeDoc.querySelectorAll('.navbar-brand strong, .footer-title');
+                        // Update all elements with navbar brand name across different pages
+                        const brandElements = iframeDoc.querySelectorAll(
+                            '.navbar-brand strong, ' +
+                            '.footer-title, ' +
+                            '.navbar-brand, ' +
+                            '.brand-text, ' +
+                            'a.navbar-brand, ' +
+                            '.brand-text.fw-bold, ' +
+                            'span.brand-text.fw-bold'
+                        );
+                        
                         brandElements.forEach(element => {
-                            element.textContent = fieldValue;
+                            // For navbar-brand that contains both icon and text
+                            if (element.classList.contains('navbar-brand') && element.querySelector('i')) {
+                                // Update only the text part, preserving the icon
+                                const iconElement = element.querySelector('i');
+                                element.innerHTML = iconElement.outerHTML + fieldValue;
+                            } else {
+                                // Direct text update for other elements
+                                element.textContent = fieldValue;
+                            }
                         });
                         
                         console.log(`Updated navbar brand name to: ${fieldValue}`);
@@ -1525,6 +1623,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         console.log(`Updated hero title to: ${fieldValue}`);
                         return; // Don't refresh iframe for hero title changes
+                    }
+                    
+                    // Handle homepage color updates
+                    if (fieldName.includes('homepage_') && fieldName.includes('_color')) {
+                        const colorType = fieldName.replace('homepage_', '').replace('_color', '');
+                        updatePreviewColor('homepage_' + colorType, fieldValue);
+                        console.log(`Updated homepage ${colorType} color to: ${fieldValue}`);
+                        return; // Don't refresh iframe for color changes
                     }
                 }
             } catch (e) {

@@ -30,5 +30,23 @@ class AppServiceProvider extends ServiceProvider
         
         // Register view composer for student sidebar
         view()->composer('components.student-sidebar', \App\Http\View\Composers\StudentSidebarComposer::class);
+        
+        // Register view composer for navbar to ensure navbar data is always available
+        view()->composer('layouts.navbar', \App\Http\View\Composers\NavbarComposer::class);
+        
+        // Register view composer for login pages to ensure settings data is available
+        view()->composer('Login.*', \App\Http\View\Composers\NavbarComposer::class);
+        
+        // Register view composer for SmartPrep views to ensure uiSettings data is available
+        view()->composer('smartprep.*', \App\Http\View\Composers\NavbarComposer::class);
+        
+        // Register view composer for admin layouts to ensure navbar data is available
+        view()->composer('admin.*', \App\Http\View\Composers\NavbarComposer::class);
+        
+        // Register view composer for student layouts to ensure navbar data is available
+        view()->composer('student.*', \App\Http\View\Composers\NavbarComposer::class);
+        
+        // Register view composer for components to ensure navbar data is available
+        view()->composer('components.*', \App\Http\View\Composers\NavbarComposer::class);
     }
 }
