@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Models\Smartprep\User;
-use App\Models\Admin;
+use App\Models\Smartprep\Admin;
 use Illuminate\Support\Facades\Hash;
 
 class LoginController extends Controller
@@ -36,7 +36,7 @@ class LoginController extends Controller
             if (Hash::check($password, $admin->password)) {
                 Log::info('SmartPrep Login: Admin password valid, logging in', ['admin_id' => $admin->id]);
                 
-                Auth::guard('admin')->login($admin, $request->boolean('remember'));
+                Auth::guard('smartprep_admin')->login($admin, $request->boolean('remember'));
                 $request->session()->regenerate();
                 
                 Log::info('SmartPrep Login: Admin login successful, redirecting to dashboard', ['admin_id' => $admin->id]);
@@ -84,8 +84,8 @@ class LoginController extends Controller
     public function logout(Request $request)
     {
         // Check which guard the user is logged in with and logout accordingly
-        if (Auth::guard('admin')->check()) {
-            Auth::guard('admin')->logout();
+        if (Auth::guard('smartprep_admin')->check()) {
+            Auth::guard('smartprep_admin')->logout();
         } elseif (Auth::guard('smartprep')->check()) {
             Auth::guard('smartprep')->logout();
         }

@@ -10,11 +10,11 @@ class Admin extends Authenticatable
 {
     use Notifiable;
     
-    // Force this model to always use the main database connection
-    protected $connection = 'mysql';
+    // Force this model to always use the tenant database connection
+    protected $connection = 'tenant';
     
-    // Tell Laravel the primary key name (table actually uses 'id', not 'admin_id')
-    protected $primaryKey = 'id';
+    // Tell Laravel the primary key name (table uses 'admin_id', not 'id')
+    protected $primaryKey = 'admin_id';
     
     // If your PK is NOT a UUID or string, this should remain true (default)
     public $incrementing = true;
@@ -23,7 +23,7 @@ class Admin extends Authenticatable
     protected $keyType = 'int';
 
     protected $fillable = [
-        'name',
+        'admin_name',
         'email',
         'password',
     ];
@@ -36,6 +36,22 @@ class Admin extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * Get the admin's name (maps to admin_name field)
+     */
+    public function getNameAttribute()
+    {
+        return $this->admin_name;
+    }
+
+    /**
+     * Set the admin's name (maps to admin_name field)
+     */
+    public function setNameAttribute($value)
+    {
+        $this->attributes['admin_name'] = $value;
+    }
 
     /**
      * Hash the password when setting it

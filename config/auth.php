@@ -47,6 +47,12 @@ return [
             'provider' => 'smartprep_users',
         ],
 
+        // SmartPrep admin guard for main database admins
+        'smartprep_admin' => [
+            'driver' => 'session',
+            'provider' => 'smartprep_admins',
+        ],
+
         // STUDENT GUARD
         'student' => [
             'driver'   => 'session',
@@ -100,6 +106,12 @@ return [
         'smartprep_users' => [
             'driver' => 'eloquent',
             'model'  => App\Models\Smartprep\User::class,
+        ],
+
+        // SmartPrep admins provider for main database
+        'smartprep_admins' => [
+            'driver' => 'eloquent',
+            'model'  => App\Models\Smartprep\Admin::class,
         ],
 
         // STUDENT PROVIDER
