@@ -3,7 +3,10 @@
 @section('title', 'Home')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/homepage/homepage.css') }}">
+<link rel="stylesheet" href="{{ asset('css/homepage/homepage.css') }}?v={{ time() }}">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
@@ -412,8 +415,8 @@
 @section('content')
 @php
     use App\Models\Module;
-    // Note: $programs and $homepageTitle are now passed from HomepageController
-$homepageContent = \App\Helpers\SettingsHelper::getHomepageContent();
+    // Note: $programs, $homepageTitle, and $homepageContent are now passed from HomepageController
+    // The controller already handles getting the settings from the database
 @endphp
 
 <!-- Hero Section -->
@@ -425,6 +428,7 @@ $homepageContent = \App\Helpers\SettingsHelper::getHomepageContent();
                     <h1 class="hero-title fade-in-up display-3 fw-bold">
                         {!! $homepageContent['hero_title'] !!}
                     </h1>
+                    <!-- DEBUG: Current hero_title = {{ $homepageContent['hero_title'] ?? 'NOT SET' }} -->
                     <p class="hero-subtitle fade-in-up lead mb-4">
                         {{ $homepageContent['hero_subtitle'] }}
                     </p>

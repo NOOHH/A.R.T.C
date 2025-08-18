@@ -1148,6 +1148,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Initialize preview URL from settings
             initializePreviewUrl();
+            
+            // Refresh homepage form with current data
+            setTimeout(() => {
+                refreshHomepageForm();
+            }, 500);
         });
 
         // Form submission handlers
@@ -1255,9 +1260,31 @@ document.addEventListener('DOMContentLoaded', function() {
                     submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Settings Updated Successfully!';
                     showNotification(`${settingType.charAt(0).toUpperCase() + settingType.slice(1)} settings have been updated successfully!`, 'success');
                     
+                    // Show additional notification for homepage updates
+                    if (settingType === 'homepage') {
+                        setTimeout(() => {
+                            showNotification('💡 Tip: Refresh the homepage (Ctrl+F5) to see the changes!', 'info');
+                            
+                            // Add a "View Changes" button
+                            const viewChangesBtn = document.createElement('button');
+                            viewChangesBtn.className = 'btn btn-outline-primary btn-sm ms-2';
+                            viewChangesBtn.innerHTML = '<i class="fas fa-external-link-alt me-1"></i>View Changes';
+                            viewChangesBtn.onclick = () => window.open('http://127.0.0.1/?v=' + Date.now(), '_blank');
+                            
+                            // Add the button to the notification area
+                            const notificationArea = document.querySelector('.notification-area') || document.body;
+                            notificationArea.appendChild(viewChangesBtn);
+                        }, 1000);
+                    }
+                    
                     // Refresh preview if needed
                     if (['branding', 'navbar', 'homepage'].includes(settingType)) {
                         refreshPreview();
+                    }
+                    
+                    // Refresh form data to show updated values
+                    if (settingType === 'homepage') {
+                        refreshHomepageForm();
                     }
                     
                     // Reset button after 2 seconds
@@ -1510,6 +1537,96 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (error) {
                 console.error('Failed to initialize preview URL:', error);
+            }
+        }
+
+        // Refresh homepage form with latest data
+        async function refreshHomepageForm() {
+            try {
+                const response = await fetch('{{ route("smartprep.api.ui-settings") }}');
+                if (response.ok) {
+                    const settings = await response.json();
+                    const homepageSettings = settings.data.homepage;
+                    
+                    if (homepageSettings) {
+                        // Update form fields with latest data
+                        const form = document.getElementById('homepageForm');
+                        if (form) {
+                            // Update text inputs
+                            const heroTitleInput = form.querySelector('input[name="hero_title"]');
+                            if (heroTitleInput) {
+                                heroTitleInput.value = homepageSettings.hero_title || '';
+                            }
+                            
+                            const heroSubtitleInput = form.querySelector('textarea[name="hero_subtitle"]');
+                            if (heroSubtitleInput) {
+                                heroSubtitleInput.value = homepageSettings.hero_subtitle || '';
+                            }
+                            
+                            const ctaPrimaryTextInput = form.querySelector('input[name="cta_primary_text"]');
+                            if (ctaPrimaryTextInput) {
+                                ctaPrimaryTextInput.value = homepageSettings.cta_primary_text || '';
+                            }
+                            
+                            const ctaPrimaryLinkInput = form.querySelector('input[name="cta_primary_link"]');
+                            if (ctaPrimaryLinkInput) {
+                                ctaPrimaryLinkInput.value = homepageSettings.cta_primary_link || '';
+                            }
+                            
+                            const ctaSecondaryTextInput = form.querySelector('input[name="cta_secondary_text"]');
+                            if (ctaSecondaryTextInput) {
+                                ctaSecondaryTextInput.value = homepageSettings.cta_secondary_text || '';
+                            }
+                            
+                            const ctaSecondaryLinkInput = form.querySelector('input[name="cta_secondary_link"]');
+                            if (ctaSecondaryLinkInput) {
+                                ctaSecondaryLinkInput.value = homepageSettings.cta_secondary_link || '';
+                            }
+                            
+                            const featuresTitleInput = form.querySelector('input[name="features_title"]');
+                            if (featuresTitleInput) {
+                                featuresTitleInput.value = homepageSettings.features_title || '';
+                            }
+                            
+                            const copyrightInput = form.querySelector('input[name="copyright"]');
+                            if (copyrightInput) {
+                                copyrightInput.value = homepageSettings.copyright || '';
+                            }
+                            
+                            // Update color inputs
+                            const backgroundColorInput = form.querySelector('input[name="homepage_background_color"]');
+                            if (backgroundColorInput) {
+                                backgroundColorInput.value = homepageSettings.background_color || '#667eea';
+                            }
+                            
+                            const gradientColorInput = form.querySelector('input[name="homepage_gradient_color"]');
+                            if (gradientColorInput) {
+                                gradientColorInput.value = homepageSettings.gradient_color || '#764ba2';
+                            }
+                            
+                            const textColorInput = form.querySelector('input[name="homepage_text_color"]');
+                            if (textColorInput) {
+                                textColorInput.value = homepageSettings.text_color || '#ffffff';
+                            }
+                            
+                            const buttonColorInput = form.querySelector('input[name="homepage_button_color"]');
+                            if (buttonColorInput) {
+                                buttonColorInput.value = homepageSettings.button_color || '#28a745';
+                            }
+                            
+                            // Update color pickers
+                            const colorPickers = form.querySelectorAll('.color-input');
+                            colorPickers.forEach(picker => {
+                                const textInput = picker.nextElementSibling;
+                                if (textInput && textInput.value) {
+                                    picker.value = textInput.value;
+                                }
+                            });
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to refresh homepage form:', error);
             }
         }
         

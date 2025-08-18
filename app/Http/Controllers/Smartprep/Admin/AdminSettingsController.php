@@ -16,8 +16,8 @@ class AdminSettingsController extends Controller
         // Get current settings from database and JSON file
         $settings = $this->getCurrentSettings();
         
-        // Use the same interface as client customize website but with admin functionality
-        return view('smartprep.dashboard.customize-website', compact('settings'));
+        // Use the admin settings interface
+        return view('smartprep.admin.admin-settings.index', compact('settings'));
     }
     
     public function save(Request $request)
@@ -125,7 +125,7 @@ class AdminSettingsController extends Controller
         ]);
         $this->saveSettings($settings);
 
-        if ($request->expectsJson()) {
+        if ($request->expectsJson() || $request->ajax()) {
             return response()->json(['success' => true, 'message' => 'Homepage content updated successfully!']);
         }
 

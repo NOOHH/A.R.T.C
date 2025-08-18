@@ -651,7 +651,7 @@
                         @csrf
                         <div class="form-group mb-3">
                             <label class="form-label">Brand Name</label>
-                            <input type="text" class="form-control" name="brand_name" value="{{ $navbarBrandName ?? 'Ascendo Review and Training Center' }}" placeholder="Brand name">
+                            <input type="text" class="form-control" name="brand_name" value="{{ $settings['navbar']['brand_name'] ?? 'Ascendo Review and Training Center' }}" placeholder="Brand name">
                         </div>
                         
                         <div class="form-group mb-3">
@@ -722,12 +722,12 @@
                         @csrf
                         <div class="form-group mb-3">
                             <label class="form-label">Hero Title</label>
-                            <input type="text" class="form-control" name="hero_title" value="Review Smarter. Learn Better. Succeed Faster." placeholder="Main headline">
+                            <input type="text" class="form-control" name="hero_title" value="{{ $settings['homepage']['hero_title'] ?? 'Review Smarter. Learn Better. Succeed Faster.' }}" placeholder="Main headline">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Hero Subtitle</label>
-                            <textarea class="form-control" name="hero_subtitle" rows="3" placeholder="Hero description">Your premier destination for comprehensive review programs and professional training.</textarea>
+                            <textarea class="form-control" name="hero_subtitle" rows="3" placeholder="Hero description">{{ $settings['homepage']['hero_subtitle'] ?? 'Your premier destination for comprehensive review programs and professional training.' }}</textarea>
                         </div>
                         
                         <div class="form-group mb-3">

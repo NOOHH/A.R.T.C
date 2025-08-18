@@ -654,7 +654,17 @@ class SettingsHelper
             'about_subtitle' => 'Learn more about our mission and values',
         ];
         
-        return array_merge($defaults, $settings);
+        // Start with defaults, then override with database values
+        $result = $defaults;
+        
+        // Override with database values (database values take precedence)
+        foreach ($settings as $key => $value) {
+            if (!empty($value)) {
+                $result[$key] = $value;
+            }
+        }
+        
+        return $result;
     }
 
     public static function getAllStyles()
