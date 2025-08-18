@@ -411,7 +411,7 @@
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle me-2"></i>
                             @php
-                                $currentUser = Auth::guard('admin')->user() ?: Auth::guard('smartprep')->user() ?: Auth::user();
+                                $currentUser = Auth::guard('smartprep_admin')->user() ?: Auth::guard('smartprep')->user() ?: Auth::user();
                             @endphp
                             {{ $currentUser ? $currentUser->name : 'Admin' }}
                         </a>

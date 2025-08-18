@@ -392,15 +392,15 @@
 <body>
     @php
         // Get user info for global variables - check all relevant guards
-        $user = Auth::guard('admin')->user() ?: Auth::guard('smartprep')->user() ?: Auth::user();
+        $user = Auth::guard('smartprep_admin')->user() ?: Auth::guard('smartprep')->user() ?: Auth::user();
         
         // Check if user is actually logged in
-        $isLoggedIn = Auth::guard('admin')->check() || Auth::guard('smartprep')->check() || Auth::check();
+        $isLoggedIn = Auth::guard('smartprep_admin')->check() || Auth::guard('smartprep')->check() || Auth::check();
         
         // Determine user role
         $userRole = 'guest';
         if ($isLoggedIn && $user) {
-            if (Auth::guard('admin')->check()) {
+            if (Auth::guard('smartprep_admin')->check()) {
                 $userRole = 'admin';
             } elseif (Auth::guard('smartprep')->check()) {
                 $userRole = $user->role ?? 'user';
@@ -462,7 +462,7 @@
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-2"></i>{{ Auth::guard('admin')->user()->name ?? Auth::guard('smartprep')->user()->name ?? 'User' }}
+                            <i class="fas fa-user-circle me-2"></i>{{ Auth::guard('smartprep_admin')->user()->name ?? Auth::guard('smartprep')->user()->name ?? 'User' }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="/"><i class="fas fa-home me-2"></i>Home</a></li>
@@ -1782,7 +1782,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Contact Email *</label>
-                                <input type="email" class="form-control form-control-modern" name="contact_email" required value="{{ Auth::guard('admin')->user()->email ?? Auth::guard('smartprep')->user()->email ?? '' }}">
+                                <input type="email" class="form-control form-control-modern" name="contact_email" required value="{{ Auth::guard('smartprep_admin')->user()->email ?? Auth::guard('smartprep')->user()->email ?? '' }}">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Contact Phone</label>
