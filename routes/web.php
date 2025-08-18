@@ -360,6 +360,11 @@ Route::get('/test-settings', function () {
 // Homepage
 Route::get('/', [App\Http\Controllers\HomepageController::class, 'index'])->name('home');
 
+// Debug navbar route
+Route::get('/debug-navbar', function () {
+    return view('debug-navbar');
+})->name('debug.navbar');
+
 // Review Programs page
 Route::get('/review-programs', function() {
     return view('welcome.review-programs');

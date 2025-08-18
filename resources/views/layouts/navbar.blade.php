@@ -421,11 +421,21 @@
 <body class="body-background d-flex flex-column min-vh-100 @if(request()->routeIs('enrollment.*')) enrollment-page @endif">
     @php
         $settings = \App\Helpers\SettingsHelper::getSettings();
+        // Pull fresh settings from DB (collection of key => value)
         $navbarSettings = \App\Models\UiSetting::getSection('navbar');
         $footerSettings = \App\Models\UiSetting::getSection('footer');
-        
-        $navbar = $navbarSettings ? $navbarSettings->toArray() : [];
+
+        // Preserve composer-injected $navbar if present, don't clobber it
+        $composerNavbar = (isset($navbar) && is_array($navbar)) ? $navbar : null;
+
+        // Prefer DB values when available, otherwise keep composer data
+        $navbar = $navbarSettings ? $navbarSettings->toArray() : ($composerNavbar ?? []);
         $footer = $footerSettings ? $footerSettings->toArray() : [];
+
+        // Single source of truth for brand name with sane fallbacks
+        $brandName = $navbar['brand_name']
+            ?? ($composerNavbar['brand_name'] ?? null)
+            ?? ($settings['navbar']['brand_name'] ?? 'Ascendo Review and Training Center');
     @endphp
     
     {{-- Bootstrap Navbar --}}
@@ -436,7 +446,7 @@
                 <img src="{{ \App\Helpers\SettingsHelper::getLogoUrl() }}" 
                      alt="Logo" class="logo me-2" style="height: 40px;"
                      onerror="this.src='{{ asset('images/ARTC_Logo.png') }}'">
-                <strong>{{ $navbar['brand_name'] ?? 'Ascendo Review and Training Center' }}</strong>
+                <strong>{{ $brandName }}</strong>
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
@@ -550,7 +560,7 @@
             <div class="footer-top d-flex justify-content-between align-items-center flex-wrap py-4">
                 <div class="footer-logo mb-3 mb-md-0">
                     <img src="{{ asset('images/ARTC_Logo.png') }}" alt="ARTC Logo" style="height: 40px;">
-                    <span class="footer-title ms-2">{{ $navbar['brand_name'] ?? 'Ascendo Review and Training Center' }}</span>
+                    <span class="footer-title ms-2">{{ $brandName }}</span>
                 </div>
                 <div class="footer-social">
                     <a href="#" class="footer-social-icon"><i class="bi bi-youtube"></i></a>

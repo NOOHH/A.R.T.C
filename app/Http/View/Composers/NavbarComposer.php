@@ -44,7 +44,7 @@ class NavbarComposer
         }
         
         // Always ensure navbar data is available
-        $view->with('navbar', $navbar['brand_name'] ?? 'Ascendo Review and Training Center');
+        $view->with('navbar', $navbar);
         
         // Also provide settings in the format expected by login pages
         $settings = [
