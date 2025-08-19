@@ -90,7 +90,12 @@ class SettingsHelper
             return asset('storage/' . $settings['global_logo']);
         }
         
-        // Check for navbar specific logo
+        // Check for navbar brand logo (new setting)
+        if (isset($settings['navbar']['brand_logo']) && $settings['navbar']['brand_logo']) {
+            return asset($settings['navbar']['brand_logo']);
+        }
+        
+        // Check for navbar specific logo (legacy)
         if (isset($settings['navbar']['logo']) && $settings['navbar']['logo']) {
             return asset('storage/' . $settings['navbar']['logo']);
         }

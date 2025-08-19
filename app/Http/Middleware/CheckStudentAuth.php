@@ -18,6 +18,11 @@ class CheckStudentAuth
      */
     public function handle(Request $request, Closure $next)
     {
+        // Allow preview mode to bypass authentication completely
+        if ($request->boolean('preview', false)) {
+            return $next($request);
+        }
+
         // Check if user is logged in via session
         if (!session('logged_in') || !session('user_id')) {
             return redirect()->route('login')->with('error', 'Please log in to access this page.');

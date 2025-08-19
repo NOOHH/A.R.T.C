@@ -17,6 +17,11 @@ class CheckProfessorAuth
      */
     public function handle(Request $request, Closure $next)
     {
+        // Allow preview mode to bypass authentication completely
+        if ($request->boolean('preview', false)) {
+            return $next($request);
+        }
+
         // Debug logging
         Log::info('Professor Auth Check', [
             'session_logged_in' => session('logged_in'),

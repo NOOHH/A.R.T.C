@@ -19,6 +19,11 @@ class CheckAdminDirectorAuth
      */
     public function handle(Request $request, Closure $next)
     {
+        // Allow preview mode to bypass authentication completely
+        if ($request->boolean('preview', false)) {
+            return $next($request);
+        }
+
         // Start PHP session if not already started
         if (session_status() === PHP_SESSION_NONE) {
             session_start();

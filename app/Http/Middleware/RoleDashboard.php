@@ -17,6 +17,11 @@ class RoleDashboard
      */
     public function handle(Request $request, Closure $next)
     {
+        // Allow preview mode to bypass role-based redirects
+        if ($request->boolean('preview', false)) {
+            return $next($request);
+        }
+
         $userType = SessionManager::getUserType();
 
         // Redirect to appropriate dashboard based on user type

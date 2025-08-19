@@ -564,7 +564,9 @@
         <div class="container">
             <div class="footer-top d-flex justify-content-between align-items-center flex-wrap py-4">
                 <div class="footer-logo mb-3 mb-md-0">
-                    <img src="{{ asset('images/ARTC_Logo.png') }}" alt="ARTC Logo" style="height: 40px;">
+                    <img src="{{ \App\Helpers\SettingsHelper::getLogoUrl() }}" 
+                         alt="Logo" style="height: 40px;"
+                         onerror="this.src='{{ asset('images/ARTC_Logo.png') }}'">
                     <span class="footer-title ms-2">{{ $brandName }}</span>
                 </div>
                 <div class="footer-social">

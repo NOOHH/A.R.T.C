@@ -640,7 +640,7 @@
                         <h5><i class="fas fa-bars me-2"></i>Navigation Bar</h5>
                     </div>
                     
-                    <form id="navbarForm" method="POST" action="{{ route('smartprep.admin.settings.update.navbar') }}">
+                    <form id="navbarForm" method="POST" action="{{ route('smartprep.admin.settings.update.navbar') }}" enctype="multipart/form-data">
                         @csrf
                         
                         @if(session('success'))
@@ -653,6 +653,18 @@
                         <div class="form-group mb-3">
                             <label class="form-label">Brand Name</label>
                             <input type="text" class="form-control" name="navbar_brand_name" value="{{ $settings['navbar']['brand_name'] ?? 'SmartPrep Admin' }}" placeholder="Brand name">
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label class="form-label">Brand Logo</label>
+                            <input type="file" class="form-control" name="navbar_brand_logo" accept="image/*">
+                            <small class="form-text text-muted">Upload a logo for the navigation bar. Recommended: 40px height, PNG format with transparent background</small>
+                            @if(isset($settings['navbar']['brand_logo']) && $settings['navbar']['brand_logo'])
+                                <div class="mt-2">
+                                    <small class="text-muted">Current logo:</small><br>
+                                    <img src="{{ \Illuminate\Support\Facades\Storage::url($settings['navbar']['brand_logo']) }}" alt="Current brand logo" style="max-height: 40px;" class="img-thumbnail">
+                                </div>
+                            @endif
                         </div>
                         
                         <div class="form-group mb-3">
@@ -907,7 +919,7 @@
                             @if(isset($settings['homepage']['hero_background_image']) && $settings['homepage']['hero_background_image'])
                                 <div class="mt-2">
                                     <small class="text-muted">Current image:</small><br>
-                                    <img src="{{ asset($settings['homepage']['hero_background_image']) }}" alt="Current hero background" style="max-width: 200px; max-height: 100px;" class="img-thumbnail">
+                                    <img src="{{ \Illuminate\Support\Facades\Storage::url($settings['homepage']['hero_background_image']) }}" alt="Current hero background" style="max-width: 200px; max-height: 100px;" class="img-thumbnail">
                                 </div>
                             @endif
                         </div>
@@ -935,58 +947,202 @@
                         <h5><i class="fas fa-user-graduate me-2"></i>Student Portal</h5>
                     </div>
                     
-                    <form id="studentForm" onsubmit="updateStudent(event)">
+                    <form id="studentForm" method="POST" action="{{ route('smartprep.admin.settings.update.student') }}">
                         @csrf
-                        <div class="form-group mb-3">
-                            <label class="form-label">Student Dashboard Title</label>
-                            <input type="text" class="form-control" name="student_dashboard_title" value="Student Dashboard" placeholder="Dashboard title">
+                        
+                        @if(session('student_success'))
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i>{{ session('student_success') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        @endif
+                        
+                        <!-- Dashboard Colors -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>Dashboard Colors</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Dashboard Header Background</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['dashboard_header_bg'] ?? '#0d6efd' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="dashboard_header_bg" value="{{ $settings['student_portal']['dashboard_header_bg'] ?? '#0d6efd' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Dashboard Header Text</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['dashboard_header_text'] ?? '#ffffff' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="dashboard_header_text" value="{{ $settings['student_portal']['dashboard_header_text'] ?? '#ffffff' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Sidebar Background</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['sidebar_bg'] ?? '#f8f9fa' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="sidebar_bg" value="{{ $settings['student_portal']['sidebar_bg'] ?? '#f8f9fa' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Active Menu Item</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['active_menu_color'] ?? '#0d6efd' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="active_menu_color" value="{{ $settings['student_portal']['active_menu_color'] ?? '#0d6efd' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="form-group mb-3">
-                            <label class="form-label">Welcome Message</label>
-                            <textarea class="form-control" name="student_welcome_message" rows="3" placeholder="Welcome message for students">Welcome to your learning portal. Access your courses, track progress, and achieve your goals.</textarea>
+                        <!-- Course Interface Colors -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-book me-2"></i>Course Interface Colors</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Course Card Background</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['course_card_bg'] ?? '#ffffff' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="course_card_bg" value="{{ $settings['student_portal']['course_card_bg'] ?? '#ffffff' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Course Progress Bar</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['progress_bar_color'] ?? '#28a745' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="progress_bar_color" value="{{ $settings['student_portal']['progress_bar_color'] ?? '#28a745' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Course Title Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['course_title_color'] ?? '#212529' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="course_title_color" value="{{ $settings['student_portal']['course_title_color'] ?? '#212529' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Assignment Due Date</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['due_date_color'] ?? '#dc3545' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="due_date_color" value="{{ $settings['student_portal']['due_date_color'] ?? '#dc3545' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <h6 class="mt-4 mb-3">Student Features</h6>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="student_features[]" value="course_access" checked>
-                            <label class="form-check-label">Course Access</label>
+                        <!-- Buttons and Interactive Elements -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-mouse-pointer me-2"></i>Buttons & Interactive Elements</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Primary Button Background</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['primary_btn_bg'] ?? '#0d6efd' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="primary_btn_bg" value="{{ $settings['student_portal']['primary_btn_bg'] ?? '#0d6efd' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Primary Button Text</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['primary_btn_text'] ?? '#ffffff' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="primary_btn_text" value="{{ $settings['student_portal']['primary_btn_text'] ?? '#ffffff' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Secondary Button Background</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['secondary_btn_bg'] ?? '#6c757d' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="secondary_btn_bg" value="{{ $settings['student_portal']['secondary_btn_bg'] ?? '#6c757d' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Link Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['link_color'] ?? '#0d6efd' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="link_color" value="{{ $settings['student_portal']['link_color'] ?? '#0d6efd' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="student_features[]" value="progress_tracking" checked>
-                            <label class="form-check-label">Progress Tracking</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="student_features[]" value="assignments" checked>
-                            <label class="form-check-label">Assignments</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="student_features[]" value="grades" checked>
-                            <label class="form-check-label">Grades & Results</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="student_features[]" value="calendar" checked>
-                            <label class="form-check-label">Calendar & Schedule</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="student_features[]" value="messages" checked>
-                            <label class="form-check-label">Messages</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="student_features[]" value="resources" checked>
-                            <label class="form-check-label">Learning Resources</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="student_features[]" value="certificates">
-                            <label class="form-check-label">Certificates</label>
+                        <!-- Status and Notification Colors -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-bell me-2"></i>Status & Notification Colors</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Success Message</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['success_color'] ?? '#28a745' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="success_color" value="{{ $settings['student_portal']['success_color'] ?? '#28a745' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Warning Message</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['warning_color'] ?? '#ffc107' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="warning_color" value="{{ $settings['student_portal']['warning_color'] ?? '#ffc107' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Error Message</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['error_color'] ?? '#dc3545' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="error_color" value="{{ $settings['student_portal']['error_color'] ?? '#dc3545' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Info Message</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['info_color'] ?? '#17a2b8' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="info_color" value="{{ $settings['student_portal']['info_color'] ?? '#17a2b8' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <button type="submit" class="btn btn-primary">
@@ -1001,68 +1157,108 @@
                         <h5><i class="fas fa-chalkboard-teacher me-2"></i>Professor Panel</h5>
                     </div>
                     
-                    <form id="professorForm" onsubmit="updateProfessor(event)">
+                    <form id="professorForm" method="POST" action="{{ route('smartprep.admin.settings.update.professor') }}">
                         @csrf
-                        <div class="form-group mb-3">
-                            <label class="form-label">Professor Dashboard Title</label>
-                            <input type="text" class="form-control" name="professor_dashboard_title" value="Instructor Dashboard" placeholder="Dashboard title">
+                        
+                        @if(session('professor_success'))
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i>{{ session('professor_success') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        @endif
+                        
+                        <!-- Sidebar Colors -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-bars me-2"></i>Sidebar Colors</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Sidebar Background</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['professor_panel']['sidebar_bg'] ?? '#f8f9fa' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="sidebar_bg" value="{{ $settings['professor_panel']['sidebar_bg'] ?? '#f8f9fa' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Sidebar Text Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['professor_panel']['sidebar_text'] ?? '#212529' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="sidebar_text" value="{{ $settings['professor_panel']['sidebar_text'] ?? '#212529' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Active Menu Item</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['professor_panel']['active_menu_color'] ?? '#0d6efd' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="active_menu_color" value="{{ $settings['professor_panel']['active_menu_color'] ?? '#0d6efd' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Menu Hover Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['professor_panel']['menu_hover_color'] ?? '#e9ecef' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="menu_hover_color" value="{{ $settings['professor_panel']['menu_hover_color'] ?? '#e9ecef' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="form-group mb-3">
-                            <label class="form-label">Welcome Message</label>
-                            <textarea class="form-control" name="professor_welcome_message" rows="3" placeholder="Welcome message for professors">Welcome to your instructor portal. Manage your courses, students, and teaching materials.</textarea>
-                        </div>
-                        
-                        <h6 class="mt-4 mb-3">Professor Features</h6>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="course_management" checked>
-                            <label class="form-check-label">Course Management</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="student_management" checked>
-                            <label class="form-check-label">Student Management</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="grading" checked>
-                            <label class="form-check-label">Grading System</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="attendance" checked>
-                            <label class="form-check-label">Attendance Tracking</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="materials">
-                            <label class="form-check-label">Learning Materials Upload</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="quiz_generation">
-                            <label class="form-check-label">AI Quiz Generation</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="reports" checked>
-                            <label class="form-check-label">Student Reports</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="announcements" checked>
-                            <label class="form-check-label">Announcements</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="video_upload">
-                            <label class="form-check-label">Video Upload</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="meeting_creation">
-                            <label class="form-check-label">Virtual Meeting Creation</label>
+                        <!-- Dashboard Colors -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>Dashboard Colors</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Header Background</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['professor_panel']['header_bg'] ?? '#0d6efd' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="header_bg" value="{{ $settings['professor_panel']['header_bg'] ?? '#0d6efd' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Header Text</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['professor_panel']['header_text'] ?? '#ffffff' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="header_text" value="{{ $settings['professor_panel']['header_text'] ?? '#ffffff' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Primary Button</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['professor_panel']['primary_btn'] ?? '#28a745' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="primary_btn" value="{{ $settings['professor_panel']['primary_btn'] ?? '#28a745' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Secondary Button</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['professor_panel']['secondary_btn'] ?? '#6c757d' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="secondary_btn" value="{{ $settings['professor_panel']['secondary_btn'] ?? '#6c757d' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <button type="submit" class="btn btn-primary">
@@ -1077,58 +1273,108 @@
                         <h5><i class="fas fa-user-shield me-2"></i>Admin Panel</h5>
                     </div>
                     
-                    <form id="adminForm" onsubmit="updateAdmin(event)">
+                    <form id="adminForm" method="POST" action="{{ route('smartprep.admin.settings.update.admin') }}">
                         @csrf
-                        <div class="form-group mb-3">
-                            <label class="form-label">Admin Dashboard Title</label>
-                            <input type="text" class="form-control" name="admin_dashboard_title" value="Administrative Dashboard" placeholder="Dashboard title">
+                        
+                        @if(session('admin_success'))
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i>{{ session('admin_success') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        @endif
+                        
+                        <!-- Sidebar Colors -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-bars me-2"></i>Sidebar Colors</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Sidebar Background</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['admin_panel']['sidebar_bg'] ?? '#343a40' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="sidebar_bg" value="{{ $settings['admin_panel']['sidebar_bg'] ?? '#343a40' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Sidebar Text Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['admin_panel']['sidebar_text'] ?? '#ffffff' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="sidebar_text" value="{{ $settings['admin_panel']['sidebar_text'] ?? '#ffffff' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Active Menu Item</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['admin_panel']['active_menu_color'] ?? '#0d6efd' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="active_menu_color" value="{{ $settings['admin_panel']['active_menu_color'] ?? '#0d6efd' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Menu Hover Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['admin_panel']['menu_hover_color'] ?? '#495057' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="menu_hover_color" value="{{ $settings['admin_panel']['menu_hover_color'] ?? '#495057' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="form-group mb-3">
-                            <label class="form-label">Welcome Message</label>
-                            <textarea class="form-control" name="admin_welcome_message" rows="3" placeholder="Welcome message for admins">Welcome to the administrative control panel. Manage your training center efficiently.</textarea>
-                        </div>
-                        
-                        <h6 class="mt-4 mb-3">Admin Features</h6>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="admin_features[]" value="user_management" checked>
-                            <label class="form-check-label">User Management</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="admin_features[]" value="course_oversight" checked>
-                            <label class="form-check-label">Course Oversight</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="admin_features[]" value="financial_reports" checked>
-                            <label class="form-check-label">Financial Reports</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="admin_features[]" value="analytics" checked>
-                            <label class="form-check-label">Analytics & Statistics</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="admin_features[]" value="system_settings" checked>
-                            <label class="form-check-label">System Settings</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="admin_features[]" value="backup_restore">
-                            <label class="form-check-label">Backup & Restore</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="admin_features[]" value="email_notifications" checked>
-                            <label class="form-check-label">Email Notifications</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="admin_features[]" value="audit_logs">
-                            <label class="form-check-label">Audit Logs</label>
+                        <!-- Dashboard Colors -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>Dashboard Colors</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Header Background</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['admin_panel']['header_bg'] ?? '#dc3545' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="header_bg" value="{{ $settings['admin_panel']['header_bg'] ?? '#dc3545' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Header Text</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['admin_panel']['header_text'] ?? '#ffffff' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="header_text" value="{{ $settings['admin_panel']['header_text'] ?? '#ffffff' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Primary Button</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['admin_panel']['primary_btn'] ?? '#dc3545' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="primary_btn" value="{{ $settings['admin_panel']['primary_btn'] ?? '#dc3545' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Secondary Button</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['admin_panel']['secondary_btn'] ?? '#6c757d' }}" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="secondary_btn" value="{{ $settings['admin_panel']['secondary_btn'] ?? '#6c757d' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <button type="submit" class="btn btn-primary">
@@ -1267,6 +1513,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     document.getElementById(section + '-settings').style.display = 'block';
                     document.getElementById(section + '-settings').classList.add('active');
+                    
+                    // Update preview URL based on section
+                    updatePreviewForSection(section);
                 });
             });
             
@@ -1437,6 +1686,67 @@ document.addEventListener('DOMContentLoaded', function() {
                     submitBtn.disabled = false;
                 }, 2000);
             }
+        }
+
+        // Update preview based on section
+        function updatePreviewForSection(section) {
+            const iframe = document.getElementById('previewFrame');
+            const openInNewTabLink = document.getElementById('openInNewTabLink');
+            const previewTitle = document.querySelector('.preview-title');
+            
+            if (!iframe || !openInNewTabLink || !previewTitle) {
+                console.error('Preview elements not found');
+                return;
+            }
+            
+            let previewUrl = 'http://127.0.0.1:8000/';
+            let titleText = 'Live Preview';
+            
+            switch(section) {
+                case 'student':
+                    previewUrl = 'http://127.0.0.1:8000/student/dashboard';
+                    titleText = 'Student Portal Preview';
+                    break;
+                case 'professor':
+                    previewUrl = 'http://127.0.0.1:8000/professor/dashboard';
+                    titleText = 'Professor Panel Preview';
+                    break;
+                case 'admin':
+                    previewUrl = 'http://127.0.0.1:8000/admin-dashboard';
+                    titleText = 'Admin Panel Preview';
+                    break;
+                case 'homepage':
+                    previewUrl = 'http://127.0.0.1:8000/';
+                    titleText = 'Homepage Preview';
+                    break;
+                case 'navbar':
+                case 'branding':
+                    previewUrl = 'http://127.0.0.1:8000/';
+                    titleText = 'Live Preview';
+                    break;
+                default:
+                    previewUrl = 'http://127.0.0.1:8000/';
+                    titleText = 'Live Preview';
+            }
+            
+            // Add preview parameter and timestamp to bypass cache
+            const finalUrl = previewUrl + '?preview=true&t=' + Date.now();
+            
+            console.log('Updating preview for section:', section, 'URL:', finalUrl);
+            
+            // Update iframe
+            iframe.src = finalUrl;
+            
+            // Update open in new tab link
+            openInNewTabLink.href = finalUrl;
+            
+            // Update title
+            previewTitle.innerHTML = `<i class="fas fa-eye me-2"></i>${titleText}`;
+            
+            // Show loading state
+            showLoading();
+
+            // Do not auto-open new tab; keep preview within iframe only
         }
 
         // Color picker management
@@ -1643,6 +1953,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (iframe) iframe.style.opacity = '1';
             }, 500);
         }
+
+        function showLoading() {
+            const loading = document.getElementById('previewLoading');
+            const iframe = document.getElementById('previewFrame');
+            
+            if (loading) {
+                loading.style.display = 'flex';
+                loading.innerHTML = `
+                    <div class="loading-spinner"></div>
+                    <span class="text-muted">Loading preview...</span>
+                `;
+            }
+            if (iframe) {
+                iframe.style.opacity = '0.5';
+            }
+        }
         
         // Initialize preview URL from settings
         async function initializePreviewUrl() {
@@ -1661,7 +1987,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Update "Open in New Tab" link
                     const openInNewTabLink = document.getElementById('openInNewTabLink');
                     if (openInNewTabLink) {
-                        openInNewTabLink.href = previewUrl;
+                        const hrefWithPreview = previewUrl + (previewUrl.includes('?') ? '&' : '?') + 'preview=true';
+                        openInNewTabLink.href = hrefWithPreview;
                     }
                 }
             } catch (error) {

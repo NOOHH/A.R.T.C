@@ -145,8 +145,8 @@ class StudentDashboardController extends Controller
 
     public function __construct()
     {
-        // Ensure only authenticated students can access these methods
-        $this->middleware('student.auth');
+        // Apply middleware conditionally - skip for preview requests
+        $this->middleware('student.auth')->except(['showPreviewDashboard']);
     }
 
     /**
@@ -159,6 +159,11 @@ class StudentDashboardController extends Controller
 
     public function dashboard()
     {
+        // Check if this is a preview request - handle before middleware
+        if (request()->has('preview') && request('preview') === 'true') {
+            return $this->showPreviewDashboard();
+        }
+        
         // Get user data from session
         $user = (object) [
             'user_id' => session('user_id'),
@@ -562,6 +567,122 @@ class StudentDashboardController extends Controller
             // Get announcements for this student using new targeting system
             $announcements = $this->getTargetedAnnouncements($student, $enrolledProgramIds);
         }
+
+        return view('student.student-dashboard.student-dashboard', compact('user', 'courses', 'deadlines', 'announcements', 'studentPrograms'));
+    }
+
+    /**
+     * Display a preview version of the student dashboard for admin customization
+     */
+    public function showPreviewDashboard()
+    {
+        // Create fake user data for preview
+        $user = (object) [
+            'user_id' => 'preview-user',
+            'user_firstname' => 'John',
+            'user_lastname' => 'Student',
+            'role' => 'student'
+        ];
+
+        // Create sample courses for preview
+        $courses = [
+            [
+                'id' => 1,
+                'name' => 'Nursing Board Review',
+                'description' => 'Comprehensive nursing board examination review program.',
+                'progress' => 75,
+                'status' => 'in_progress',
+                'learning_mode' => 'Synchronous',
+                'enrollment_type' => 'Full',
+                'package_name' => 'Premium Package',
+                'total_modules' => 8,
+                'completed_modules' => 6,
+                'enrollment_status' => 'approved',
+                'payment_status' => 'paid',
+                'button_text' => 'Continue Learning',
+                'button_class' => 'resume-btn',
+                'button_action' => '#',
+                'batch_name' => 'Batch 2025-A',
+                'batch_dates' => [
+                    'start' => 'Jan 15, 2025',
+                    'end' => 'Mar 15, 2025'
+                ],
+                'enrollment_id' => 'sample-enrollment-1',
+                'show_access_modal' => false,
+                'batch_access_granted' => true,
+            ],
+            [
+                'id' => 2,
+                'name' => 'Medical Technology Review',
+                'description' => 'Advanced medical technology certification review.',
+                'progress' => 30,
+                'status' => 'in_progress',
+                'learning_mode' => 'Asynchronous',
+                'enrollment_type' => 'Modular',
+                'package_name' => 'Standard Package',
+                'total_modules' => 6,
+                'completed_modules' => 2,
+                'enrollment_status' => 'approved',
+                'payment_status' => 'paid',
+                'button_text' => 'Continue Learning',
+                'button_class' => 'resume-btn',
+                'button_action' => '#',
+                'batch_name' => 'Self-Paced',
+                'batch_dates' => null,
+                'enrollment_id' => 'sample-enrollment-2',
+                'show_access_modal' => false,
+                'batch_access_granted' => true,
+            ]
+        ];
+
+        // Create sample deadlines compatible with the blade expectations
+        $deadlines = [
+            (object) [
+                'reference_id' => 'assignment-101',
+                'module_id' => 'module-3',
+                'type' => 'assignment',
+                'program_id' => 1,
+                'title' => 'Practice Test 1',
+                'description' => 'Complete and submit the practice test by the due date.',
+                'course_name' => 'Nursing Board Review',
+                'program_name' => 'Nursing Board Review',
+                'module_name' => 'Module 3: Fundamentals',
+                'status' => 'pending',
+                'due_date' => now()->addDays(3)->format('Y-m-d H:i:s'),
+                'grade' => null,
+                'feedback' => null,
+            ],
+            (object) [
+                'reference_id' => 'quiz-202',
+                'module_id' => 'module-2',
+                'type' => 'quiz',
+                'program_id' => 2,
+                'title' => 'Module 3 Quiz',
+                'description' => 'Timed quiz covering module topics.',
+                'course_name' => 'Medical Technology Review',
+                'program_name' => 'Medical Technology Review',
+                'module_name' => 'Module 3: Diagnostics',
+                'status' => 'pending',
+                'due_date' => now()->addDays(7)->format('Y-m-d H:i:s'),
+                'grade' => null,
+                'feedback' => null,
+            ],
+        ];
+
+        // Create sample announcements
+        $announcements = [
+            (object) [
+                'id' => 'preview-announcement-1',
+                'title' => 'Welcome to the Student Portal!',
+                'content' => 'This is a preview of how announcements will appear to students.',
+                'announcement_type' => 'general',
+                'created_at' => now(),
+                'program_name' => 'System Announcement'
+            ]
+        ];
+
+        // Sample student programs
+        $studentPrograms = collect($courses);
 
         return view('student.student-dashboard.student-dashboard', compact('user', 'courses', 'deadlines', 'announcements', 'studentPrograms'));
     }

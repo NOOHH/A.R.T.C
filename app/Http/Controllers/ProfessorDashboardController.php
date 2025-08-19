@@ -17,12 +17,17 @@ class ProfessorDashboardController extends Controller
 {
     public function __construct()
     {
-        // Ensure only authenticated professors can access these methods
-        $this->middleware('professor.auth');
+        // Apply middleware conditionally - skip for preview requests
+        $this->middleware('professor.auth')->except(['showPreviewDashboard']);
     }
 
     public function index()
     {
+        // Check if this is a preview request - handle before middleware
+        if (request()->has('preview') && request('preview') === 'true') {
+            return $this->showPreviewDashboard();
+        }
+        
         // Get professor from session
         $professor = Professor::find(session('professor_id'));
         $assignedPrograms = $professor->programs()->with(['modules'])->get();
@@ -376,5 +381,100 @@ class ProfessorDashboardController extends Controller
         return $query->orderBy('created_at', 'desc')
                     ->limit(5)
                     ->get();
+    }
+
+    /**
+     * Display a preview version of the professor dashboard for admin customization
+     */
+    public function showPreviewDashboard()
+    {
+        // Set up session data for preview mode to prevent layout errors
+        session([
+            'user_id' => 'preview-professor',
+            'user_name' => 'Dr. Jane Professor',
+            'user_role' => 'professor',
+            'user_type' => 'professor',
+            'professor_id' => 'preview-professor',
+            'logged_in' => true
+        ]);
+
+        // Create fake professor data for preview
+        $professor = (object) [
+            'professor_id' => 'preview-professor',
+            'user_firstname' => 'Dr. Jane',
+            'user_lastname' => 'Professor',
+            'full_name' => 'Dr. Jane Professor',
+            'role' => 'professor'
+        ];
+
+        // Create sample programs with modules and students
+        $assignedPrograms = collect([
+            (object) [
+                'program_id' => 1,
+                'program_name' => 'Nursing Board Review',
+                'program_description' => 'Comprehensive nursing board examination review program.',
+                'pivot' => (object) ['video_link' => 'https://example.com/nursing-video'],
+                'modules' => collect([
+                    (object) ['module_id' => 1, 'module_name' => 'Fundamentals'],
+                    (object) ['module_id' => 2, 'module_name' => 'Pharmacology'],
+                    (object) ['module_id' => 3, 'module_name' => 'Clinical Practice']
+                ]),
+                'students' => collect([
+                    (object) ['student_id' => 1, 'user_firstname' => 'John', 'user_lastname' => 'Doe'],
+                    (object) ['student_id' => 2, 'user_firstname' => 'Jane', 'user_lastname' => 'Smith'],
+                    (object) ['student_id' => 3, 'user_firstname' => 'Mike', 'user_lastname' => 'Johnson']
+                ])
+            ],
+            (object) [
+                'program_id' => 2,
+                'program_name' => 'Medical Technology Review',
+                'program_description' => 'Advanced medical technology certification review.',
+                'pivot' => (object) ['video_link' => null],
+                'modules' => collect([
+                    (object) ['module_id' => 4, 'module_name' => 'Laboratory Techniques'],
+                    (object) ['module_id' => 5, 'module_name' => 'Diagnostics']
+                ]),
+                'students' => collect([
+                    (object) ['student_id' => 4, 'user_firstname' => 'Sarah', 'user_lastname' => 'Wilson'],
+                    (object) ['student_id' => 5, 'user_firstname' => 'Tom', 'user_lastname' => 'Brown']
+                ])
+            ]
+        ]);
+        
+        // Calculate statistics
+        $totalPrograms = $assignedPrograms->count();
+        $totalStudents = $assignedPrograms->sum(function($program) {
+            return $program->students->count();
+        });
+        $totalModules = $assignedPrograms->sum(function($program) {
+            return $program->modules->count();
+        });
+        
+        // Sample settings
+        $aiQuizEnabled = true;
+        $announcementManagementEnabled = true;
+        $moduleManagementEnabled = true; // Add this for layout compatibility
+        
+        // Add missing variables for compatibility with the main dashboard view
+        $upcomingMeetings = 0;
+        $pendingAssignments = 0;
+        $announcements = collect([
+            (object) [
+                'id' => 'preview-announcement-1',
+                'title' => 'Welcome to Professor Dashboard',
+                'content' => 'This is a preview of the professor dashboard interface.',
+                'created_at' => now(),
+                'announcement_type' => 'general',
+                'priority' => 'medium',
+                'target_scope' => 'general',
+                'expire_date' => null
+            ]
+        ]);
+
+        return view('professor.dashboard', compact(
+            'professor', 'assignedPrograms', 'totalPrograms', 'totalStudents', 'totalModules',
+            'aiQuizEnabled', 'announcementManagementEnabled', 'moduleManagementEnabled', 
+            'upcomingMeetings', 'pendingAssignments', 'announcements'
+        ));
     }
 }

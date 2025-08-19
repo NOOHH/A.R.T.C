@@ -21,8 +21,19 @@ use Carbon\Carbon;
 
 class AdminController extends Controller
 {
+    public function __construct()
+    {
+        // Apply middleware conditionally - skip for preview requests
+        $this->middleware('admin.auth')->except(['showPreviewDashboard']);
+    }
+
     public function dashboard()
     {
+        // Check if this is a preview request - handle before middleware
+        if (request()->has('preview') && request('preview') === 'true') {
+            return $this->showPreviewDashboard();
+        }
+        
         try {
             // Get pending registrations
             $registrations = Registration::where('status', 'pending')
@@ -2701,5 +2712,64 @@ class AdminController extends Controller
             return redirect()->route('admin.dashboard')
                 ->with('error', 'Error loading assignment submissions: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Display a preview version of the admin dashboard for admin customization
+     */
+    public function showPreviewDashboard()
+    {
+        // Set up session data for preview mode to prevent layout errors
+        session([
+            'user_id' => 'preview-admin',
+            'user_name' => 'Admin Preview',
+            'user_role' => 'admin',
+            'user_type' => 'admin',
+            'logged_in' => true
+        ]);
+
+        // Create sample data for preview
+        $registrations = collect([
+            (object) [
+                'registration_id' => 'preview-reg-1',
+                'user_firstname' => 'John',
+                'user_lastname' => 'Doe',
+                'user_email' => 'john.doe@example.com',
+                'program_name' => 'Nursing Board Review',
+                'package_name' => 'Premium Package',
+                'enrollment_type' => 'Full',
+                'status' => 'pending',
+                'created_at' => now(),
+                'total_amount' => 2500.00
+            ],
+            (object) [
+                'registration_id' => 'preview-reg-2',
+                'user_firstname' => 'Jane',
+                'user_lastname' => 'Smith',
+                'user_email' => 'jane.smith@example.com',
+                'program_name' => 'Medical Technology Review',
+                'package_name' => 'Standard Package',
+                'enrollment_type' => 'Modular',
+                'status' => 'pending',
+                'created_at' => now()->subHours(2),
+                'total_amount' => 1800.00
+            ]
+        ]);
+
+        // Sample analytics data
+        $analytics = [
+            'total_students' => 245,
+            'total_programs' => 8,
+            'total_modules' => 32,
+            'total_enrollments' => 312,
+            'pending_registrations' => 12,
+            'new_students_this_month' => 18,
+            'modules_this_week' => 3,
+            'archived_programs' => 2,
+        ];
+
+        $dbError = null;
+
+        return view('admin.admin-dashboard', compact('registrations', 'analytics', 'dbError'));
     }
 }
