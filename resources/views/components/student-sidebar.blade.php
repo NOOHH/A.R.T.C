@@ -144,11 +144,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadSidebarCustomization() {
-    fetch('/api/student/sidebar-settings')
+    fetch('/smartprep/api/sidebar-settings')
         .then(response => response.json())
         .then(data => {
-            if (data.success && data.settings) {
-                applySidebarColors(data.settings);
+            if (data.success && data.colors) {
+                applySidebarColors(data.colors);
             }
         })
         .catch(error => {

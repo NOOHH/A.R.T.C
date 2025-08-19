@@ -59,6 +59,7 @@
   <?php echo $__env->yieldPushContent('styles'); ?>
 
   <style>
+    <?php echo \App\Helpers\SettingsHelper::getSidebarCSS('student'); ?>
 
 
     /* Global text rendering optimization */

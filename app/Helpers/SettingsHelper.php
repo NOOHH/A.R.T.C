@@ -647,7 +647,7 @@ class SettingsHelper
         $settings = $settingsCollection ? $settingsCollection->toArray() : [];
         
         // DEBUG: Log what we get from database
-        \Log::info('SettingsHelper Debug', [
+        Log::info('SettingsHelper Debug', [
             'settingsCount' => count($settings),
             'hero_title_from_db' => $settings['hero_title'] ?? 'NOT SET',
             'all_keys' => array_keys($settings)
@@ -677,7 +677,7 @@ class SettingsHelper
         }
         
         // DEBUG: Log final result
-        \Log::info('SettingsHelper Final Result', [
+        Log::info('SettingsHelper Final Result', [
             'final_hero_title' => $result['hero_title']
         ]);
         
@@ -696,6 +696,128 @@ class SettingsHelper
         $allStyles .= self::getLoginStyles();
         
         return $allStyles;
+    }
+
+    /**
+     * Get sidebar colors for a specific role
+     */
+    public static function getSidebarColors($role = 'student')
+    {
+        $section = $role . '_sidebar';
+        
+        // Try to get from database first
+        if (class_exists('\App\Models\UiSetting')) {
+            try {
+                $settings = \App\Models\UiSetting::getSection($section);
+                if (!empty($settings)) {
+                    return $settings;
+                }
+            } catch (\Exception $e) {
+                // Fall back to defaults if database error
+            }
+        }
+
+        // Default colors for each role
+        $defaults = [
+            'student' => [
+                'primary_color' => '#1a1a1a',
+                'secondary_color' => '#2d2d2d',
+                'accent_color' => '#3b82f6',
+                'text_color' => '#e0e0e0',
+                'hover_color' => '#374151'
+            ],
+            'professor' => [
+                'primary_color' => '#1e293b',
+                'secondary_color' => '#334155',
+                'accent_color' => '#10b981',
+                'text_color' => '#f1f5f9',
+                'hover_color' => '#475569'
+            ],
+            'admin' => [
+                'primary_color' => '#111827',
+                'secondary_color' => '#1f2937',
+                'accent_color' => '#f59e0b',
+                'text_color' => '#f9fafb',
+                'hover_color' => '#374151'
+            ]
+        ];
+
+        return $defaults[$role] ?? $defaults['student'];
+    }
+
+    /**
+     * Generate CSS variables for sidebar colors
+     */
+    public static function getSidebarCSS($role = 'student')
+    {
+        $colors = self::getSidebarColors($role);
+        
+        $css = ":root {\n";
+        $css .= "    --sidebar-primary: {$colors['primary_color']};\n";
+        $css .= "    --sidebar-secondary: {$colors['secondary_color']};\n";
+        $css .= "    --sidebar-accent: {$colors['accent_color']};\n";
+        $css .= "    --sidebar-text: {$colors['text_color']};\n";
+        $css .= "    --sidebar-hover: {$colors['hover_color']};\n";
+        
+        // Generate additional variations
+        $css .= "    --sidebar-text-muted: " . self::adjustColorOpacity($colors['text_color'], 0.7) . ";\n";
+        $css .= "    --sidebar-accent-dark: " . self::darkenColor($colors['accent_color'], 10) . ";\n";
+        $css .= "    --sidebar-hover-light: " . self::lightenColor($colors['hover_color'], 10) . ";\n";
+        $css .= "}\n";
+
+        return $css;
+    }
+
+    /**
+     * Get inline CSS for sidebar customization
+     */
+    public static function getSidebarInlineCSS($role = 'student')
+    {
+        $colors = self::getSidebarColors($role);
+        
+        return [
+            'primary' => $colors['primary_color'],
+            'secondary' => $colors['secondary_color'],
+            'accent' => $colors['accent_color'],
+            'text' => $colors['text_color'],
+            'hover' => $colors['hover_color'],
+            'text_muted' => self::adjustColorOpacity($colors['text_color'], 0.7),
+            'accent_dark' => self::darkenColor($colors['accent_color'], 10),
+            'hover_light' => self::lightenColor($colors['hover_color'], 10)
+        ];
+    }
+
+    // Helper methods
+    private static function adjustColorOpacity($hex, $opacity)
+    {
+        $hex = ltrim($hex, '#');
+        
+        if (strlen($hex) == 3) {
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+        
+        $rgb = array_map('hexdec', str_split($hex, 2));
+        
+        return "rgba({$rgb[0]}, {$rgb[1]}, {$rgb[2]}, {$opacity})";
+    }
+
+    private static function lightenColor($hex, $percent)
+    {
+        $hex = ltrim($hex, '#');
+        
+        if (strlen($hex) == 3) {
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+        
+        $rgb = array_map('hexdec', str_split($hex, 2));
+        
+        foreach ($rgb as &$color) {
+            $color = min(255, (int)round($color + ((255 - $color) * $percent / 100)));
+        }
+        
+        return '#' . implode('', array_map(function($color) {
+            return str_pad(dechex((int)$color), 2, '0', STR_PAD_LEFT);
+        }, $rgb));
     }
 
     // Helper methods

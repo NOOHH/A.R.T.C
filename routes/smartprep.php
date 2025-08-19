@@ -37,6 +37,11 @@ Route::get('/api/programs', function () {
     return response()->json($programs);
 })->name('smartprep.api.programs');
 
+// API endpoint for sidebar settings (for student/professor/admin dashboards)
+Route::get('/api/sidebar-settings', [ClientDashboardController::class, 'getSidebarSettings'])
+    ->middleware('smartprep.auth')
+    ->name('smartprep.api.sidebar-settings');
+
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.submit');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');

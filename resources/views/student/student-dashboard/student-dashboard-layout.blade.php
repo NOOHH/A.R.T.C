@@ -59,7 +59,7 @@
   @stack('styles')
 
   <style>
-
+    {!! \App\Helpers\SettingsHelper::getSidebarCSS('student') !!}
 
     /* Global text rendering optimization */
     * {
