@@ -1186,18 +1186,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <iframe 
                         class="preview-iframe" 
-                        src="{{ $previewUrl ?? url('/artc') }}" 
-                        title="Website Preview"
                         id="previewFrame"
+                        src="{{ $previewUrl ?? url('/artc') }}" 
+                        data-preview-url="{{ $previewUrl ?? url('/artc') }}"
+                        loading="lazy" 
+                        referrerpolicy="no-referrer" 
+                        sandbox="allow-same-origin allow-scripts allow-forms allow-popups" 
+                        title="Website Preview"
                         onload="hideLoading()"
-                        onerror="showError()">
-                    </iframe>
+                        onerror="showError()"></iframe>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Main customization script -->
     <script>
         // Settings tab navigation with enhanced functionality
         document.addEventListener('DOMContentLoaded', function() {
@@ -1938,5 +1941,8 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         </div>
     </div>
+
+    <!-- Load Bootstrap JS (needed for modal) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>

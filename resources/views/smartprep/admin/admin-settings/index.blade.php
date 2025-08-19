@@ -1867,7 +1867,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+    <script type="text/javascript">
         // Settings tab navigation with enhanced functionality
         document.addEventListener('DOMContentLoaded', function() {
             const navTabs = document.querySelectorAll('.settings-nav-tab');
@@ -2769,8 +2769,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Initialize role-specific previews when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            // Load saved colors from database
-            const sidebarSettings = @json($sidebarSettings ?? []);
+            // Load saved colors from database (read from hidden element to avoid Blade parser issues in large script)
+            const sidebarSettingsEl = document.getElementById('sidebar-settings-json');
+            let sidebarSettings = {};
+            if (sidebarSettingsEl) {
+                try { sidebarSettings = JSON.parse(sidebarSettingsEl.textContent || '{}'); } catch(e) { sidebarSettings = {}; }
+            }
             
             // Load student sidebar colors
             if (sidebarSettings.student) {
@@ -2830,5 +2834,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 100);
         });
     </script>
+    <script type="application/json" id="sidebar-settings-json">@json($sidebarSettings ?? [])</script>
 </body>
 </html>

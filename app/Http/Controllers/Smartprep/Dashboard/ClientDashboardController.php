@@ -29,8 +29,15 @@ class ClientDashboardController extends Controller
             ->get();
 
         return view('smartprep.dashboard.client', [
-            'activeWebsites' => collect([]),
-            'websiteRequests' => collect([])
+            'activeWebsites' => $activeWebsites,
+            'websiteRequests' => $websiteRequests,
+            'counts' => [
+                'websites_total' => $activeWebsites->count(),
+                'websites_active' => $activeWebsites->where('status','active')->count(),
+                'websites_draft' => $activeWebsites->where('status','draft')->count(),
+                'requests_pending' => $websiteRequests->where('status','pending')->count(),
+                'requests_completed' => $websiteRequests->where('status','completed')->count(),
+            ]
         ]);
     }
 

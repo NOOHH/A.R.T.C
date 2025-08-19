@@ -40,12 +40,17 @@ class CustomizeWebsiteController extends Controller
             $selectedWebsite = $activeWebsites->first();
         }
 
-        // Dynamic preview: if a specific website is selected and corresponding tenant exists use /t/{slug}
+        // Preview policy:
+        // 1. If a website is selected AND tenant exists with database_name -> /t/{slug}
+        // 2. Else fallback to legacy ARTC preview (/artc) ONLY (no other legacy formats)
         $previewUrl = url('/artc');
         if ($selectedWebsite) {
-            // Ensure a tenant row exists for this client (auto-create if missing)
-            $tenant = $this->ensureTenantForClient($selectedWebsite);
-            if ($tenant) {
+            $tenant = \App\Models\Tenant::where('slug', $selectedWebsite->slug)->first();
+            if (!$tenant) {
+                // Attempt to create tenant row without touching clients table beyond current record
+                $tenant = $this->ensureTenantForClient($selectedWebsite);
+            }
+            if ($tenant && $tenant->database_name) {
                 $previewUrl = url('/t/' . $tenant->slug);
             }
         }

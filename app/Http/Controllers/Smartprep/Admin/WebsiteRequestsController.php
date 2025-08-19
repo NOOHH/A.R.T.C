@@ -56,9 +56,16 @@ class WebsiteRequestsController extends Controller
                     'status' => 'active',
                 ]);
             } else {
+                // Generate a unique slug (avoid duplicate key on clients.slug)
+                $baseSlug = 'smartprep-' . Str::slug($req->business_name);
+                $uniqueSlug = $baseSlug;
+                $n = 1;
+                while (Client::where('slug', $uniqueSlug)->exists()) {
+                    $uniqueSlug = $baseSlug . '-' . $n++;
+                }
                 $client = Client::create([
                     'name' => $req->business_name,
-                    'slug' => 'smartprep-' . Str::slug($req->business_name),
+                    'slug' => $uniqueSlug,
                     'domain' => $req->domain_preference ?: null,
                     'db_name' => $conn['db_name'],
                     'db_host' => $conn['db_host'],
