@@ -641,6 +641,13 @@ class SettingsHelper
         $settingsCollection = \App\Models\UiSetting::getSection('homepage');
         $settings = $settingsCollection ? $settingsCollection->toArray() : [];
         
+        // DEBUG: Log what we get from database
+        \Log::info('SettingsHelper Debug', [
+            'settingsCount' => count($settings),
+            'hero_title_from_db' => $settings['hero_title'] ?? 'NOT SET',
+            'all_keys' => array_keys($settings)
+        ]);
+        
         // Default content
         $defaults = [
             'hero_title' => 'Review <span style="color: #4CAF50;">Smarter.</span><br>Learn <span style="color: #4CAF50;">Better.</span><br>Succeed <span style="color: #4CAF50;">Faster.</span>',
@@ -663,6 +670,11 @@ class SettingsHelper
                 $result[$key] = $value;
             }
         }
+        
+        // DEBUG: Log final result
+        \Log::info('SettingsHelper Final Result', [
+            'final_hero_title' => $result['hero_title']
+        ]);
         
         return $result;
     }

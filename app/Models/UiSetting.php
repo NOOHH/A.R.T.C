@@ -9,6 +9,9 @@ class UiSetting extends Model
 {
     use HasFactory;
 
+    // Force this model to use the main database connection
+    protected $connection = 'mysql';
+
     protected $fillable = [
         'section',
         'setting_key',
