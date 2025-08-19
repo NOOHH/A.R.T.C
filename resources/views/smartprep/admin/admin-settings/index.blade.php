@@ -656,27 +656,6 @@
                         </div>
                         
                         <div class="form-group mb-3">
-                            <label class="form-label">Brand Image URL</label>
-                            <input type="text" class="form-control" name="navbar_brand_image" value="{{ $settings['navbar']['brand_image'] ?? '' }}" placeholder="Logo URL for navigation bar">
-                            <small class="form-text text-muted">Enter the URL or path to your logo image</small>
-                        </div>
-                        
-                        <div class="form-group mb-3">
-                            <label class="form-label">Navigation Style</label>
-                            <select class="form-control" name="navbar_style">
-                                <option value="fixed-top" {{ ($settings['navbar']['style'] ?? 'fixed-top') == 'fixed-top' ? 'selected' : '' }}>Fixed Top</option>
-                                <option value="sticky-top" {{ ($settings['navbar']['style'] ?? '') == 'sticky-top' ? 'selected' : '' }}>Sticky Top</option>
-                                <option value="static" {{ ($settings['navbar']['style'] ?? '') == 'static' ? 'selected' : '' }}>Static</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group mb-3">
-                            <label class="form-label">Menu Items (JSON Format)</label>
-                            <textarea class="form-control" name="navbar_menu_items" rows="6" placeholder='[{"label":"Home","link":"/"}, {"label":"Programs","link":"/programs"}]'>{{ $settings['navbar']['menu_items'] ?? '[{"label":"Dashboard","link":"/dashboard"}, {"label":"Users","link":"/users"}, {"label":"Settings","link":"/settings"}]' }}</textarea>
-                            <small class="form-text text-muted">Enter menu items in JSON format</small>
-                        </div>
-                        
-                        <div class="form-group mb-3">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" name="show_login_button" value="1" {{ ($settings['navbar']['show_login_button'] ?? '1') == '1' ? 'checked' : '' }}>
                                 <label class="form-check-label">Show Login Button</label>
@@ -774,64 +753,7 @@
                         
                         <!-- Color Customization Section -->
                         <div class="card mb-4">
-                            <div class="card-header">
-                                <h6 class="mb-0"><i class="fas fa-palette me-2"></i>Homepage Colors</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="form-group mb-3">
-                                    <label class="form-label">Homepage Background Color</label>
-                                    <div class="color-picker-group">
-                                        <input type="color" class="color-input" value="{{ $settings['homepage']['background_color'] ?? '#667eea' }}" onchange="updatePreviewColor('homepage_background', this.value)">
-                                        <input type="text" class="form-control" name="homepage_background_color" value="{{ $settings['homepage']['background_color'] ?? '#667eea' }}">
-                                    </div>
-                                    <small class="form-text text-muted">Main background color for the homepage</small>
-                                </div>
-                                
-                                <div class="form-group mb-3">
-                                    <label class="form-label">Homepage Gradient Color (Optional)</label>
-                                    <div class="color-picker-group">
-                                        <input type="color" class="color-input" value="{{ $settings['homepage']['gradient_color'] ?? '#764ba2' }}" onchange="updatePreviewColor('homepage_gradient', this.value)">
-                                        <input type="text" class="form-control" name="homepage_gradient_color" value="{{ $settings['homepage']['gradient_color'] ?? '#764ba2' }}">
-                                    </div>
-                                    <small class="form-text text-muted">Creates a gradient effect with the background color</small>
-                                </div>
-                                
-                                <div class="form-group mb-3">
-                                    <label class="form-label">Hero Text Color</label>
-                                    <div class="color-picker-group">
-                                        <input type="color" class="color-input" value="{{ $settings['homepage']['text_color'] ?? '#ffffff' }}" onchange="updatePreviewColor('homepage_text', this.value)">
-                                        <input type="text" class="form-control" name="homepage_text_color" value="{{ $settings['homepage']['text_color'] ?? '#ffffff' }}">
-                                    </div>
-                                    <small class="form-text text-muted">Color for hero title and subtitle text</small>
-                                </div>
-                                
-                                <div class="form-group mb-3">
-                                    <label class="form-label">Button Primary Color</label>
-                                    <div class="color-picker-group">
-                                        <input type="color" class="color-input" value="{{ $settings['homepage']['button_color'] ?? '#28a745' }}" onchange="updatePreviewColor('homepage_button', this.value)">
-                                        <input type="text" class="form-control" name="homepage_button_color" value="{{ $settings['homepage']['button_color'] ?? '#28a745' }}">
-                                    </div>
-                                    <small class="form-text text-muted">Color for CTA buttons</small>
-                                </div>
-                                
-                                <div class="form-group mb-3">
-                                    <label class="form-label">Primary Theme Color</label>
-                                    <div class="color-picker-group">
-                                        <input type="color" class="color-input" value="{{ $settings['homepage']['primary_color'] ?? '#667eea' }}" onchange="updatePreviewColor('homepage_primary', this.value)">
-                                        <input type="text" class="form-control" name="homepage_primary_color" value="{{ $settings['homepage']['primary_color'] ?? '#667eea' }}">
-                                    </div>
-                                    <small class="form-text text-muted">Primary color used throughout the homepage sections</small>
-                                </div>
-                                
-                                <div class="form-group mb-3">
-                                    <label class="form-label">Secondary Theme Color</label>
-                                    <div class="color-picker-group">
-                                        <input type="color" class="color-input" value="{{ $settings['homepage']['secondary_color'] ?? '#764ba2' }}" onchange="updatePreviewColor('homepage_secondary', this.value)">
-                                        <input type="text" class="form-control" name="homepage_secondary_color" value="{{ $settings['homepage']['secondary_color'] ?? '#764ba2' }}">
-                                    </div>
-                                    <small class="form-text text-muted">Secondary color for accents and text elements</small>
-                                </div>
-                            </div>
+
                         </div>
                         
                         <!-- Section-Specific Color Customization -->
@@ -893,6 +815,24 @@
                                         </div>
                                     </div>
                                 </div>
+                            <div class="card-body">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Programs Section Gradient Color</label>
+                                    <div class="color-picker-group">
+                                        <input type="color" class="color-input" value="{{ $settings['homepage']['gradient_color'] ?? '#764ba2' }}" onchange="updatePreviewColor('homepage_gradient', this.value)">
+                                        <input type="text" class="form-control" name="homepage_gradient_color" value="{{ $settings['homepage']['gradient_color'] ?? '#764ba2' }}">
+                                    </div>
+                                    <small class="form-text text-muted">Second color for programs section gradient effect</small>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Programs Section Background Color</label>
+                                    <div class="color-picker-group">
+                                        <input type="color" class="color-input" value="{{ $settings['homepage']['programs_section_bg_color'] ?? '#667eea' }}" onchange="updatePreviewColor('programs_section_bg', this.value)">
+                                        <input type="text" class="form-control" name="homepage_programs_section_bg_color" value="{{ $settings['homepage']['programs_section_bg_color'] ?? '#667eea' }}">
+                                    </div>
+                                    <small class="form-text text-muted">Background color for the programs section (creates gradient with secondary color)</small>
+                                </div>
+                            </div>
                                 
                                 <!-- Modalities Section Colors -->
                                 <div class="row">
@@ -964,37 +904,18 @@
                             <label class="form-label">Hero Background Image</label>
                             <input type="file" class="form-control" name="hero_background" accept="image/*">
                             <small class="form-text text-muted">Recommended: 1920x1080px</small>
+                            @if(isset($settings['homepage']['hero_background_image']) && $settings['homepage']['hero_background_image'])
+                                <div class="mt-2">
+                                    <small class="text-muted">Current image:</small><br>
+                                    <img src="{{ asset($settings['homepage']['hero_background_image']) }}" alt="Current hero background" style="max-width: 200px; max-height: 100px;" class="img-thumbnail">
+                                </div>
+                            @endif
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Login Page Image</label>
                             <input type="file" class="form-control" name="login_image" accept="image/*">
                             <small class="form-text text-muted">Image shown on login page</small>
-                        </div>
-                        
-                        <div class="form-group mb-3">
-                            <label class="form-label">Primary CTA Button Text</label>
-                            <input type="text" class="form-control" name="cta_primary_text" value="{{ $settings['homepage']['cta_primary_text'] ?? 'Get Started' }}" placeholder="Primary button text">
-                        </div>
-                        
-                        <div class="form-group mb-3">
-                            <label class="form-label">Primary CTA Button Link</label>
-                            <input type="text" class="form-control" name="cta_primary_link" value="{{ $settings['homepage']['cta_primary_link'] ?? '/programs' }}" placeholder="Primary button link">
-                        </div>
-                        
-                        <div class="form-group mb-3">
-                            <label class="form-label">Secondary CTA Button Text</label>
-                            <input type="text" class="form-control" name="cta_secondary_text" value="{{ $settings['homepage']['cta_secondary_text'] ?? 'Learn More' }}" placeholder="Secondary button text">
-                        </div>
-                        
-                        <div class="form-group mb-3">
-                            <label class="form-label">Secondary CTA Button Link</label>
-                            <input type="text" class="form-control" name="cta_secondary_link" value="{{ $settings['homepage']['cta_secondary_link'] ?? '/about' }}" placeholder="Secondary button link">
-                        </div>
-                        
-                        <div class="form-group mb-3">
-                            <label class="form-label">Features Section Title</label>
-                            <input type="text" class="form-control" name="features_title" value="{{ $settings['homepage']['features_title'] ?? 'Why Choose Us?' }}" placeholder="Features section title">
                         </div>
                         
                         <div class="form-group mb-3">

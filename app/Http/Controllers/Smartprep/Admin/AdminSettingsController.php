@@ -71,6 +71,7 @@ class AdminSettingsController extends Controller
         $request->validate([
             'hero_title' => 'nullable|string|max:255',
             'hero_subtitle' => 'nullable|string|max:1000',
+            'hero_background' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             // Section content fields
             'programs_title' => 'nullable|string|max:255',
             'programs_subtitle' => 'nullable|string|max:500',
@@ -91,22 +92,26 @@ class AdminSettingsController extends Controller
             'homepage_hero_title_color' => 'nullable|string|max:7',
             'homepage_programs_title_color' => 'nullable|string|max:7',
             'homepage_programs_subtitle_color' => 'nullable|string|max:7',
+            'homepage_programs_section_bg_color' => 'nullable|string|max:7',
             'homepage_modalities_bg_color' => 'nullable|string|max:7',
             'homepage_modalities_text_color' => 'nullable|string|max:7',
             'homepage_about_bg_color' => 'nullable|string|max:7',
             'homepage_about_title_color' => 'nullable|string|max:7',
             'homepage_about_text_color' => 'nullable|string|max:7',
-            'cta_primary_text' => 'nullable|string|max:100',
-            'cta_primary_link' => 'nullable|string|max:255',
-            'cta_secondary_text' => 'nullable|string|max:100',
-            'cta_secondary_link' => 'nullable|string|max:255',
-            'features_title' => 'nullable|string|max:255',
             'copyright' => 'nullable|string|max:500',
         ]);
 
         // Save to database using UiSetting model
         UiSetting::set('homepage', 'hero_title', $request->input('hero_title', 'Review Smarter. Learn Better. Succeed Faster.'), 'text');
         UiSetting::set('homepage', 'hero_subtitle', $request->input('hero_subtitle', 'Your premier destination for comprehensive review programs and professional training.'), 'text');
+        
+        // Handle hero background image upload
+        if ($request->hasFile('hero_background')) {
+            $file = $request->file('hero_background');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs('hero-images', $filename, 'public');
+            UiSetting::set('homepage', 'hero_background_image', 'storage/' . $path, 'file');
+        }
         
         // Section content
         UiSetting::set('homepage', 'programs_title', $request->input('programs_title', 'Our Programs'), 'text');
@@ -130,17 +135,13 @@ class AdminSettingsController extends Controller
         UiSetting::set('homepage', 'hero_title_color', $request->input('homepage_hero_title_color', '#ffffff'), 'color');
         UiSetting::set('homepage', 'programs_title_color', $request->input('homepage_programs_title_color', '#667eea'), 'color');
         UiSetting::set('homepage', 'programs_subtitle_color', $request->input('homepage_programs_subtitle_color', '#6c757d'), 'color');
+        UiSetting::set('homepage', 'programs_section_bg_color', $request->input('homepage_programs_section_bg_color', '#667eea'), 'color');
         UiSetting::set('homepage', 'modalities_bg_color', $request->input('homepage_modalities_bg_color', '#667eea'), 'color');
         UiSetting::set('homepage', 'modalities_text_color', $request->input('homepage_modalities_text_color', '#ffffff'), 'color');
         UiSetting::set('homepage', 'about_bg_color', $request->input('homepage_about_bg_color', '#ffffff'), 'color');
         UiSetting::set('homepage', 'about_title_color', $request->input('homepage_about_title_color', '#667eea'), 'color');
         UiSetting::set('homepage', 'about_text_color', $request->input('homepage_about_text_color', '#6c757d'), 'color');
         
-        UiSetting::set('homepage', 'cta_primary_text', $request->input('cta_primary_text', 'Get Started'), 'text');
-        UiSetting::set('homepage', 'cta_primary_link', $request->input('cta_primary_link', '/programs'), 'text');
-        UiSetting::set('homepage', 'cta_secondary_text', $request->input('cta_secondary_text', 'Learn More'), 'text');
-        UiSetting::set('homepage', 'cta_secondary_link', $request->input('cta_secondary_link', '/about'), 'text');
-        UiSetting::set('homepage', 'features_title', $request->input('features_title', 'Why Choose Us?'), 'text');
         UiSetting::set('homepage', 'copyright', $request->input('copyright', '© Copyright Ascendo Review and Training Center. All Rights Reserved.'), 'text');
 
         // Also save to JSON file for backward compatibility
@@ -168,16 +169,12 @@ class AdminSettingsController extends Controller
             'hero_title_color' => $request->input('homepage_hero_title_color', $settings['homepage']['hero_title_color'] ?? '#ffffff'),
             'programs_title_color' => $request->input('homepage_programs_title_color', $settings['homepage']['programs_title_color'] ?? '#667eea'),
             'programs_subtitle_color' => $request->input('homepage_programs_subtitle_color', $settings['homepage']['programs_subtitle_color'] ?? '#6c757d'),
+            'programs_section_bg_color' => $request->input('homepage_programs_section_bg_color', $settings['homepage']['programs_section_bg_color'] ?? '#667eea'),
             'modalities_bg_color' => $request->input('homepage_modalities_bg_color', $settings['homepage']['modalities_bg_color'] ?? '#667eea'),
             'modalities_text_color' => $request->input('homepage_modalities_text_color', $settings['homepage']['modalities_text_color'] ?? '#ffffff'),
             'about_bg_color' => $request->input('homepage_about_bg_color', $settings['homepage']['about_bg_color'] ?? '#ffffff'),
             'about_title_color' => $request->input('homepage_about_title_color', $settings['homepage']['about_title_color'] ?? '#667eea'),
             'about_text_color' => $request->input('homepage_about_text_color', $settings['homepage']['about_text_color'] ?? '#6c757d'),
-            'cta_primary_text' => $request->input('cta_primary_text', $settings['homepage']['cta_primary_text'] ?? 'Get Started'),
-            'cta_primary_link' => $request->input('cta_primary_link', $settings['homepage']['cta_primary_link'] ?? '/programs'),
-            'cta_secondary_text' => $request->input('cta_secondary_text', $settings['homepage']['cta_secondary_text'] ?? 'Learn More'),
-            'cta_secondary_link' => $request->input('cta_secondary_link', $settings['homepage']['cta_secondary_link'] ?? '/about'),
-            'features_title' => $request->input('features_title', $settings['homepage']['features_title'] ?? 'Why Choose Us?'),
             'copyright' => $request->input('copyright', $settings['homepage']['copyright'] ?? '© Copyright Ascendo Review and Training Center. All Rights Reserved.'),
             'updated_at' => now()->toISOString()
         ]);

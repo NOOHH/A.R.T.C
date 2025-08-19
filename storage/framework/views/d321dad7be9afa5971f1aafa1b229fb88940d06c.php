@@ -428,6 +428,7 @@
         // Pull fresh settings from DB (collection of key => value)
         $navbarSettings = \App\Models\UiSetting::getSection('navbar');
         $footerSettings = \App\Models\UiSetting::getSection('footer');
+        $homepageSettings = \App\Models\UiSetting::getSection('homepage');
 
         // Preserve composer-injected $navbar if present, don't clobber it
         $composerNavbar = (isset($navbar) && is_array($navbar)) ? $navbar : null;
@@ -435,11 +436,15 @@
         // Prefer DB values when available, otherwise keep composer data
         $navbar = $navbarSettings ? $navbarSettings->toArray() : ($composerNavbar ?? []);
         $footer = $footerSettings ? $footerSettings->toArray() : [];
+        $homepageContent = $homepageSettings ? $homepageSettings->toArray() : [];
 
         // Single source of truth for brand name with sane fallbacks
         $brandName = $navbar['brand_name']
             ?? ($composerNavbar['brand_name'] ?? null)
             ?? ($settings['navbar']['brand_name'] ?? 'Ascendo Review and Training Center');
+            
+        // Get copyright text from homepage settings
+        $copyrightText = $homepageContent['copyright'] ?? '© Copyright Ascendo Review and Training Center. All Rights Reserved.';
     ?>
     
     
@@ -600,7 +605,8 @@
             </div>
             <div class="footer-bottom d-flex flex-wrap justify-content-between align-items-center py-3">
                 <div class="footer-copyright">
-                    &copy; <?php echo e(date('Y')); ?> ARTC. All rights reserved.
+                    <?php echo e($copyrightText); ?>
+
                 </div>
                 <div class="footer-policies">
                     <a href="#">Terms and Conditions</a>
