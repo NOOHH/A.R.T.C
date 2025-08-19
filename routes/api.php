@@ -599,3 +599,10 @@ Route::get('/debug-session', function () {
     ]);
     return response()->json(['session' => session()->all()]);
 });
+
+// Student Sidebar Customization API Routes
+Route::middleware(['web'])->group(function () {
+    Route::get('/student/sidebar-settings', [App\Http\Controllers\StudentController::class, 'getSidebarSettings']);
+    Route::post('/student/sidebar-settings', [App\Http\Controllers\StudentController::class, 'saveSidebarSettings']);
+    Route::post('/student/sidebar-settings/reset', [App\Http\Controllers\StudentController::class, 'resetSidebarSettings']);
+});

@@ -16,8 +16,11 @@ class AdminSettingsController extends Controller
         // Get current settings from database and JSON file
         $settings = $this->getCurrentSettings();
         
+        // Get sidebar customization settings for all roles
+        $sidebarSettings = $this->getSidebarSettings();
+        
         // Use the admin settings interface
-        return view('smartprep.admin.admin-settings.index', compact('settings'));
+        return view('smartprep.admin.admin-settings.index', compact('settings', 'sidebarSettings'));
     }
     
     public function save(Request $request)
@@ -458,5 +461,83 @@ class AdminSettingsController extends Controller
         // Save to the main settings file that controls the main A.R.T.C homepage
         $settingsPath = storage_path('app/settings.json');
         File::put($settingsPath, json_encode($settings, JSON_PRETTY_PRINT));
+    }
+
+    /**
+     * Update sidebar customization settings
+     */
+    private function getSidebarSettings()
+    {
+        $roles = ['student', 'professor', 'admin'];
+        $sidebarSettings = [];
+        
+        foreach ($roles as $role) {
+            $section = $role . '_sidebar';
+            $settings = UiSetting::getSection($section);
+            
+            if (!empty($settings)) {
+                $sidebarSettings[$role] = $settings;
+            } else {
+                // Default colors for each role
+                $sidebarSettings[$role] = [
+                    'primary_color' => '#001F3F',
+                    'secondary_color' => '#2d2d2d',
+                    'accent_color' => '#3b82f6',
+                    'text_color' => '#ffffff',
+                    'hover_color' => '#004080'
+                ];
+            }
+        }
+        
+        return $sidebarSettings;
+    }
+
+    public function updateSidebar(Request $request)
+    {
+        try {
+            $request->validate([
+                'role' => 'required|string|in:student,professor,admin',
+                'colors' => 'required|array',
+                'colors.primary_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
+                'colors.secondary_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
+                'colors.accent_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
+                'colors.text_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
+                'colors.hover_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
+            ]);
+
+            $role = $request->input('role');
+            $colors = $request->input('colors');
+            $section = $role . '_sidebar';
+
+            // Save each color setting to the database
+            foreach ($colors as $key => $value) {
+                UiSetting::updateOrCreate(
+                    ['section' => $section, 'setting_key' => $key],
+                    ['setting_value' => $value, 'setting_type' => 'color']
+                );
+            }
+
+            Log::info("Sidebar colors updated for {$role}", $colors);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Sidebar colors updated successfully for {$role}",
+                'role' => $role,
+                'colors' => $colors
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid color format. Please use valid hex colors.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error updating sidebar settings: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating sidebar settings'
+            ], 500);
+        }
     }
 }

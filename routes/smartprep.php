@@ -82,6 +82,7 @@ Route::middleware(['smartprep.auth', 'debug.smartprep'])->group(function () {
     Route::post('/admin/settings/student', [AdminSettingsController::class, 'updateStudent'])->name('admin.settings.update.student');
     Route::post('/admin/settings/professor', [AdminSettingsController::class, 'updateProfessor'])->name('admin.settings.update.professor');
     Route::post('/admin/settings/admin', [AdminSettingsController::class, 'updateAdmin'])->name('admin.settings.update.admin');
+    Route::post('/admin/settings/sidebar', [AdminSettingsController::class, 'updateSidebar'])->name('admin.settings.update.sidebar');
     Route::get('/admin/clients', [ClientsController::class, 'index'])->name('admin.clients');
     Route::get('/admin/clients/create', [ClientsController::class, 'create'])->name('admin.clients.create');
     Route::get('/admin/clients/{id}/edit', [ClientsController::class, 'edit'])->name('admin.clients.edit');

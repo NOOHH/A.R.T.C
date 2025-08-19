@@ -137,4 +137,53 @@
 <button class="mobile-sidebar-toggle" id="mobileSidebarToggle" title="Toggle Sidebar">
   <i class="bi bi-list"></i>
 </button>
+
+<script>
+// Load and apply custom sidebar colors
+document.addEventListener('DOMContentLoaded', function() {
+    loadSidebarCustomization();
+});
+
+function loadSidebarCustomization() {
+    fetch('/api/student/sidebar-settings')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.settings) {
+                applySidebarColors(data.settings);
+            }
+        })
+        .catch(error => {
+            console.log('No custom sidebar settings found, using defaults');
+        });
+}
+
+function applySidebarColors(settings) {
+    const sidebar = document.getElementById('studentSidebar');
+    if (sidebar && settings) {
+        // Apply custom CSS properties
+        if (settings.primary_color) {
+            sidebar.style.setProperty('--sidebar-bg', settings.primary_color);
+            document.documentElement.style.setProperty('--sidebar-bg', settings.primary_color);
+        }
+        if (settings.secondary_color) {
+            sidebar.style.setProperty('--sidebar-hover', settings.secondary_color);
+            sidebar.style.setProperty('--sidebar-border', settings.secondary_color);
+            document.documentElement.style.setProperty('--sidebar-hover', settings.secondary_color);
+            document.documentElement.style.setProperty('--sidebar-border', settings.secondary_color);
+        }
+        if (settings.accent_color) {
+            sidebar.style.setProperty('--sidebar-active', settings.accent_color);
+            document.documentElement.style.setProperty('--sidebar-active', settings.accent_color);
+        }
+        if (settings.text_color) {
+            sidebar.style.setProperty('--sidebar-text', settings.text_color);
+            document.documentElement.style.setProperty('--sidebar-text', settings.text_color);
+        }
+        if (settings.hover_color) {
+            sidebar.style.setProperty('--sidebar-hover', settings.hover_color);
+            document.documentElement.style.setProperty('--sidebar-hover', settings.hover_color);
+        }
+    }
+}
+</script>
 <?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/components/student-sidebar.blade.php ENDPATH**/ ?>

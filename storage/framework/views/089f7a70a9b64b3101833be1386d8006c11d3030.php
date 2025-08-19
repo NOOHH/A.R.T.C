@@ -387,6 +387,183 @@
                 height: 500px;
             }
         }
+        
+        /* ====== SIDEBAR CUSTOMIZATION STYLES ====== */
+        .sidebar-preview-container {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 1rem;
+            min-height: 400px;
+        }
+        
+        .sidebar-preview {
+            background: var(--preview-primary, #1a1a1a);
+            color: var(--preview-text, #e0e0e0);
+            border-radius: 8px;
+            padding: 1rem;
+            width: 100%;
+            min-height: 350px;
+            transition: all 0.3s ease;
+        }
+        
+        .preview-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--preview-secondary, #2d2d2d);
+            margin-bottom: 1rem;
+        }
+        
+        .preview-avatar-placeholder {
+            width: 40px;
+            height: 40px;
+            background: var(--preview-accent, #3b82f6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: white;
+        }
+        
+        .preview-profile-info {
+            flex: 1;
+        }
+        
+        .preview-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--preview-text, #e0e0e0);
+        }
+        
+        .preview-role {
+            font-size: 0.8rem;
+            color: var(--preview-text-muted, #9ca3af);
+            opacity: 0.8;
+        }
+        
+        .preview-toggle {
+            background: none;
+            border: none;
+            color: var(--preview-text, #e0e0e0);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .preview-toggle:hover {
+            background: var(--preview-hover, #374151);
+        }
+        
+        .preview-nav {
+            margin-top: 1rem;
+        }
+        
+        .preview-section-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--preview-text-muted, #9ca3af);
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .preview-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.25rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+        
+        .preview-nav-item:hover {
+            background: var(--preview-hover, #374151);
+        }
+        
+        .preview-nav-item.active {
+            background: var(--preview-accent, #3b82f6);
+            color: white;
+        }
+        
+        .preview-nav-item i {
+            width: 16px;
+            text-align: center;
+        }
+        
+        .color-preview {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            margin-right: 0.25rem;
+            border: 1px solid #ccc;
+        }
+        
+        .color-picker-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .color-input {
+            width: 50px;
+            height: 38px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 0;
+            background: none;
+        }
+        
+        .color-input::-webkit-color-swatch {
+            border: none;
+            border-radius: 4px;
+        }
+        
+        /* Role selector styles */
+        .btn-check:checked + .btn-outline-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+        
+        /* Preset buttons */
+        .btn-sm .color-preview {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+        
+        /* Animation for color changes */
+        .sidebar-preview * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        /* Mobile responsiveness for sidebar customization */
+        @media (max-width: 768px) {
+            .color-picker-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .color-input {
+                width: 100%;
+                height: 50px;
+            }
+            
+            .sidebar-preview-container {
+                margin-top: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -470,6 +647,9 @@
                         </button>
                         <button class="settings-nav-tab" data-section="student">
                             <i class="fas fa-user-graduate me-2"></i>Student Portal
+                        </button>
+                        <button class="settings-nav-tab" data-section="sidebar">
+                            <i class="fas fa-bars me-2"></i>Sidebar Customization
                         </button>
                         <button class="settings-nav-tab" data-section="professor">
                             <i class="fas fa-chalkboard-teacher me-2"></i>Professor Panel
@@ -1149,6 +1329,102 @@
                             </div>
                         </div>
                         
+                        <!-- Sidebar Customization -->
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-bars me-2"></i>Sidebar Customization</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Primary Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="studentSidebarPrimary" value="#1a1a1a" onchange="updateStudentSidebarColor('primary', this.value)">
+                                                <input type="text" class="form-control" id="studentSidebarPrimaryText" value="#1a1a1a">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Secondary Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="studentSidebarSecondary" value="#2d2d2d" onchange="updateStudentSidebarColor('secondary', this.value)">
+                                                <input type="text" class="form-control" id="studentSidebarSecondaryText" value="#2d2d2d">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Accent Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="studentSidebarAccent" value="#3b82f6" onchange="updateStudentSidebarColor('accent', this.value)">
+                                                <input type="text" class="form-control" id="studentSidebarAccentText" value="#3b82f6">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Text Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="studentSidebarText" value="#e0e0e0" onchange="updateStudentSidebarColor('text', this.value)">
+                                                <input type="text" class="form-control" id="studentSidebarTextText" value="#e0e0e0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Hover Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="studentSidebarHover" value="#374151" onchange="updateStudentSidebarColor('hover', this.value)">
+                                                <input type="text" class="form-control" id="studentSidebarHoverText" value="#374151">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Sidebar Preview -->
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <label class="form-label">Preview</label>
+                                        <div class="sidebar-preview-container">
+                                            <div class="sidebar-preview" id="studentSidebarPreview">
+                                                <div class="preview-header">
+                                                    <div class="preview-logo">
+                                                        <i class="fas fa-graduation-cap"></i>
+                                                        <span>Student Portal</span>
+                                                    </div>
+                                                </div>
+                                                <div class="preview-nav">
+                                                    <div class="preview-nav-item active">
+                                                        <i class="fas fa-tachometer-alt"></i>
+                                                        <span>Dashboard</span>
+                                                    </div>
+                                                    <div class="preview-nav-item">
+                                                        <i class="fas fa-book"></i>
+                                                        <span>My Courses</span>
+                                                    </div>
+                                                    <div class="preview-nav-item">
+                                                        <i class="fas fa-calendar"></i>
+                                                        <span>Schedule</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-success btn-sm" onclick="saveStudentSidebarColors()">
+                                        <i class="fas fa-save me-1"></i>Save Sidebar Colors
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetStudentSidebarColors()">
+                                        <i class="fas fa-undo me-1"></i>Reset to Default
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-sync me-2"></i>Update Student Portal
                         </button>
@@ -1266,6 +1542,102 @@
                             </div>
                         </div>
                         
+                        <!-- Sidebar Customization -->
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-bars me-2"></i>Sidebar Customization</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Primary Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="professorSidebarPrimary" value="#1e293b" onchange="updateProfessorSidebarColor('primary', this.value)">
+                                                <input type="text" class="form-control" id="professorSidebarPrimaryText" value="#1e293b">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Secondary Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="professorSidebarSecondary" value="#334155" onchange="updateProfessorSidebarColor('secondary', this.value)">
+                                                <input type="text" class="form-control" id="professorSidebarSecondaryText" value="#334155">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Accent Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="professorSidebarAccent" value="#10b981" onchange="updateProfessorSidebarColor('accent', this.value)">
+                                                <input type="text" class="form-control" id="professorSidebarAccentText" value="#10b981">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Text Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="professorSidebarText" value="#f1f5f9" onchange="updateProfessorSidebarColor('text', this.value)">
+                                                <input type="text" class="form-control" id="professorSidebarTextText" value="#f1f5f9">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Hover Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="professorSidebarHover" value="#475569" onchange="updateProfessorSidebarColor('hover', this.value)">
+                                                <input type="text" class="form-control" id="professorSidebarHoverText" value="#475569">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Sidebar Preview -->
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <label class="form-label">Preview</label>
+                                        <div class="sidebar-preview-container">
+                                            <div class="sidebar-preview" id="professorSidebarPreview">
+                                                <div class="preview-header">
+                                                    <div class="preview-logo">
+                                                        <i class="fas fa-chalkboard-teacher"></i>
+                                                        <span>Professor Portal</span>
+                                                    </div>
+                                                </div>
+                                                <div class="preview-nav">
+                                                    <div class="preview-nav-item active">
+                                                        <i class="fas fa-tachometer-alt"></i>
+                                                        <span>Dashboard</span>
+                                                    </div>
+                                                    <div class="preview-nav-item">
+                                                        <i class="fas fa-users"></i>
+                                                        <span>My Classes</span>
+                                                    </div>
+                                                    <div class="preview-nav-item">
+                                                        <i class="fas fa-chart-bar"></i>
+                                                        <span>Reports</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-success btn-sm" onclick="saveProfessorSidebarColors()">
+                                        <i class="fas fa-save me-1"></i>Save Sidebar Colors
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetProfessorSidebarColors()">
+                                        <i class="fas fa-undo me-1"></i>Reset to Default
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-sync me-2"></i>Update Professor Panel
                         </button>
@@ -1379,6 +1751,102 @@
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sidebar Customization -->
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-bars me-2"></i>Sidebar Customization</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Primary Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="adminSidebarPrimary" value="#111827" onchange="updateAdminSidebarColor('primary', this.value)">
+                                                <input type="text" class="form-control" id="adminSidebarPrimaryText" value="#111827">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Secondary Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="adminSidebarSecondary" value="#1f2937" onchange="updateAdminSidebarColor('secondary', this.value)">
+                                                <input type="text" class="form-control" id="adminSidebarSecondaryText" value="#1f2937">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Accent Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="adminSidebarAccent" value="#f59e0b" onchange="updateAdminSidebarColor('accent', this.value)">
+                                                <input type="text" class="form-control" id="adminSidebarAccentText" value="#f59e0b">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Text Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="adminSidebarText" value="#f9fafb" onchange="updateAdminSidebarColor('text', this.value)">
+                                                <input type="text" class="form-control" id="adminSidebarTextText" value="#f9fafb">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Hover Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="adminSidebarHover" value="#374151" onchange="updateAdminSidebarColor('hover', this.value)">
+                                                <input type="text" class="form-control" id="adminSidebarHoverText" value="#374151">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Sidebar Preview -->
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <label class="form-label">Preview</label>
+                                        <div class="sidebar-preview-container">
+                                            <div class="sidebar-preview" id="adminSidebarPreview">
+                                                <div class="preview-header">
+                                                    <div class="preview-logo">
+                                                        <i class="fas fa-cog"></i>
+                                                        <span>Admin Portal</span>
+                                                    </div>
+                                                </div>
+                                                <div class="preview-nav">
+                                                    <div class="preview-nav-item active">
+                                                        <i class="fas fa-tachometer-alt"></i>
+                                                        <span>Dashboard</span>
+                                                    </div>
+                                                    <div class="preview-nav-item">
+                                                        <i class="fas fa-users"></i>
+                                                        <span>Users</span>
+                                                    </div>
+                                                    <div class="preview-nav-item">
+                                                        <i class="fas fa-cogs"></i>
+                                                        <span>Settings</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-success btn-sm" onclick="saveAdminSidebarColors()">
+                                        <i class="fas fa-save me-1"></i>Save Sidebar Colors
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetAdminSidebarColors()">
+                                        <i class="fas fa-undo me-1"></i>Reset to Default
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -2209,6 +2677,483 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 refreshPreview(); // Refresh preview with keyboard shortcut
             }
+        });
+
+        // ====== SIDEBAR CUSTOMIZATION FUNCTIONALITY ======
+        
+        // Initialize sidebar customization
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSidebarCustomization();
+            setupRoleSelector();
+        });
+
+        function initializeSidebarCustomization() {
+            // Load default colors
+            updateSidebarPreview();
+            
+            // Setup role change listener
+            document.querySelectorAll('input[name="sidebarRole"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    loadRoleColors(this.value);
+                    updatePreviewForRole(this.value);
+                });
+            });
+        }
+
+        function setupRoleSelector() {
+            // Initialize with student role
+            loadRoleColors('student');
+            updatePreviewForRole('student');
+        }
+
+        function loadRoleColors(role) {
+            // Load colors from database settings
+            const sidebarSettings = <?php echo json_encode($sidebarSettings ?? [], 15, 512) ?>;
+            const settings = sidebarSettings[role] || {
+                primary_color: '#1a1a1a',
+                secondary_color: '#2d2d2d',
+                accent_color: '#3b82f6',
+                text_color: '#e0e0e0',
+                hover_color: '#374151'
+            };
+
+            // Update color inputs with database values
+            document.getElementById('sidebarPrimaryColor').value = settings.primary_color || '#1a1a1a';
+            document.getElementById('sidebarSecondaryColor').value = settings.secondary_color || '#2d2d2d';
+            document.getElementById('sidebarAccentColor').value = settings.accent_color || '#3b82f6';
+            document.getElementById('sidebarTextColor').value = settings.text_color || '#e0e0e0';
+            document.getElementById('sidebarHoverColor').value = settings.hover_color || '#374151';
+
+            // Sync with text inputs
+            document.getElementById('sidebarPrimaryText').value = settings.primary_color || '#1a1a1a';
+            document.getElementById('sidebarSecondaryText').value = settings.secondary_color || '#2d2d2d';
+            document.getElementById('sidebarAccentText').value = settings.accent_color || '#3b82f6';
+            document.getElementById('sidebarTextText').value = settings.text_color || '#e0e0e0';
+            document.getElementById('sidebarHoverText').value = settings.hover_color || '#374151';
+            
+            updateSidebarPreview();
+        }
+
+        function updatePreviewForRole(role) {
+            // Update preview content based on role
+            const roleData = {
+                student: {
+                    name: 'John Student',
+                    role: 'Student',
+                    nav1: 'Calendar',
+                    nav2: 'My Courses',
+                    nav3: 'Meetings'
+                },
+                professor: {
+                    name: 'Dr. Smith',
+                    role: 'Professor',
+                    nav1: 'Classes',
+                    nav2: 'Students',
+                    nav3: 'Reports'
+                },
+                admin: {
+                    name: 'Admin User',
+                    role: 'Administrator',
+                    nav1: 'Users',
+                    nav2: 'Settings',
+                    nav3: 'Reports'
+                }
+            };
+
+            const data = roleData[role] || roleData.student;
+            
+            document.getElementById('previewUserName').textContent = data.name;
+            document.getElementById('previewUserRole').textContent = data.role;
+            document.getElementById('previewNav1').textContent = data.nav1;
+            document.getElementById('previewNav2').textContent = data.nav2;
+            document.getElementById('previewNav3').textContent = data.nav3;
+        }
+
+        function updateSidebarColor(type, value) {
+            // Sync color picker with text input
+            const textInput = document.getElementById(`sidebar${type.charAt(0).toUpperCase() + type.slice(1)}Text`);
+            textInput.value = value;
+            updateSidebarPreview();
+        }
+
+        function updateSidebarColorFromText(type, value) {
+            // Validate hex color
+            if (/^#[0-9A-F]{6}$/i.test(value)) {
+                const colorInput = document.getElementById(`sidebar${type.charAt(0).toUpperCase() + type.slice(1)}Color`);
+                colorInput.value = value;
+                updateSidebarPreview();
+            }
+        }
+
+        function updateSidebarPreview() {
+            const preview = document.getElementById('sidebarPreview');
+            const primaryColor = document.getElementById('sidebarPrimaryColor').value;
+            const secondaryColor = document.getElementById('sidebarSecondaryColor').value;
+            const accentColor = document.getElementById('sidebarAccentColor').value;
+            const textColor = document.getElementById('sidebarTextColor').value;
+            const hoverColor = document.getElementById('sidebarHoverColor').value;
+            
+            // Apply CSS custom properties
+            preview.style.setProperty('--preview-primary', primaryColor);
+            preview.style.setProperty('--preview-secondary', secondaryColor);
+            preview.style.setProperty('--preview-accent', accentColor);
+            preview.style.setProperty('--preview-text', textColor);
+            preview.style.setProperty('--preview-hover', hoverColor);
+            preview.style.setProperty('--preview-text-muted', adjustColorOpacity(textColor, 0.7));
+        }
+
+        function adjustColorOpacity(hex, opacity) {
+            // Convert hex to rgba with opacity
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        }
+
+        function applySidebarPreset(presetName) {
+            const presets = {
+                dark: {
+                    primary: '#1a1a1a',
+                    secondary: '#2d2d2d',
+                    accent: '#3b82f6',
+                    text: '#e0e0e0',
+                    hover: '#374151'
+                },
+                blue: {
+                    primary: '#1e40af',
+                    secondary: '#3b82f6',
+                    accent: '#60a5fa',
+                    text: '#f1f5f9',
+                    hover: '#2563eb'
+                },
+                green: {
+                    primary: '#059669',
+                    secondary: '#10b981',
+                    accent: '#34d399',
+                    text: '#f0fdf4',
+                    hover: '#047857'
+                },
+                orange: {
+                    primary: '#d97706',
+                    secondary: '#f59e0b',
+                    accent: '#fbbf24',
+                    text: '#fffbeb',
+                    hover: '#b45309'
+                },
+                purple: {
+                    primary: '#7c3aed',
+                    secondary: '#8b5cf6',
+                    accent: '#a78bfa',
+                    text: '#faf5ff',
+                    hover: '#6d28d9'
+                }
+            };
+
+            const preset = presets[presetName];
+            if (preset) {
+                // Update all color inputs
+                Object.keys(preset).forEach(type => {
+                    const colorInput = document.getElementById(`sidebar${type.charAt(0).toUpperCase() + type.slice(1)}Color`);
+                    const textInput = document.getElementById(`sidebar${type.charAt(0).toUpperCase() + type.slice(1)}Text`);
+                    if (colorInput && textInput) {
+                        colorInput.value = preset[type];
+                        textInput.value = preset[type];
+                    }
+                });
+                
+                updateSidebarPreview();
+                showNotification(`Applied ${presetName} color scheme!`, 'success');
+            }
+        }
+
+        function saveSidebarColors() {
+            const selectedRole = document.querySelector('input[name="sidebarRole"]:checked').value;
+            const colors = {
+                primary_color: document.getElementById('sidebarPrimaryColor').value,
+                secondary_color: document.getElementById('sidebarSecondaryColor').value,
+                accent_color: document.getElementById('sidebarAccentColor').value,
+                text_color: document.getElementById('sidebarTextColor').value,
+                hover_color: document.getElementById('sidebarHoverColor').value
+            };
+
+            // Save to database via AJAX
+            fetch('/smartprep/admin/settings/sidebar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    role: selectedRole,
+                    colors: colors
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`${selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)} sidebar colors saved successfully!`, 'success');
+                } else {
+                    showNotification('Error saving sidebar colors', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error saving sidebar colors', 'danger');
+            });
+        }
+
+        function resetSidebarColors() {
+            if (confirm('Reset sidebar colors to default? This will override your current settings.')) {
+                const selectedRole = document.querySelector('input[name="sidebarRole"]:checked').value;
+                loadRoleColors(selectedRole);
+                showNotification('Sidebar colors reset to default', 'info');
+            }
+        }
+
+        function applySidebarToRole() {
+            const selectedRole = document.querySelector('input[name="sidebarRole"]:checked').value;
+            
+            if (confirm(`Apply these colors to all ${selectedRole} portals? This will update the live interface.`)) {
+                saveSidebarColors();
+                
+                // Additional logic to apply to live interface
+                setTimeout(() => {
+                    showNotification(`Colors applied to ${selectedRole} portals!`, 'success');
+                }, 1000);
+            }
+        }
+
+        // ====== ROLE-SPECIFIC SIDEBAR FUNCTIONS ======
+
+        // Student Sidebar Functions
+        function updateStudentSidebarColor(type, value) {
+            document.getElementById(`studentSidebar${type.charAt(0).toUpperCase() + type.slice(1)}Text`).value = value;
+            updateStudentSidebarPreview();
+        }
+
+        function updateStudentSidebarPreview() {
+            const preview = document.getElementById('studentSidebarPreview');
+            if (!preview) return;
+
+            const primaryColor = document.getElementById('studentSidebarPrimary').value;
+            const secondaryColor = document.getElementById('studentSidebarSecondary').value;
+            const accentColor = document.getElementById('studentSidebarAccent').value;
+            const textColor = document.getElementById('studentSidebarText').value;
+            const hoverColor = document.getElementById('studentSidebarHover').value;
+
+            preview.style.setProperty('--preview-primary', primaryColor);
+            preview.style.setProperty('--preview-secondary', secondaryColor);
+            preview.style.setProperty('--preview-accent', accentColor);
+            preview.style.setProperty('--preview-text', textColor);
+            preview.style.setProperty('--preview-hover', hoverColor);
+        }
+
+        function saveStudentSidebarColors() {
+            const colors = {
+                primary_color: document.getElementById('studentSidebarPrimary').value,
+                secondary_color: document.getElementById('studentSidebarSecondary').value,
+                accent_color: document.getElementById('studentSidebarAccent').value,
+                text_color: document.getElementById('studentSidebarText').value,
+                hover_color: document.getElementById('studentSidebarHover').value
+            };
+
+            saveSidebarColorsForRole('student', colors);
+        }
+
+        function resetStudentSidebarColors() {
+            if (confirm('Reset student sidebar colors to default?')) {
+                document.getElementById('studentSidebarPrimary').value = '#1a1a1a';
+                document.getElementById('studentSidebarSecondary').value = '#2d2d2d';
+                document.getElementById('studentSidebarAccent').value = '#3b82f6';
+                document.getElementById('studentSidebarText').value = '#e0e0e0';
+                document.getElementById('studentSidebarHover').value = '#374151';
+                updateStudentSidebarPreview();
+                showNotification('Student sidebar colors reset to default', 'info');
+            }
+        }
+
+        // Professor Sidebar Functions
+        function updateProfessorSidebarColor(type, value) {
+            document.getElementById(`professorSidebar${type.charAt(0).toUpperCase() + type.slice(1)}Text`).value = value;
+            updateProfessorSidebarPreview();
+        }
+
+        function updateProfessorSidebarPreview() {
+            const preview = document.getElementById('professorSidebarPreview');
+            if (!preview) return;
+
+            const primaryColor = document.getElementById('professorSidebarPrimary').value;
+            const secondaryColor = document.getElementById('professorSidebarSecondary').value;
+            const accentColor = document.getElementById('professorSidebarAccent').value;
+            const textColor = document.getElementById('professorSidebarText').value;
+            const hoverColor = document.getElementById('professorSidebarHover').value;
+
+            preview.style.setProperty('--preview-primary', primaryColor);
+            preview.style.setProperty('--preview-secondary', secondaryColor);
+            preview.style.setProperty('--preview-accent', accentColor);
+            preview.style.setProperty('--preview-text', textColor);
+            preview.style.setProperty('--preview-hover', hoverColor);
+        }
+
+        function saveProfessorSidebarColors() {
+            const colors = {
+                primary_color: document.getElementById('professorSidebarPrimary').value,
+                secondary_color: document.getElementById('professorSidebarSecondary').value,
+                accent_color: document.getElementById('professorSidebarAccent').value,
+                text_color: document.getElementById('professorSidebarText').value,
+                hover_color: document.getElementById('professorSidebarHover').value
+            };
+
+            saveSidebarColorsForRole('professor', colors);
+        }
+
+        function resetProfessorSidebarColors() {
+            if (confirm('Reset professor sidebar colors to default?')) {
+                document.getElementById('professorSidebarPrimary').value = '#1e293b';
+                document.getElementById('professorSidebarSecondary').value = '#334155';
+                document.getElementById('professorSidebarAccent').value = '#10b981';
+                document.getElementById('professorSidebarText').value = '#f1f5f9';
+                document.getElementById('professorSidebarHover').value = '#475569';
+                updateProfessorSidebarPreview();
+                showNotification('Professor sidebar colors reset to default', 'info');
+            }
+        }
+
+        // Admin Sidebar Functions
+        function updateAdminSidebarColor(type, value) {
+            document.getElementById(`adminSidebar${type.charAt(0).toUpperCase() + type.slice(1)}Text`).value = value;
+            updateAdminSidebarPreview();
+        }
+
+        function updateAdminSidebarPreview() {
+            const preview = document.getElementById('adminSidebarPreview');
+            if (!preview) return;
+
+            const primaryColor = document.getElementById('adminSidebarPrimary').value;
+            const secondaryColor = document.getElementById('adminSidebarSecondary').value;
+            const accentColor = document.getElementById('adminSidebarAccent').value;
+            const textColor = document.getElementById('adminSidebarText').value;
+            const hoverColor = document.getElementById('adminSidebarHover').value;
+
+            preview.style.setProperty('--preview-primary', primaryColor);
+            preview.style.setProperty('--preview-secondary', secondaryColor);
+            preview.style.setProperty('--preview-accent', accentColor);
+            preview.style.setProperty('--preview-text', textColor);
+            preview.style.setProperty('--preview-hover', hoverColor);
+        }
+
+        function saveAdminSidebarColors() {
+            const colors = {
+                primary_color: document.getElementById('adminSidebarPrimary').value,
+                secondary_color: document.getElementById('adminSidebarSecondary').value,
+                accent_color: document.getElementById('adminSidebarAccent').value,
+                text_color: document.getElementById('adminSidebarText').value,
+                hover_color: document.getElementById('adminSidebarHover').value
+            };
+
+            saveSidebarColorsForRole('admin', colors);
+        }
+
+        function resetAdminSidebarColors() {
+            if (confirm('Reset admin sidebar colors to default?')) {
+                document.getElementById('adminSidebarPrimary').value = '#111827';
+                document.getElementById('adminSidebarSecondary').value = '#1f2937';
+                document.getElementById('adminSidebarAccent').value = '#f59e0b';
+                document.getElementById('adminSidebarText').value = '#f9fafb';
+                document.getElementById('adminSidebarHover').value = '#374151';
+                updateAdminSidebarPreview();
+                showNotification('Admin sidebar colors reset to default', 'info');
+            }
+        }
+
+        // Shared function for saving sidebar colors
+        function saveSidebarColorsForRole(role, colors) {
+            fetch('/smartprep/admin/settings/sidebar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    role: role,
+                    colors: colors
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`${role.charAt(0).toUpperCase() + role.slice(1)} sidebar colors saved successfully!`, 'success');
+                } else {
+                    showNotification('Error saving sidebar colors', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error saving sidebar colors', 'danger');
+            });
+        }
+
+        // Initialize role-specific previews when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load saved colors from database
+            const sidebarSettings = <?php echo json_encode($sidebarSettings ?? [], 15, 512) ?>;
+            
+            // Load student sidebar colors
+            if (sidebarSettings.student) {
+                const studentColors = sidebarSettings.student;
+                document.getElementById('studentSidebarPrimary').value = studentColors.primary_color || '#1a1a1a';
+                document.getElementById('studentSidebarSecondary').value = studentColors.secondary_color || '#2d2d2d';
+                document.getElementById('studentSidebarAccent').value = studentColors.accent_color || '#3b82f6';
+                document.getElementById('studentSidebarText').value = studentColors.text_color || '#e0e0e0';
+                document.getElementById('studentSidebarHover').value = studentColors.hover_color || '#374151';
+                
+                // Sync text inputs
+                document.getElementById('studentSidebarPrimaryText').value = studentColors.primary_color || '#1a1a1a';
+                document.getElementById('studentSidebarSecondaryText').value = studentColors.secondary_color || '#2d2d2d';
+                document.getElementById('studentSidebarAccentText').value = studentColors.accent_color || '#3b82f6';
+                document.getElementById('studentSidebarTextText').value = studentColors.text_color || '#e0e0e0';
+                document.getElementById('studentSidebarHoverText').value = studentColors.hover_color || '#374151';
+            }
+            
+            // Load professor sidebar colors
+            if (sidebarSettings.professor) {
+                const professorColors = sidebarSettings.professor;
+                document.getElementById('professorSidebarPrimary').value = professorColors.primary_color || '#1e293b';
+                document.getElementById('professorSidebarSecondary').value = professorColors.secondary_color || '#334155';
+                document.getElementById('professorSidebarAccent').value = professorColors.accent_color || '#10b981';
+                document.getElementById('professorSidebarText').value = professorColors.text_color || '#f1f5f9';
+                document.getElementById('professorSidebarHover').value = professorColors.hover_color || '#475569';
+                
+                // Sync text inputs
+                document.getElementById('professorSidebarPrimaryText').value = professorColors.primary_color || '#1e293b';
+                document.getElementById('professorSidebarSecondaryText').value = professorColors.secondary_color || '#334155';
+                document.getElementById('professorSidebarAccentText').value = professorColors.accent_color || '#10b981';
+                document.getElementById('professorSidebarTextText').value = professorColors.text_color || '#f1f5f9';
+                document.getElementById('professorSidebarHoverText').value = professorColors.hover_color || '#475569';
+            }
+            
+            // Load admin sidebar colors
+            if (sidebarSettings.admin) {
+                const adminColors = sidebarSettings.admin;
+                document.getElementById('adminSidebarPrimary').value = adminColors.primary_color || '#111827';
+                document.getElementById('adminSidebarSecondary').value = adminColors.secondary_color || '#1f2937';
+                document.getElementById('adminSidebarAccent').value = adminColors.accent_color || '#f59e0b';
+                document.getElementById('adminSidebarText').value = adminColors.text_color || '#f9fafb';
+                document.getElementById('adminSidebarHover').value = adminColors.hover_color || '#374151';
+                
+                // Sync text inputs
+                document.getElementById('adminSidebarPrimaryText').value = adminColors.primary_color || '#111827';
+                document.getElementById('adminSidebarSecondaryText').value = adminColors.secondary_color || '#1f2937';
+                document.getElementById('adminSidebarAccentText').value = adminColors.accent_color || '#f59e0b';
+                document.getElementById('adminSidebarTextText').value = adminColors.text_color || '#f9fafb';
+                document.getElementById('adminSidebarHoverText').value = adminColors.hover_color || '#374151';
+            }
+            
+            setTimeout(() => {
+                updateStudentSidebarPreview();
+                updateProfessorSidebarPreview();
+                updateAdminSidebarPreview();
+            }, 100);
         });
     </script>
 </body>

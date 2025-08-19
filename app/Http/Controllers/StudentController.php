@@ -1154,4 +1154,132 @@ class StudentController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get current sidebar customization settings for the student
+     */
+    public function getSidebarSettings()
+    {
+        try {
+            // Check authentication
+            if (!session('logged_in') || !session('user_id') || session('user_role') !== 'student') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access'
+                ], 401);
+            }
+
+            $userId = session('user_id');
+            
+            // Get user-specific sidebar settings
+            $settings = \App\Models\UiSetting::where('section', 'student_sidebar_' . $userId)
+                ->pluck('setting_value', 'setting_key');
+            
+            // If no user-specific settings, get default settings
+            if ($settings->isEmpty()) {
+                $settings = \App\Models\UiSetting::where('section', 'student_sidebar')
+                    ->pluck('setting_value', 'setting_key');
+            }
+            
+            return response()->json([
+                'success' => true,
+                'settings' => $settings
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting sidebar settings: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading sidebar settings'
+            ], 500);
+        }
+    }
+
+    /**
+     * Save sidebar customization settings for the student
+     */
+    public function saveSidebarSettings(Request $request)
+    {
+        try {
+            // Check authentication
+            if (!session('logged_in') || !session('user_id') || session('user_role') !== 'student') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access'
+                ], 401);
+            }
+
+            $userId = session('user_id');
+            $section = 'student_sidebar_' . $userId;
+            
+            // Validate color inputs
+            $validated = $request->validate([
+                'primary_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
+                'secondary_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
+                'accent_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
+                'text_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
+                'hover_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
+            ]);
+
+            // Save each setting
+            foreach ($validated as $key => $value) {
+                \App\Models\UiSetting::updateOrCreate(
+                    ['section' => $section, 'setting_key' => $key],
+                    ['setting_value' => $value, 'setting_type' => 'color']
+                );
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Sidebar settings saved successfully'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid color format. Please use valid hex colors.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error saving sidebar settings: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error saving sidebar settings'
+            ], 500);
+        }
+    }
+
+    /**
+     * Reset sidebar customization settings to default for the student
+     */
+    public function resetSidebarSettings()
+    {
+        try {
+            // Check authentication
+            if (!session('logged_in') || !session('user_id') || session('user_role') !== 'student') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access'
+                ], 401);
+            }
+
+            $userId = session('user_id');
+            $section = 'student_sidebar_' . $userId;
+            
+            // Delete user-specific settings (will fall back to defaults)
+            \App\Models\UiSetting::where('section', $section)->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Sidebar settings reset to default'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error resetting sidebar settings: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error resetting sidebar settings'
+            ], 500);
+        }
+    }
 }
