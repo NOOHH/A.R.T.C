@@ -275,22 +275,22 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('smartprep.admin.dashboard') }}">
+                        <a class="nav-link" href="<?php echo e(route('smartprep.admin.dashboard')); ?>">
                             <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="{{ route('smartprep.admin.website-requests') }}">
+                        <a class="nav-link active" href="<?php echo e(route('smartprep.admin.website-requests')); ?>">
                             <i class="fas fa-clock me-2"></i>Requests
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('smartprep.admin.clients') }}">
+                        <a class="nav-link" href="<?php echo e(route('smartprep.admin.clients')); ?>">
                             <i class="fas fa-users me-2"></i>Clients
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('smartprep.admin.settings') }}">
+                        <a class="nav-link" href="<?php echo e(route('smartprep.admin.settings')); ?>">
                             <i class="fas fa-cog me-2"></i>Settings
                         </a>
                     </li>
@@ -305,8 +305,8 @@
                             <li><a class="dropdown-item" href="/"><i class="fas fa-home me-2"></i>View Site</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <form method="POST" action="{{ route('smartprep.logout') }}" class="d-inline w-100">
-                                    @csrf
+                                <form method="POST" action="<?php echo e(route('smartprep.logout')); ?>" class="d-inline w-100">
+                                    <?php echo csrf_field(); ?>
                                     <button type="submit" class="dropdown-item">
                                         <i class="fas fa-sign-out-alt me-2"></i>Logout
                                     </button>
@@ -331,8 +331,8 @@
                 </div>
                 <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
                     <div class="d-flex flex-column align-items-lg-end">
-                        <div class="text-white-50 mb-2">{{ $requests->count() }} Total Requests</div>
-                        <div class="fs-4 fw-bold">{{ $requests->where('status', 'pending')->count() }} Pending</div>
+                        <div class="text-white-50 mb-2"><?php echo e($requests->count()); ?> Total Requests</div>
+                        <div class="fs-4 fw-bold"><?php echo e($requests->where('status', 'pending')->count()); ?> Pending</div>
                     </div>
                 </div>
             </div>
@@ -340,19 +340,21 @@
     </div>
 
     <div class="container pb-5">
-        @if(session('success'))
+        <?php if(session('success')): ?>
             <div class="alert alert-success alert-dismissible fade show mt-4" role="alert">
-                <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
+                <i class="fas fa-check-circle me-2"></i><?php echo e(session('success')); ?>
 
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show mt-4" role="alert">
-                <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        @endif
+        <?php endif; ?>
+
+        <?php if(session('error')): ?>
+            <div class="alert alert-danger alert-dismissible fade show mt-4" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i><?php echo e(session('error')); ?>
+
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
 
         <!-- Filters -->
         <div class="filter-card mt-4">
@@ -361,12 +363,12 @@
                     <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filter Requests</h5>
                 </div>
                 <div class="col-md-4">
-                    <form method="GET" action="{{ route('smartprep.admin.website-requests') }}">
+                    <form method="GET" action="<?php echo e(route('smartprep.admin.website-requests')); ?>">
                         <select name="status" class="form-select" onchange="this.form.submit()">
-                            <option value="all" {{ request('status') == 'all' ? 'selected' : '' }}>All Requests</option>
-                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
-                            <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                            <option value="all" <?php echo e(request('status') == 'all' ? 'selected' : ''); ?>>All Requests</option>
+                            <option value="pending" <?php echo e(request('status') == 'pending' ? 'selected' : ''); ?>>Pending</option>
+                            <option value="approved" <?php echo e(request('status') == 'approved' ? 'selected' : ''); ?>>Approved</option>
+                            <option value="rejected" <?php echo e(request('status') == 'rejected' ? 'selected' : ''); ?>>Rejected</option>
                         </select>
                     </form>
                 </div>
@@ -374,132 +376,137 @@
         </div>
 
         <!-- Requests List -->
-        @if($requests->count() > 0)
-            @foreach($requests as $request)
+        <?php if($requests->count() > 0): ?>
+            <?php $__currentLoopData = $requests; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $request): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
             <div class="request-card">
                 <div class="row">
                     <div class="col-lg-8">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div>
-                                <h4 class="fw-bold text-dark mb-1">{{ $request->business_name }}</h4>
+                                <h4 class="fw-bold text-dark mb-1"><?php echo e($request->business_name); ?></h4>
                                 <div class="text-muted">
-                                    <i class="fas fa-user me-1"></i>{{ $request->user->name }} • 
-                                    <i class="fas fa-envelope me-1"></i>{{ $request->contact_email ?? $request->user->email }} • 
-                                    <i class="fas fa-calendar me-1"></i>{{ $request->created_at->format('M j, Y g:i A') }}
+                                    <i class="fas fa-user me-1"></i><?php echo e($request->user->name); ?> • 
+                                    <i class="fas fa-envelope me-1"></i><?php echo e($request->contact_email ?? $request->user->email); ?> • 
+                                    <i class="fas fa-calendar me-1"></i><?php echo e($request->created_at->format('M j, Y g:i A')); ?>
+
                                 </div>
                             </div>
-                            <span class="badge-status badge-{{ $request->status }}">
-                                {{ ucfirst($request->status) }}
+                            <span class="badge-status badge-<?php echo e($request->status); ?>">
+                                <?php echo e(ucfirst($request->status)); ?>
+
                             </span>
                         </div>
 
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
-                                <strong>Business Type:</strong> {{ $request->business_type ?? 'Not specified' }}
+                                <strong>Business Type:</strong> <?php echo e($request->business_type ?? 'Not specified'); ?>
+
                             </div>
                             <div class="col-md-6">
                                 <strong>Preferred Domain:</strong> 
-                                @if($request->domain_preference)
-                                    <code>/t/{{ Str::slug($request->domain_preference) }}</code>
-                                @else
+                                <?php if($request->domain_preference): ?>
+                                    <code>/t/<?php echo e(Str::slug($request->domain_preference)); ?></code>
+                                <?php else: ?>
                                     <span class="text-muted">Auto-generate</span>
-                                @endif
+                                <?php endif; ?>
                             </div>
-                            @if($request->contact_phone)
+                            <?php if($request->contact_phone): ?>
                             <div class="col-md-6">
-                                <strong>Phone:</strong> {{ $request->contact_phone }}
+                                <strong>Phone:</strong> <?php echo e($request->contact_phone); ?>
+
                             </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
 
-                        @if($request->description)
+                        <?php if($request->description): ?>
                         <div class="mb-3">
                             <strong>Description:</strong>
-                            <p class="mb-0 mt-1 text-muted">{{ $request->description }}</p>
+                            <p class="mb-0 mt-1 text-muted"><?php echo e($request->description); ?></p>
                         </div>
-                        @endif
+                        <?php endif; ?>
 
-                        @if($request->template_data)
+                        <?php if($request->template_data): ?>
                         <div class="mb-3">
                             <strong>Customization Data:</strong>
                             <div class="mt-1 p-2 bg-light rounded">
                                 <small class="text-success"><i class="fas fa-check me-1"></i>Client has provided customization settings</small>
-                                <button class="btn btn-sm btn-outline-primary ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#customizationData{{ $request->id }}">
+                                <button class="btn btn-sm btn-outline-primary ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#customizationData<?php echo e($request->id); ?>">
                                     <i class="fas fa-eye me-1"></i>View Details
                                 </button>
-                                <div class="collapse mt-2" id="customizationData{{ $request->id }}">
-                                    @php
+                                <div class="collapse mt-2" id="customizationData<?php echo e($request->id); ?>">
+                                    <?php
                                         $td = $request->template_data;
                                         $pretty = is_array($td)
                                             ? json_encode($td, JSON_PRETTY_PRINT)
                                             : json_encode(json_decode($td ?: '{}', true), JSON_PRETTY_PRINT);
-                                    @endphp
-                                    <pre class="small bg-white p-2 rounded border">{{ $pretty }}</pre>
+                                    ?>
+                                    <pre class="small bg-white p-2 rounded border"><?php echo e($pretty); ?></pre>
                                 </div>
                             </div>
                         </div>
-                        @endif
+                        <?php endif; ?>
 
-                        @if($request->admin_notes)
+                        <?php if($request->admin_notes): ?>
                         <div class="mb-3">
                             <strong>Admin Notes:</strong>
-                            <p class="mb-0 mt-1 text-muted">{{ $request->admin_notes }}</p>
+                            <p class="mb-0 mt-1 text-muted"><?php echo e($request->admin_notes); ?></p>
                         </div>
-                        @endif
+                        <?php endif; ?>
 
-                        @if($request->client)
+                        <?php if($request->client): ?>
                         <div class="mb-3">
                             <strong>Created Website:</strong>
-                            <a href="/t/{{ $request->client->slug }}" target="_blank" class="btn-primary-custom">
-                                <i class="fas fa-external-link-alt me-1"></i>Visit /t/{{ $request->client->slug }}
+                            <a href="/t/<?php echo e($request->client->slug); ?>" target="_blank" class="btn-primary-custom">
+                                <i class="fas fa-external-link-alt me-1"></i>Visit /t/<?php echo e($request->client->slug); ?>
+
                             </a>
                         </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
 
                     <div class="col-lg-4 text-lg-end">
-                        @if($request->status === 'pending')
+                        <?php if($request->status === 'pending'): ?>
                         <div class="d-flex flex-column gap-2">
-                            <button type="button" class="btn-success-custom" data-bs-toggle="modal" data-bs-target="#approveModal{{ $request->id }}">
+                            <button type="button" class="btn-success-custom" data-bs-toggle="modal" data-bs-target="#approveModal<?php echo e($request->id); ?>">
                                 <i class="fas fa-check me-2"></i>Approve & Create Website
                             </button>
-                            <button type="button" class="btn-danger-custom" data-bs-toggle="modal" data-bs-target="#rejectModal{{ $request->id }}">
+                            <button type="button" class="btn-danger-custom" data-bs-toggle="modal" data-bs-target="#rejectModal<?php echo e($request->id); ?>">
                                 <i class="fas fa-times me-2"></i>Reject Request
                             </button>
                         </div>
-                        @elseif($request->status === 'completed' && $request->client)
+                        <?php elseif($request->status === 'completed' && $request->client): ?>
                         <div class="d-flex flex-column gap-2">
-                            <a href="/t/{{ $request->client->slug }}" target="_blank" class="btn-primary-custom">
+                            <a href="/t/<?php echo e($request->client->slug); ?>" target="_blank" class="btn-primary-custom">
                                 <i class="fas fa-external-link-alt me-2"></i>Visit Website
                             </a>
-                            <a href="/t/{{ $request->client->slug }}/admin/courses" target="_blank" class="btn-primary-custom">
+                            <a href="/t/<?php echo e($request->client->slug); ?>/admin/courses" target="_blank" class="btn-primary-custom">
                                 <i class="fas fa-cog me-2"></i>Admin Panel
                             </a>
                         </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
 
             <!-- Approve Modal -->
-            <div class="modal fade" id="approveModal{{ $request->id }}" tabindex="-1">
+            <div class="modal fade" id="approveModal<?php echo e($request->id); ?>" tabindex="-1">
                 <div class="modal-dialog">
                     <div class="modal-content">
-                        <form method="POST" action="{{ route('smartprep.admin.approve-request', $request) }}">
-                            @csrf
+                        <form method="POST" action="<?php echo e(route('smartprep.admin.approve-request', $request)); ?>">
+                            <?php echo csrf_field(); ?>
                             <div class="modal-header">
                                 <h5 class="modal-title">Approve Website Request</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
                             <div class="modal-body">
-                                <p>Are you sure you want to approve this request and create a website for <strong>{{ $request->business_name }}</strong>?</p>
+                                <p>Are you sure you want to approve this request and create a website for <strong><?php echo e($request->business_name); ?></strong>?</p>
                                 <div class="mb-3">
                                     <label class="form-label">Admin Notes (Optional)</label>
                                     <textarea class="form-control" name="admin_notes" rows="3" placeholder="Add any notes for the client..."></textarea>
                                 </div>
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    This will create a new database and website at <code>/t/{{ Str::slug($request->business_name) }}</code>
+                                    This will create a new database and website at <code>/t/<?php echo e(Str::slug($request->business_name)); ?></code>
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -514,17 +521,17 @@
             </div>
 
             <!-- Reject Modal -->
-            <div class="modal fade" id="rejectModal{{ $request->id }}" tabindex="-1">
+            <div class="modal fade" id="rejectModal<?php echo e($request->id); ?>" tabindex="-1">
                 <div class="modal-dialog">
                     <div class="modal-content">
-                        <form method="POST" action="{{ route('smartprep.admin.reject-request', $request) }}">
-                            @csrf
+                        <form method="POST" action="<?php echo e(route('smartprep.admin.reject-request', $request)); ?>">
+                            <?php echo csrf_field(); ?>
                             <div class="modal-header">
                                 <h5 class="modal-title">Reject Website Request</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
                             <div class="modal-body">
-                                <p>Are you sure you want to reject the request for <strong>{{ $request->business_name }}</strong>?</p>
+                                <p>Are you sure you want to reject the request for <strong><?php echo e($request->business_name); ?></strong>?</p>
                                 <div class="mb-3">
                                     <label class="form-label">Reason for Rejection *</label>
                                     <textarea class="form-control" name="admin_notes" rows="3" required placeholder="Please provide a reason for rejection..."></textarea>
@@ -540,22 +547,24 @@
                     </div>
                 </div>
             </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
             <!-- Pagination -->
             <div class="d-flex justify-content-center mt-4">
-                {{ $requests->links() }}
+                <?php echo e($requests->links()); ?>
+
             </div>
-        @else
+        <?php else: ?>
             <div class="empty-state">
                 <i class="fas fa-inbox"></i>
                 <h4>No website requests yet</h4>
                 <p class="text-muted">Requests will appear here when users submit them</p>
             </div>
-        @endif
+        <?php endif; ?>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
 
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/smartprep/admin/website-requests.blade.php ENDPATH**/ ?>

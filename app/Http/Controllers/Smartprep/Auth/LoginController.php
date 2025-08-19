@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Smartprep\User;
 use App\Models\Smartprep\Admin;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cookie;
 
 class LoginController extends Controller
 {
@@ -27,26 +29,39 @@ class LoginController extends Controller
         $login = $request->input('email');
         $password = $request->input('password');
 
-        // Step 1: Check if it's an admin user (admins table)
+        // Step 1: Check SmartPrep-admins table (main DB)
         $admin = Admin::where('email', $login)->first();
-        
-        if ($admin) {
-            Log::info('SmartPrep Login: Admin found', ['email' => $login, 'admin_id' => $admin->id]);
-            
-            if (Hash::check($password, $admin->password)) {
-                Log::info('SmartPrep Login: Admin password valid, logging in', ['admin_id' => $admin->id]);
-                
-                Auth::guard('smartprep_admin')->login($admin, $request->boolean('remember'));
+        if (
+            $admin &&
+            Str::endsWith(strtolower($admin->email), '@smartprep.com') &&
+            Hash::check($password, $admin->password)
+        ) {
+            Log::info('SmartPrep Login: Admin (main DB) authenticated', ['admin_pk' => $admin->getKey()]);
+            Auth::guard('smartprep_admin')->login($admin, $request->boolean('remember'));
+            $request->session()->regenerate();
+            return redirect()->route('smartprep.admin.dashboard');
+        }
+
+        // Step 1b: Try tenant admins table and sync to SmartPrep if valid
+        try {
+            $tenantAdmin = \App\Models\Admin::where('email', $login)->first();
+            if (
+                $tenantAdmin &&
+                Str::endsWith(strtolower($tenantAdmin->email), '@smartprep.com') &&
+                Hash::check($password, $tenantAdmin->password)
+            ) {
+                // Sync or create SmartPrep admin with same credentials
+                $synced = Admin::firstOrNew(['email' => $tenantAdmin->email]);
+                $synced->name = $tenantAdmin->admin_name ?? ($tenantAdmin->name ?? 'Admin');
+                $synced->password = $tenantAdmin->password; // already hashed
+                $synced->save();
+
+                Auth::guard('smartprep_admin')->login($synced, $request->boolean('remember'));
                 $request->session()->regenerate();
-                
-                Log::info('SmartPrep Login: Admin login successful, redirecting to dashboard', ['admin_id' => $admin->id]);
                 return redirect()->route('smartprep.admin.dashboard');
-            } else {
-                Log::warning('SmartPrep Login: Admin password invalid', ['email' => $login]);
-                return back()->withErrors([
-                    'email' => 'The provided credentials do not match our records.',
-                ])->onlyInput('email');
             }
+        } catch (\Throwable $e) {
+            Log::error('SmartPrep Login: tenant admin sync check failed', ['error' => $e->getMessage()]);
         }
 
         // Step 2: Check if it's a regular user (users table)
@@ -90,8 +105,28 @@ class LoginController extends Controller
             Auth::guard('smartprep')->logout();
         }
         
+        // Invalidate SmartPrep-scoped session
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        // Proactively clear ARTC/root cookies so the preview logs out too
+        try {
+            // Root Laravel session (ARTC)
+            Cookie::queue(cookie()->forget('laravel_session', '/'));
+            // Root XSRF token used by ARTC
+            Cookie::queue(cookie()->forget('XSRF-TOKEN', '/'));
+            // SmartPrep-scoped session cookie
+            Cookie::queue(cookie()->forget('smartprep_session', '/smartprep'));
+            // Any remember cookies
+            foreach ($request->cookies->keys() as $cookieName) {
+                if (Str::startsWith($cookieName, 'remember_')) {
+                    Cookie::queue(cookie()->forget($cookieName, '/'));
+                }
+            }
+        } catch (\Throwable $e) {
+            // Best effort only; ignore
+        }
+
         return redirect()->route('smartprep.login');
     }
 }

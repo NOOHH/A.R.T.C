@@ -554,7 +554,7 @@
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Preview URL</label>
-                            <input type="url" class="form-control" name="preview_url" value="{{ $settings['general']['preview_url'] ?? 'http://127.0.0.1:8000/' }}" placeholder="http://127.0.0.1:8000/">
+                            <input type="url" class="form-control" name="preview_url" value="{{ $settings['general']['preview_url'] ?? url('/artc') }}" placeholder="{{ url('/artc') }}">
                             <small class="form-text text-muted">URL for the live preview iframe</small>
                         </div>
                         
@@ -1299,7 +1299,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <button class="preview-btn" onclick="refreshPreview()">
                                 <i class="fas fa-sync-alt me-1"></i>Refresh
                             </button>
-                            <a href="http://127.0.0.1:8000/" class="preview-btn" target="_blank" id="openInNewTabLink">
+                            <a href="{{ $settings['general']['preview_url'] ?? url('/artc') }}" class="preview-btn" target="_blank" id="openInNewTabLink">
                                 <i class="fas fa-external-link-alt me-1"></i>Open in New Tab
                             </a>
                         </div>
@@ -1313,7 +1313,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <iframe 
                         class="preview-iframe" 
-                        src="http://127.0.0.1:8000/" 
+                        src="{{ $settings['general']['preview_url'] ?? url('/artc') }}" 
                         title="A.R.T.C Site Preview"
                         id="previewFrame"
                         onload="hideLoading()"
@@ -1635,13 +1635,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         applySettingsToPreview(settings.data);
                         
                         // Update iframe src with configurable preview URL
-                        const previewUrl = settings.data.general?.preview_url || 'http://127.0.0.1:8000/';
+                        const fallbackUrl = "{{ url('/artc') }}";
+                        const previewUrl = (settings.data && settings.data.general && settings.data.general.preview_url)
+                            ? settings.data.general.preview_url
+                            : fallbackUrl;
                         iframe.src = previewUrl;
                     }
                 } catch (error) {
                     console.error('Failed to fetch UI settings:', error);
                     // Fallback to default URL
-                    iframe.src = 'http://127.0.0.1:8000/';
+                    iframe.src = "{{ url('/artc') }}";
                 }
                 
                 showNotification('Refreshing A.R.T.C preview...', 'info');
@@ -1729,12 +1732,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 const response = await fetch('{{ route("smartprep.api.ui-settings") }}');
                 if (response.ok) {
                     const settings = await response.json();
-                    const previewUrl = settings.data.general?.preview_url || 'http://127.0.0.1:8000/';
+                    const fallbackUrlInit = "{{ url('/artc') }}";
+                    const previewUrl = (settings.data && settings.data.general && settings.data.general.preview_url)
+                        ? settings.data.general.preview_url
+                        : fallbackUrlInit;
                     
                     // Update iframe src
                     const iframe = document.getElementById('previewFrame');
                     if (iframe) {
                         iframe.src = previewUrl;
+                        // Hard-guard: if it ever navigates to smartprep, force back to ARTC
+                        iframe.addEventListener('load', function() {
+                            try {
+                                const currentUrl = iframe.contentWindow.location.href;
+                                if (/\/smartprep(\/|$)/.test(currentUrl)) {
+                                    iframe.contentWindow.location.replace("{{ url('/artc') }}");
+                                }
+                            } catch (e) {
+                                // Cross-origin, best-effort only
+                            }
+                        });
                     }
                     
                     // Update "Open in New Tab" link

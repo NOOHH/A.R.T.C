@@ -1480,7 +1480,7 @@
                                                     <code class="code-badge">{{ $client->slug }}</code>
                                                 </div>
                                             </td>
-                                            <td><code class="code-badge">{{ $client->db_name ?? $client->database }}</code></td>
+                                            <td><code class="code-badge">{{ $client->db_name }}</code></td>
                                             <td>
                                                 <span class="date-text">{{ optional($client->created_at)->format('M j, Y') ?? '—' }}</span>
                                             </td>
@@ -1574,7 +1574,7 @@
                                                         <code class="code-badge">{{ $client->slug }}</code>
                                                     </div>
                                                 </td>
-                                                <td><code class="code-badge">{{ $client->db_name ?? $client->database }}</code></td>
+                                                <td><code class="code-badge">{{ $client->db_name }}</code></td>
                                                 <td>
                                                     <span class="date-text">{{ optional($client->created_at)->format('M j, Y') ?? '—' }}</span>
                                                 </td>

@@ -334,8 +334,8 @@ class UnifiedLoginController extends Controller
         \App\Helpers\SessionManager::init();
         \App\Helpers\SessionManager::destroy();
         
-        // Redirect to home page (preserving original behavior)
-        return redirect('/')->with('success', 'You have been logged out successfully.');
+        // Redirect ARTC users to ARTC homepage to avoid SmartPrep root redirect in preview
+        return redirect()->route('artc.preview')->with('success', 'You have been logged out successfully.');
     }
 
     /**

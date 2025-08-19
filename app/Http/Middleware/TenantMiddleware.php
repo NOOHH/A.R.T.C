@@ -31,6 +31,14 @@ class TenantMiddleware
             $this->tenantService->switchToMain();
             return $next($request);
         }
+
+        // For path-based tenant routes (/t/{slug}), defer DB switching to the controller
+        // and keep the default connection on the main database so models like Client/Tenant
+        // query the correct schema.
+        if ($request->is('t/*')) {
+            $this->tenantService->switchToMain();
+            return $next($request);
+        }
         
         $domain = $request->getHost();
         

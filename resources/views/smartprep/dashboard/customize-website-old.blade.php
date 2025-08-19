@@ -402,7 +402,7 @@
                     </a>
                     <ul class="navbar-nav d-flex flex-row mb-0">
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('smartprep.dashboard') }}">
+                            <a class="nav-link" href="{{ Auth::guard('smartprep_admin')->check() ? route('smartprep.admin.dashboard') : route('smartprep.dashboard') }}">
                                 <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                             </a>
                         </li>

@@ -31,7 +31,8 @@ class AuthController extends Controller
         // Clear session data
         $request->session()->flush();
         
-        return redirect('/')->with('success', 'Logged out successfully');
+        // For ARTC, return to the ARTC homepage to keep the preview on ARTC
+        return redirect()->route('artc.preview')->with('success', 'Logged out successfully');
     }
     
     /**

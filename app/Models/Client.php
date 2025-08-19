@@ -20,7 +20,6 @@ class Client extends Model
         'db_password',
         'status',
         'user_id',
-        'database',
         'archived'
     ];
     

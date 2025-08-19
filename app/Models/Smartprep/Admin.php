@@ -10,8 +10,9 @@ class Admin extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    protected $connection = 'mysql'; // Main database for SmartPrep
+    protected $connection = 'mysql'; // SmartPrep main database
     protected $table = 'admins';
+    // SmartPrep DB uses `id` as PK
     protected $primaryKey = 'id';
 
     protected $fillable = [
@@ -37,7 +38,7 @@ class Admin extends Authenticatable
 
     public function getAuthIdentifierName()
     {
-        return 'id';
+        return $this->primaryKey;
     }
 
     public function getAuthIdentifier()
@@ -64,4 +65,6 @@ class Admin extends Authenticatable
     {
         return 'remember_token';
     }
+
+    // No custom accessors needed; SmartPrep DB uses `name`
 }

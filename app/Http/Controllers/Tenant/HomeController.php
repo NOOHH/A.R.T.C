@@ -5,59 +5,65 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use App\Services\TenantProvisioner;
 
 class HomeController extends Controller
 {
     public function index($tenant)
     {
-        // Get tenant info
-        $client = \App\Models\Client::where('slug', $tenant)->firstOrFail();
+        // Resolve tenant; if missing, auto-create from matching client
+        $tenantModel = $this->resolveOrProvisionTenant($tenant);
+        $this->switchToTenantDB($tenantModel);
         
-        // Switch to tenant database
-        $this->switchToTenantDB($client);
-        
-        // Get basic data for the homepage
-        $stats = [
-            'total_programs' => DB::table('programs')->where('is_archived', false)->count(),
-            'total_courses' => DB::table('courses')->where('is_archived', false)->count(),
-            'total_modules' => DB::table('modules')->where('is_archived', false)->count(),
-            'active_students' => DB::table('students')->where('is_archived', false)->count(),
-        ];
-        
-        $programs = DB::table('programs')
+        // Use ARTC live preview UI (welcome.homepage) for tenant sites
+        $tenantDb = DB::connection('tenant');
+        $programs = $tenantDb->table('programs')
             ->where('is_archived', false)
             ->orderBy('created_at', 'desc')
-            ->limit(6)
             ->get();
-            
-        $announcements = DB::table('announcements')
-            ->where('is_active', true)
-            ->orderBy('created_at', 'desc')
-            ->limit(3)
-            ->get();
-        
-        return view('tenant.artc.home', compact('client', 'stats', 'programs', 'announcements'));
+
+        // Pull homepage settings from main SmartPrep DB (shared template settings)
+        $homepageSettings = \App\Helpers\UiSettingsHelper::getSection('homepage')->toArray();
+        $homepageContent = array_merge([
+            'hero_title' => 'Review Smarter. Learn Better. Succeed Faster.',
+            'hero_subtitle' => 'Your premier destination for comprehensive review programs and professional training.',
+            'hero_button_text' => 'ENROLL NOW',
+            'programs_title' => 'Our Programs',
+            'programs_subtitle' => 'Choose from our comprehensive range of review and training programs',
+            'modalities_title' => 'Learning Modalities',
+            'modalities_subtitle' => 'Choose the learning style that works best for you',
+            'about_title' => 'About Us',
+            'about_subtitle' => 'We are committed to providing high-quality education and training',
+        ], $homepageSettings);
+
+        $homepageTitle = $homepageContent['hero_button_text'] ?? 'ENROLL NOW';
+
+        return view('welcome.homepage', compact('programs', 'homepageTitle', 'homepageContent'));
     }
     
     public function programs($tenant)
     {
-        $client = \App\Models\Client::where('slug', $tenant)->firstOrFail();
-        $this->switchToTenantDB($client);
+        $tenantModel = $this->resolveOrProvisionTenant($tenant);
+        $this->switchToTenantDB($tenantModel);
         
         $programs = DB::table('programs')
             ->where('is_archived', false)
             ->orderBy('program_name')
             ->get();
             
-        return view('tenant.artc.programs', compact('client', 'programs'));
+        return view('tenant.artc.programs', [
+            'tenant' => $tenantModel,
+            'programs' => $programs,
+        ]);
     }
     
     public function programDetails($tenant, $id)
     {
-        $client = \App\Models\Client::where('slug', $tenant)->firstOrFail();
-        $this->switchToTenantDB($client);
+        $tenantModel = $this->resolveOrProvisionTenant($tenant);
+        $this->switchToTenantDB($tenantModel);
         
-        $program = DB::table('programs')->where('id', $id)->where('is_archived', false)->firstOrFail();
+        $program = DB::connection('tenant')->table('programs')->where('program_id', $id)->where('is_archived', false)->firstOrFail();
         
         $courses = DB::table('courses')
             ->where('program_id', $id)
@@ -73,17 +79,82 @@ class HomeController extends Controller
                 ->get();
         }
         
-        return view('tenant.artc.program-details', compact('client', 'program', 'courses'));
+        return view('tenant.artc.program-details', [
+            'tenant' => $tenantModel,
+            'program' => $program,
+            'courses' => $courses,
+        ]);
     }
     
-    private function switchToTenantDB($client)
+    private function switchToTenantDB($tenantModel)
     {
-        $dbName = $client->db_name ?? $client->database ?? null;
+        $dbName = $tenantModel->database_name;
         if (!$dbName) {
-            abort(500, 'Client database is not configured.');
+            abort(500, 'Tenant database is not configured.');
         }
-        config(['database.connections.mysql.database' => $dbName]);
-        DB::purge('mysql');
-        DB::reconnect('mysql');
+        // Use tenant connection slot if configured else fallback to mysql
+        if (config()->has('database.connections.tenant')) {
+            config(['database.connections.tenant.database' => $dbName]);
+            DB::purge('tenant');
+            DB::reconnect('tenant');
+            // Ensure all subsequent DB::table() calls use the tenant connection
+            config(['database.default' => 'tenant']);
+        } else {
+            config(['database.connections.mysql.database' => $dbName]);
+            DB::purge('mysql');
+            DB::reconnect('mysql');
+            config(['database.default' => 'mysql']);
+        }
+    }
+
+    /**
+     * Resolve a tenant by slug; if missing, create it from a matching Client row.
+     */
+    private function resolveOrProvisionTenant(string $slug)
+    {
+        // Fast path: existing tenant
+        $tenant = \App\Models\Tenant::where('slug', $slug)->first();
+        if ($tenant) {
+            return $tenant;
+        }
+
+        // Try to infer from clients only if a database already exists to avoid 500s
+        $client = \App\Models\Client::where('slug', $slug)->first();
+        if (!$client) {
+            abort(404);
+        }
+
+        $dbName = $client->db_name;
+        if (!$dbName) {
+            $keyword = preg_replace('/^smartprep-/', '', $client->slug);
+            $dbName = 'smartprep_' . Str::slug($keyword, '_');
+        }
+
+        // Verify database exists; if not, attempt provisioning from sample dump
+        $existsRow = DB::selectOne('SELECT SCHEMA_NAME as s FROM information_schema.schemata WHERE SCHEMA_NAME = ?', [$dbName]);
+        if (!$existsRow) {
+            try {
+                $conn = TenantProvisioner::createDatabaseFromSqlDump($client->name);
+                $dbName = $conn['db_name'] ?? $dbName;
+                // Persist db name back to client for future lookups
+                $client->db_name = $dbName;
+                $client->save();
+            } catch (\Throwable $e) {
+                // If provisioning fails, return 404 until admin approves/provisions
+                abort(404);
+            }
+        }
+
+        // Create tenant registry row
+        return \App\Models\Tenant::updateOrCreate(
+            ['slug' => $client->slug],
+            [
+                'name' => $client->name,
+                'database_name' => $dbName,
+                'domain' => $client->domain,
+                'status' => $client->status ?? 'active',
+                'settings' => ['client_id' => $client->id],
+            ]
+        );
     }
 }

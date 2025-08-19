@@ -11,8 +11,8 @@ class AdminController extends Controller
 {
     public function dashboard($tenant)
     {
-        $client = \App\Models\Client::where('slug', $tenant)->firstOrFail();
-        $this->switchToTenantDB($client);
+        $tenantModel = \App\Models\Tenant::where('slug', $tenant)->firstOrFail();
+        $this->switchToTenantDB($tenantModel);
         
         $stats = [
             'total_programs' => DB::table('programs')->count(),
@@ -34,13 +34,18 @@ class AdminController extends Controller
             ->limit(5)
             ->get();
         
-        return view('tenant.artc.admin.dashboard', compact('client', 'stats', 'recentStudents', 'recentEnrollments'));
+        return view('tenant.artc.admin.dashboard', [
+            'tenant' => $tenantModel,
+            'stats' => $stats,
+            'recentStudents' => $recentStudents,
+            'recentEnrollments' => $recentEnrollments,
+        ]);
     }
     
     public function programs($tenant)
     {
-        $client = \App\Models\Client::where('slug', $tenant)->firstOrFail();
-        $this->switchToTenantDB($client);
+        $tenantModel = \App\Models\Tenant::where('slug', $tenant)->firstOrFail();
+        $this->switchToTenantDB($tenantModel);
         
         $programs = DB::table('programs')
             ->leftJoin('directors', 'programs.director_id', '=', 'directors.id')
@@ -48,13 +53,16 @@ class AdminController extends Controller
             ->orderBy('programs.created_at', 'desc')
             ->get();
         
-        return view('tenant.artc.admin.programs', compact('client', 'programs'));
+        return view('tenant.artc.admin.programs', [
+            'tenant' => $tenantModel,
+            'programs' => $programs,
+        ]);
     }
     
     public function createProgram(Request $request, $tenant)
     {
-        $client = \App\Models\Client::where('slug', $tenant)->firstOrFail();
-        $this->switchToTenantDB($client);
+        $tenantModel = \App\Models\Tenant::where('slug', $tenant)->firstOrFail();
+        $this->switchToTenantDB($tenantModel);
         
         $request->validate([
             'program_name' => 'required|string|max:255',
@@ -73,20 +81,23 @@ class AdminController extends Controller
     
     public function students($tenant)
     {
-        $client = \App\Models\Client::where('slug', $tenant)->firstOrFail();
-        $this->switchToTenantDB($client);
+        $tenantModel = \App\Models\Tenant::where('slug', $tenant)->firstOrFail();
+        $this->switchToTenantDB($tenantModel);
         
         $students = DB::table('students')
             ->orderBy('created_at', 'desc')
             ->get();
         
-        return view('tenant.artc.admin.students', compact('client', 'students'));
+        return view('tenant.artc.admin.students', [
+            'tenant' => $tenantModel,
+            'students' => $students,
+        ]);
     }
     
     public function createStudent(Request $request, $tenant)
     {
-        $client = \App\Models\Client::where('slug', $tenant)->firstOrFail();
-        $this->switchToTenantDB($client);
+        $tenantModel = \App\Models\Tenant::where('slug', $tenant)->firstOrFail();
+        $this->switchToTenantDB($tenantModel);
         
         $request->validate([
             'first_name' => 'required|string|max:255',
@@ -116,20 +127,23 @@ class AdminController extends Controller
     
     public function professors($tenant)
     {
-        $client = \App\Models\Client::where('slug', $tenant)->firstOrFail();
-        $this->switchToTenantDB($client);
+        $tenantModel = \App\Models\Tenant::where('slug', $tenant)->firstOrFail();
+        $this->switchToTenantDB($tenantModel);
         
         $professors = DB::table('professors')
             ->orderBy('created_at', 'desc')
             ->get();
         
-        return view('tenant.artc.admin.professors', compact('client', 'professors'));
+        return view('tenant.artc.admin.professors', [
+            'tenant' => $tenantModel,
+            'professors' => $professors,
+        ]);
     }
     
     public function createProfessor(Request $request, $tenant)
     {
-        $client = \App\Models\Client::where('slug', $tenant)->firstOrFail();
-        $this->switchToTenantDB($client);
+        $tenantModel = \App\Models\Tenant::where('slug', $tenant)->firstOrFail();
+        $this->switchToTenantDB($tenantModel);
         
         $request->validate([
             'first_name' => 'required|string|max:255',
@@ -156,8 +170,8 @@ class AdminController extends Controller
     
     public function announcements($tenant)
     {
-        $client = \App\Models\Client::where('slug', $tenant)->firstOrFail();
-        $this->switchToTenantDB($client);
+        $tenantModel = \App\Models\Tenant::where('slug', $tenant)->firstOrFail();
+        $this->switchToTenantDB($tenantModel);
         
         $announcements = DB::table('announcements')
             ->leftJoin('programs', 'announcements.program_id', '=', 'programs.id')
@@ -167,13 +181,17 @@ class AdminController extends Controller
             
         $programs = DB::table('programs')->where('is_archived', false)->get();
         
-        return view('tenant.artc.admin.announcements', compact('client', 'announcements', 'programs'));
+        return view('tenant.artc.admin.announcements', [
+            'tenant' => $tenantModel,
+            'announcements' => $announcements,
+            'programs' => $programs,
+        ]);
     }
     
     public function createAnnouncement(Request $request, $tenant)
     {
-        $client = \App\Models\Client::where('slug', $tenant)->firstOrFail();
-        $this->switchToTenantDB($client);
+        $tenantModel = \App\Models\Tenant::where('slug', $tenant)->firstOrFail();
+        $this->switchToTenantDB($tenantModel);
         
         $request->validate([
             'title' => 'required|string|max:255',
@@ -197,14 +215,20 @@ class AdminController extends Controller
         return back()->with('success', 'Announcement created successfully!');
     }
     
-    private function switchToTenantDB($client)
+    private function switchToTenantDB($tenantModel)
     {
-        $dbName = $client->db_name ?? $client->database ?? null;
+        $dbName = $tenantModel->database_name;
         if (!$dbName) {
-            abort(500, 'Client database is not configured.');
+            abort(500, 'Tenant database is not configured.');
         }
-        config(['database.connections.mysql.database' => $dbName]);
-        DB::purge('mysql');
-        DB::reconnect('mysql');
+        if (config()->has('database.connections.tenant')) {
+            config(['database.connections.tenant.database' => $dbName]);
+            DB::purge('tenant');
+            DB::reconnect('tenant');
+        } else {
+            config(['database.connections.mysql.database' => $dbName]);
+            DB::purge('mysql');
+            DB::reconnect('mysql');
+        }
     }
 }

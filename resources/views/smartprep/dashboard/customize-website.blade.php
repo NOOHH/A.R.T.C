@@ -1,3 +1,19 @@
+@php
+    // Ensure auth context variables exist before head is rendered
+    $user = Auth::guard('smartprep_admin')->user() ?: Auth::guard('smartprep')->user() ?: Auth::user();
+    $isLoggedIn = Auth::guard('smartprep_admin')->check() || Auth::guard('smartprep')->check() || Auth::check();
+    $userRole = 'guest';
+    if ($isLoggedIn && $user) {
+        if (Auth::guard('smartprep_admin')->check()) {
+            $userRole = 'admin';
+        } elseif (Auth::guard('smartprep')->check()) {
+            $userRole = $user->role ?? 'user';
+        } else {
+            $userRole = $user->role ?? 'user';
+        }
+    }
+@endphp
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,6 +23,11 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <!-- App context for JS (avoid Blade echoes inside scripts for linting) -->
+    <meta name="x-my-id" content="{{ $isLoggedIn && isset($user) ? $user->id : '' }}">
+    <meta name="x-my-name" content="{{ $isLoggedIn && isset($user) ? ($user->name ?? 'User') : 'Guest' }}">
+    <meta name="x-is-authenticated" content="{{ $isLoggedIn && isset($user) ? '1' : '0' }}">
+    <meta name="x-user-role" content="{{ $userRole ?? 'guest' }}">
     <style>
         :root {
             --primary-color: #1e40af;
@@ -412,19 +433,24 @@
 
     <!-- Global Variables for JavaScript -->
     <script>
-        // Global variables accessible throughout the page
-        window.myId = @json($isLoggedIn && $user ? $user->id : null);
-        window.myName = @json($isLoggedIn && $user ? $user->name : 'Guest');
-        window.isAuthenticated = @json($isLoggedIn && (bool) $user);
-        window.userRole = @json($userRole);
-        window.csrfToken = @json(csrf_token());
-        
-        console.log('Navbar Global variables initialized:', { 
-            myId: window.myId, 
-            myName: window.myName, 
-            isAuthenticated: window.isAuthenticated, 
-            userRole: window.userRole 
-        });
+        // Global variables accessible throughout the page (read from meta tags)
+        (function() {
+            function meta(name) {
+                var el = document.querySelector('meta[name="' + name + '"]');
+                return el ? el.getAttribute('content') : null;
+            }
+            window.myId = meta('x-my-id') || null;
+            window.myName = meta('x-my-name') || 'Guest';
+            window.isAuthenticated = meta('x-is-authenticated') === '1';
+            window.userRole = meta('x-user-role') || 'guest';
+            window.csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).getAttribute ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
+            console.log('Navbar Global variables initialized:', {
+                myId: window.myId,
+                myName: window.myName,
+                isAuthenticated: window.isAuthenticated,
+                userRole: window.userRole
+            });
+        })();
     </script>
 
     <!-- Top Navigation Bar -->
@@ -441,7 +467,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('smartprep.dashboard') }}">
+                        <a class="nav-link" href="{{ Auth::guard('smartprep_admin')->check() ? route('smartprep.admin.dashboard') : route('smartprep.dashboard') }}">
                             <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                         </a>
                     </li>
@@ -538,39 +564,68 @@
             <div class="settings-sidebar">
                 <!-- General Settings -->
                 <div class="sidebar-section active" id="general-settings">
-                    <div class="section-header">
-                        <h5><i class="fas fa-cog me-2"></i>General Settings</h5>
+                    <div class="section-header mb-3">
+                        <h5 class="mb-0"><i class="fas fa-cog me-2"></i>General Settings</h5>
                     </div>
-                    
+                    <!-- Website Management (separate from form) -->
+                    <div class="mb-4" id="website_selector_container">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small text-muted">Websites</span>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="openCreateWebsite()" title="Create Draft"><i class="fas fa-plus"></i></button>
+                        </div>
+                        <div class="list-group small mb-2 border" id="websiteList" style="max-height:140px;overflow:auto;">
+                            @foreach(($activeWebsites ?? collect()) as $website)
+                                @php $isActive = isset($selectedWebsite) && $selectedWebsite && $selectedWebsite->id === $website->id; @endphp
+                                <button type="button" class="list-group-item list-group-item-action py-2 website-item d-flex justify-content-between align-items-center {{ $isActive ? 'active' : '' }}" data-id="{{ $website->id }}">
+                                    <span class="text-truncate" style="max-width:130px">{{ $website->name }}</span>
+                                    @if($website->status === 'draft')<span class="badge bg-warning text-dark">Draft</span>@endif
+                                </button>
+                            @endforeach
+                            @if(($activeWebsites ?? collect())->isEmpty())
+                                <div class="text-muted small px-2 py-1">No drafts yet.</div>
+                            @endif
+                        </div>
+                        @if(isset($selectedWebsite))
+                            <div class="d-flex flex-wrap align-items-center gap-2 mb-3 small">
+                                <span><strong>Editing:</strong> {{ $selectedWebsite->name }}</span>
+                                <code>/t/{{ $selectedWebsite->slug }}</code>
+                                <button type="button" class="btn btn-xs btn-outline-success" onclick="saveDraftSettings()" style="font-size:11px;padding:3px 8px"><i class="fas fa-save"></i></button>
+                                <form method="POST" action="{{ route('smartprep.dashboard.websites.destroy', $selectedWebsite->id) }}" onsubmit="return confirm('Delete this website? This cannot be undone.');" class="m-0 p-0">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="btn btn-xs btn-outline-danger" style="font-size:11px;padding:3px 8px"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </div>
+                        @endif
+                    </div>
                     <form id="generalForm" onsubmit="updateGeneral(event)">
                         @csrf
                         <div class="form-group mb-3">
                             <label class="form-label">Site Title</label>
-                            <input type="text" class="form-control" name="site_title" value="Ascendo Review and Training Center" placeholder="Enter site title">
+                            <input type="text" class="form-control" name="site_title" value="{{ $settings['general']['site_name'] ?? 'Ascendo Review and Training Center' }}" placeholder="Enter site title">
                             <small class="form-text text-muted">Appears in browser tab and search results</small>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Site Tagline</label>
-                            <input type="text" class="form-control" name="tagline" value="Review Smarter. Learn Better. Succeed Faster." placeholder="Enter tagline">
+                            <input type="text" class="form-control" name="tagline" value="{{ $settings['general']['site_tagline'] ?? 'Review Smarter. Learn Better. Succeed Faster.' }}" placeholder="Enter tagline">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Contact Email</label>
-                            <input type="email" class="form-control" name="contact_email" value="admin@artc.com" placeholder="Contact email">
+                            <input type="email" class="form-control" name="contact_email" value="{{ $settings['general']['contact_email'] ?? 'admin@artc.com' }}" placeholder="Contact email">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Phone Number</label>
-                            <input type="text" class="form-control" name="phone" value="+1 (555) 123-4567" placeholder="Phone number">
+                            <input type="text" class="form-control" name="phone" value="{{ $settings['general']['contact_phone'] ?? '+1 (555) 123-4567' }}" placeholder="Phone number">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Address</label>
-                            <textarea class="form-control" name="address" rows="3" placeholder="Physical address">123 Education Street, Learning City, LC 12345</textarea>
+                            <textarea class="form-control" name="address" rows="3" placeholder="Physical address">{{ $settings['general']['contact_address'] ?? '123 Education Street, Learning City, LC 12345' }}</textarea>
                         </div>
                         
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary mt-1 w-100">
                             <i class="fas fa-sync me-2"></i>Update General Settings
                         </button>
                     </form>
@@ -1117,7 +1172,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <button class="preview-btn" onclick="refreshPreview()">
                                 <i class="fas fa-sync-alt me-1"></i>Refresh
                             </button>
-                            <a href="{{ url('/') }}" class="preview-btn" target="_blank">
+                            <a href="{{ $previewUrl ?? url('/artc') }}" class="preview-btn" target="_blank" id="openInNewTabLink">
                                 <i class="fas fa-external-link-alt me-1"></i>Open in New Tab
                             </a>
                         </div>
@@ -1127,12 +1182,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="preview-iframe-container">
                     <div class="preview-loading" id="previewLoading">
                         <div class="loading-spinner"></div>
-                        <span class="text-muted">Loading A.R.T.C preview...</span>
+                        <span class="text-muted">Loading preview...</span>
                     </div>
                     <iframe 
                         class="preview-iframe" 
-                        src="{{ url('/') }}" 
-                        title="A.R.T.C Site Preview"
+                        src="{{ $previewUrl ?? url('/artc') }}" 
+                        title="Website Preview"
                         id="previewFrame"
                         onload="hideLoading()"
                         onerror="showError()">
@@ -1172,6 +1227,62 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Enable auto-save for important changes
             enableAutoSave();
+
+            // Toggle website selector visibility based on mode
+            const modeSelect = document.getElementById('website_mode');
+            const selectorContainer = document.getElementById('website_selector_container');
+            if (modeSelect && selectorContainer) {
+                const toggleSelector = () => {
+                    const mode = modeSelect.value;
+                    selectorContainer.style.display = (mode === 'customize_current') ? 'block' : 'none';
+                };
+                modeSelect.addEventListener('change', toggleSelector);
+                toggleSelector();
+            }
+        });
+
+        function changeWebsite(id){
+            const url = new URL(window.location.href);
+            if(id){
+                url.searchParams.set('website', id);
+            } else {
+                url.searchParams.delete('website');
+            }
+            window.location = url.toString();
+        }
+
+        function openCreateWebsite(){
+            const name = prompt('Enter new website name');
+            if(!name) return;
+            const form = document.createElement('form');
+            form.method='POST';
+            form.action="{{ route('smartprep.dashboard.websites.store') }}";
+            form.innerHTML = `@csrf<input type="hidden" name="name" value="${name.replace(/"/g,'&quot;')}">`;
+            document.body.appendChild(form);form.submit();
+        }
+
+        function saveDraftSettings(){
+            const websiteId = new URL(window.location.href).searchParams.get('website');
+            if(!websiteId){ alert('No website selected'); return; }
+            // Collect a minimal settings snapshot (general section inputs)
+            const payload = { settings: { general: {} } };
+            document.querySelectorAll('#generalForm input[name], #generalForm textarea[name]').forEach(el=>{
+                if(el.name){ payload.settings.general[el.name]=el.value; }
+            });
+            fetch("{{ url('/smartprep/dashboard/websites') }}/"+websiteId, {
+                method:'PATCH',
+                headers:{'X-CSRF-TOKEN':window.csrfToken,'Accept':'application/json','Content-Type':'application/json'},
+                body: JSON.stringify(payload)
+            }).then(r=>r.json().catch(()=>({success:false}))).then(res=>{
+                // Silent success – optionally toast
+                console.log('Draft saved', res);
+            }).catch(e=>console.error(e));
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.website-item').forEach(btn => {
+                btn.addEventListener('click', () => changeWebsite(btn.getAttribute('data-id')));
+            });
         });
 
         // Form submission handlers
@@ -1219,14 +1330,26 @@ document.addEventListener('DOMContentLoaded', function() {
             const submitBtn = event.target.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
             const formData = new FormData(event.target);
+            const websiteMode = document.getElementById('website_mode')?.value || 'customize_current';
+            const selectedWebsite = document.getElementById('selected_website')?.value || 'current';
             
             // Update button state
             submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${loadingText}`;
             submitBtn.disabled = true;
             
             try {
-                // Simulate API call - replace with actual endpoint
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                // Determine endpoint based on mode and section
+                let endpoint = '/smartprep/admin/settings';
+                if (settingType === 'navbar') endpoint = '/smartprep/admin/settings/navbar';
+                if (settingType === 'branding') endpoint = '/smartprep/admin/settings/branding';
+                if (settingType === 'homepage') endpoint = '/smartprep/admin/settings/homepage';
+
+                // Include mode to inform backend intent
+                formData.append('website_mode', websiteMode);
+                formData.append('_token', '{{ csrf_token() }}');
+                formData.append('selected_website', selectedWebsite);
+
+                await fetch(endpoint, { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 
                 // Success state
                 submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Settings Updated Successfully!';

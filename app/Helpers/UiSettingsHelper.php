@@ -27,8 +27,12 @@ class UiSettingsHelper
      */
     public static function getAll()
     {
+        $general = self::getSection('general')->toArray();
+        // Force preview URL to ARTC preview route to avoid SmartPrep root redirect
+        $general['preview_url'] = url('/artc');
+
         return [
-            'general' => self::getSection('general')->toArray(),
+            'general' => $general,
             'navbar' => self::getSection('navbar')->toArray(),
             'branding' => self::getSection('branding')->toArray(),
             'homepage' => self::getSection('homepage')->toArray(),

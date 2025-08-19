@@ -15,6 +15,8 @@ class AdminSettingsController extends Controller
     {
         // Get current settings from database and JSON file
         $settings = $this->getCurrentSettings();
+        // Ensure preview_url always targets ARTC preview route for admin panel
+        $settings['general']['preview_url'] = url('/artc');
         
         // Use the admin settings interface
         return view('smartprep.admin.admin-settings.index', compact('settings'));
@@ -238,6 +240,8 @@ class AdminSettingsController extends Controller
             'contact_phone' => 'nullable|string|max:20',
             'contact_address' => 'nullable|string|max:500',
             'preview_url' => 'nullable|url|max:500',
+            'website_mode' => 'nullable|in:customize_current,create_new',
+            'selected_website' => 'nullable|string|max:255',
         ]);
 
         // Save to database using UiSetting model
@@ -246,9 +250,17 @@ class AdminSettingsController extends Controller
         UiSetting::set('general', 'contact_email', $request->input('contact_email', 'admin@smartprep.com'), 'text');
         UiSetting::set('general', 'contact_phone', $request->input('contact_phone', '+1 (555) 123-4567'), 'text');
         UiSetting::set('general', 'contact_address', $request->input('contact_address', '123 Admin Street, Admin City, AC 12345'), 'text');
-        UiSetting::set('general', 'preview_url', $request->input('preview_url', 'http://127.0.0.1:8000/'), 'text');
+        // Default preview should point to the ARTC preview route
+        UiSetting::set('general', 'preview_url', $request->input('preview_url', url('/artc')), 'text');
+        // Persist tenant mode selection and target website
+        if ($request->filled('website_mode')) {
+            UiSetting::set('general', 'website_mode', $request->input('website_mode'), 'text');
+        }
+        if ($request->filled('selected_website')) {
+            UiSetting::set('general', 'selected_website', $request->input('selected_website'), 'text');
+        }
 
-        // Also save to JSON file for backward compatibility
+        // Also save to JSON file for backward compatibility (but enforce ARTC preview for UI)
         $settings = $this->getCurrentSettings();
         $settings['general'] = array_merge($settings['general'] ?? [], [
             'site_name' => $request->input('site_name', $settings['general']['site_name'] ?? 'SmartPrep Admin'),
@@ -256,7 +268,9 @@ class AdminSettingsController extends Controller
             'contact_email' => $request->input('contact_email', $settings['general']['contact_email'] ?? 'admin@smartprep.com'),
             'contact_phone' => $request->input('contact_phone', $settings['general']['contact_phone'] ?? '+1 (555) 123-4567'),
             'contact_address' => $request->input('contact_address', $settings['general']['contact_address'] ?? '123 Admin Street, Admin City, AC 12345'),
-            'preview_url' => $request->input('preview_url', $settings['general']['preview_url'] ?? 'http://127.0.0.1:8000/'),
+            'preview_url' => url('/artc'),
+            'website_mode' => $request->input('website_mode', $settings['general']['website_mode'] ?? 'customize_current'),
+            'selected_website' => $request->input('selected_website', $settings['general']['selected_website'] ?? 'current'),
             'updated_at' => now()->toISOString()
         ]);
         $this->saveSettings($settings);

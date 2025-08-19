@@ -357,8 +357,15 @@ Route::get('/test-settings', function () {
 | Public Site Routes
 |--------------------------------------------------------------------------
 */
-// Homepage
-Route::get('/', [App\Http\Controllers\HomepageController::class, 'index'])->name('home');
+// Homepage → redirect to SmartPrep landing
+Route::get('/', function () {
+    return redirect()->to('/smartprep');
+})->name('home');
+
+// ARTC preview route for live customization/admin preview (bypasses root redirect)
+Route::get('/artc', [App\Http\Controllers\HomepageController::class, 'index'])->name('artc.preview');
+
+// (Removed duplicate early tenant route group; tenant routes defined later near bottom.)
 
 // Debug navbar route
 Route::get('/debug-navbar', function () {
@@ -2875,6 +2882,15 @@ Route::get('/chat-test-fixed', function () {
 Route::get('/quick-login-test', function () {
     return response()->file(public_path('quick-login-test.html'));
 })->name('quick.login.test');
+
+// ------------------------------------------------------------------
+// Tenant public site routes (basic marketing / catalog views)
+// ------------------------------------------------------------------
+Route::prefix('t')->group(function () {
+    Route::get('/{tenant}', [\App\Http\Controllers\Tenant\HomeController::class, 'index'])->name('tenant.home');
+    Route::get('/{tenant}/programs', [\App\Http\Controllers\Tenant\HomeController::class, 'programs'])->name('tenant.programs');
+    Route::get('/{tenant}/programs/{id}', [\App\Http\Controllers\Tenant\HomeController::class, 'programDetails'])->name('tenant.program.details');
+});
 
 // Debug route to test admin table structure
 Route::get('/debug/admin-table', function () {

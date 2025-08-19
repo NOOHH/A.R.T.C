@@ -30,7 +30,8 @@ class WebsiteRequest extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        // SmartPrep requests are made by SmartPrep users
+        return $this->belongsTo(\App\Models\Smartprep\User::class, 'user_id');
     }
 
     public function client(): BelongsTo

@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $uiSettings['general']['site_name'] ?? 'SmartPrep' }} - {{ $uiSettings['general']['site_tagline'] ?? 'Multi-Tenant Learning Management Platform' }}</title>
+    <title><?php echo e($uiSettings['general']['site_name'] ?? 'SmartPrep'); ?> - <?php echo e($uiSettings['general']['site_tagline'] ?? 'Multi-Tenant Learning Management Platform'); ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: {{ $uiSettings['branding']['primary_color'] ?? '#2563eb' }};
-            --secondary-color: {{ $uiSettings['branding']['secondary_color'] ?? '#059669' }};
-            --accent-color: {{ $uiSettings['branding']['accent_color'] ?? '#0891b2' }};
-            --gradient-primary: linear-gradient(135deg, {{ $uiSettings['branding']['primary_color'] ?? '#2563eb' }} 0%, {{ $uiSettings['branding']['accent_color'] ?? '#0891b2' }} 100%);
-            --gradient-secondary: linear-gradient(135deg, {{ $uiSettings['branding']['secondary_color'] ?? '#059669' }} 0%, #10b981 100%);
+            --primary-color: <?php echo e($uiSettings['branding']['primary_color'] ?? '#2563eb'); ?>;
+            --secondary-color: <?php echo e($uiSettings['branding']['secondary_color'] ?? '#059669'); ?>;
+            --accent-color: <?php echo e($uiSettings['branding']['accent_color'] ?? '#0891b2'); ?>;
+            --gradient-primary: linear-gradient(135deg, <?php echo e($uiSettings['branding']['primary_color'] ?? '#2563eb'); ?> 0%, <?php echo e($uiSettings['branding']['accent_color'] ?? '#0891b2'); ?> 100%);
+            --gradient-secondary: linear-gradient(135deg, <?php echo e($uiSettings['branding']['secondary_color'] ?? '#059669'); ?> 0%, #10b981 100%);
             --text-dark: #1f2937;
             --text-light: #6b7280;
             --surface: #f8fafc;
             --surface-dark: #1e293b;
-            --font-family: {{ $uiSettings['branding']['font_family'] ?? 'Inter' }};
+            --font-family: <?php echo e($uiSettings['branding']['font_family'] ?? 'Inter'); ?>;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -533,17 +533,18 @@
     </style>
 </head>
 <body>
-    @php
+    <?php
         $spUser = Auth::guard('smartprep')->user();
         $spAdmin = Auth::guard('smartprep_admin')->user();
         $isSpLoggedIn = Auth::guard('smartprep')->check() || Auth::guard('smartprep_admin')->check();
         $displayName = ($spAdmin->name ?? null) ?? ($spUser->name ?? null) ?? 'User';
-    @endphp
+    ?>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="{{ route('smartprep.home') }}">
-                <i class="fas fa-graduation-cap"></i>{{ $uiSettings['navbar']['brand_name'] ?? 'SmartPrep' }}
+            <a class="navbar-brand" href="<?php echo e(route('smartprep.home')); ?>">
+                <i class="fas fa-graduation-cap"></i><?php echo e($uiSettings['navbar']['brand_name'] ?? 'SmartPrep'); ?>
+
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -556,20 +557,21 @@
                     <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
                     <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
                     <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
-                    @if($isSpLoggedIn)
+                    <?php if($isSpLoggedIn): ?>
                         <li class="nav-item">
-                            <a class="btn btn-hero" href="{{ Auth::guard('smartprep_admin')->check() ? route('smartprep.admin.dashboard') : route('smartprep.dashboard') }}">
+                            <a class="btn btn-hero" href="<?php echo e(Auth::guard('smartprep_admin')->check() ? route('smartprep.admin.dashboard') : route('smartprep.dashboard')); ?>">
                                 <i class="fas fa-tachometer-alt"></i>Dashboard
                             </a>
                         </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                {{ $displayName }}
+                                <?php echo e($displayName); ?>
+
                             </a>
                             <ul class="dropdown-menu">
                                 <li>
-                                    <form method="POST" action="{{ route('smartprep.logout') }}" class="d-inline">
-                                        @csrf
+                                    <form method="POST" action="<?php echo e(route('smartprep.logout')); ?>" class="d-inline">
+                                        <?php echo csrf_field(); ?>
                                         <button type="submit" class="dropdown-item">
                                             <i class="fas fa-sign-out-alt me-2"></i>Logout
                                         </button>
@@ -577,14 +579,14 @@
                                 </li>
                             </ul>
                         </li>
-                    @else
-                        <li class="nav-item"><a class="nav-link" href="{{ route('smartprep.login') }}">Login</a></li>
+                    <?php else: ?>
+                        <li class="nav-item"><a class="nav-link" href="<?php echo e(route('smartprep.login')); ?>">Login</a></li>
                         <li class="nav-item">
-                            <a class="btn btn-hero" href="{{ route('smartprep.register') }}">
+                            <a class="btn btn-hero" href="<?php echo e(route('smartprep.register')); ?>">
                                 <i class="fas fa-rocket"></i>Get Started
                             </a>
                         </li>
-                    @endif
+                    <?php endif; ?>
                 </ul>
             </div>
         </div>
@@ -600,21 +602,22 @@
             <div class="row align-items-center">
                 <div class="col-lg-6">
                     <div class="hero-content fade-in-up">
-                        <h1 class="hero-title">{{ $uiSettings['homepage']['hero_title'] ?? 'Transform Education with SmartPrep' }}</h1>
-                        <p class="hero-subtitle">{{ $uiSettings['homepage']['hero_subtitle'] ?? 'Empower your educational institution with our cutting-edge multi-tenant learning management platform. Build professional training websites that scale with your success.' }}</p>
+                        <h1 class="hero-title"><?php echo e($uiSettings['homepage']['hero_title'] ?? 'Transform Education with SmartPrep'); ?></h1>
+                        <p class="hero-subtitle"><?php echo e($uiSettings['homepage']['hero_subtitle'] ?? 'Empower your educational institution with our cutting-edge multi-tenant learning management platform. Build professional training websites that scale with your success.'); ?></p>
                         <div>
-                            @if($isSpLoggedIn)
-                                <a href="{{ Auth::guard('smartprep_admin')->check() ? route('smartprep.admin.dashboard') : route('smartprep.dashboard') }}" class="btn btn-hero me-3">
+                            <?php if($isSpLoggedIn): ?>
+                                <a href="<?php echo e(Auth::guard('smartprep_admin')->check() ? route('smartprep.admin.dashboard') : route('smartprep.dashboard')); ?>" class="btn btn-hero me-3">
                                     <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
                                 </a>
-                            @else
-                                <a href="{{ route('smartprep.register') }}" class="btn btn-hero me-3">
-                                    <i class="fas fa-rocket me-2"></i>{{ $uiSettings['homepage']['cta_primary_text'] ?? 'Create Account' }}
+                            <?php else: ?>
+                                <a href="<?php echo e(route('smartprep.register')); ?>" class="btn btn-hero me-3">
+                                    <i class="fas fa-rocket me-2"></i><?php echo e($uiSettings['homepage']['cta_primary_text'] ?? 'Create Account'); ?>
+
                                 </a>
-                                <a href="{{ route('smartprep.login') }}" class="btn btn-outline-light btn-lg">
+                                <a href="<?php echo e(route('smartprep.login')); ?>" class="btn btn-outline-light btn-lg">
                                     <i class="fas fa-sign-in-alt me-2"></i>Login
                                 </a>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -802,18 +805,18 @@
                     <div class="cta-card">
                         <h2 class="display-4 fw-bold mb-4">Ready to Revolutionize Your Educational Platform?</h2>
                         <p class="lead mb-5">Join thousands of educators and training centers who trust SmartPrep to deliver exceptional learning experiences.</p>
-                        @auth('smartprep')
-                            <a href="{{ Auth::guard('smartprep_admin')->check() ? route('smartprep.admin.dashboard') : route('smartprep.dashboard') }}" class="btn btn-light btn-lg">
+                        <?php if(auth()->guard('smartprep')->check()): ?>
+                            <a href="<?php echo e(Auth::guard('smartprep_admin')->check() ? route('smartprep.admin.dashboard') : route('smartprep.dashboard')); ?>" class="btn btn-light btn-lg">
                                 <i class="fas fa-tachometer-alt me-2"></i>Access Dashboard
                             </a>
-                        @else
-                            <a href="{{ route('smartprep.register') }}" class="btn btn-light btn-lg me-3">
+                        <?php else: ?>
+                            <a href="<?php echo e(route('smartprep.register')); ?>" class="btn btn-light btn-lg me-3">
                                 <i class="fas fa-rocket me-2"></i>Create Your Account
                             </a>
                             <a href="#contact" class="btn btn-outline-light btn-lg">
                                 <i class="fas fa-phone me-2"></i>Contact Sales
                             </a>
-                        @endauth
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -839,12 +842,12 @@
                     <ul class="list-unstyled">
                         <li class="mb-2"><a href="#features" class="text-light text-decoration-none">Features</a></li>
                         <li class="mb-2"><a href="#about" class="text-light text-decoration-none">About</a></li>
-                        @if($isSpLoggedIn)
-                            <li class="mb-2"><a href="{{ Auth::guard('smartprep_admin')->check() ? route('smartprep.admin.dashboard') : route('smartprep.dashboard') }}" class="text-light text-decoration-none">Dashboard</a></li>
-                        @else
-                            <li class="mb-2"><a href="{{ route('smartprep.login') }}" class="text-light text-decoration-none">Login</a></li>
-                            <li class="mb-2"><a href="{{ route('smartprep.register') }}" class="text-light text-decoration-none">Register</a></li>
-                        @endif
+                        <?php if($isSpLoggedIn): ?>
+                            <li class="mb-2"><a href="<?php echo e(Auth::guard('smartprep_admin')->check() ? route('smartprep.admin.dashboard') : route('smartprep.dashboard')); ?>" class="text-light text-decoration-none">Dashboard</a></li>
+                        <?php else: ?>
+                            <li class="mb-2"><a href="<?php echo e(route('smartprep.login')); ?>" class="text-light text-decoration-none">Login</a></li>
+                            <li class="mb-2"><a href="<?php echo e(route('smartprep.register')); ?>" class="text-light text-decoration-none">Register</a></li>
+                        <?php endif; ?>
                     </ul>
                 </div>
                 <div class="col-lg-3 col-md-6">
@@ -934,3 +937,4 @@
 </body>
 </html>
 
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/smartprep/homepage/welcome.blade.php ENDPATH**/ ?>

@@ -34,6 +34,8 @@ class Kernel extends HttpKernel
         'web' => [
             \App\Http\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+            // Configure SmartPrep-scoped session cookie/path before session starts
+            \App\Http\Middleware\ConfigurePathScopedSession::class,
             \Illuminate\Session\Middleware\StartSession::class,
             // \Illuminate\Session\Middleware\AuthenticateSession::class,
             // Switch to the correct tenant database early in the web request lifecycle

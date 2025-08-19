@@ -403,7 +403,7 @@
     </style>
 </head>
 <body>
-    @php
+    <?php
         $spUser = Auth::guard('smartprep')->user();
         $spAdmin = Auth::guard('smartprep_admin')->user();
         $displayName = ($spAdmin->name ?? null) ?? ($spUser->name ?? null) ?? 'User';
@@ -414,7 +414,7 @@
         if (isset($websiteRequests) && is_array($websiteRequests)) {
             $websiteRequests = collect($websiteRequests);
         }
-    @endphp
+    ?>
     <!-- DEBUG BANNER - Remove in production -->
     <div style="background: #10b981; color: white; text-align: center; padding: 5px; font-weight: bold;">
         🎨 PROFESSIONAL DASHBOARD v2.0 - CHANGES APPLIED! 🎨
@@ -425,46 +425,47 @@
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
-                    <a href="{{ route('smartprep.home') }}" class="navbar-brand me-4">
+                    <a href="<?php echo e(route('smartprep.home')); ?>" class="navbar-brand me-4">
                         <i class="fas fa-graduation-cap me-2"></i>SmartPrep
                     </a>
                     <ul class="navbar-nav d-flex flex-row mb-0">
                         <li class="nav-item">
-                            <a class="nav-link active" href="{{ Auth::guard('smartprep_admin')->check() ? route('smartprep.admin.dashboard') : route('smartprep.dashboard') }}">
+                            <a class="nav-link active" href="<?php echo e(Auth::guard('smartprep_admin')->check() ? route('smartprep.admin.dashboard') : route('smartprep.dashboard')); ?>">
                                 <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('smartprep.dashboard.customize') }}">
+                            <a class="nav-link" href="<?php echo e(route('smartprep.dashboard.customize')); ?>">
                                 <i class="fas fa-palette me-2"></i>Customize Website
                             </a>
                         </li>
-                        @if($activeWebsites->count() > 0)
+                        <?php if($activeWebsites->count() > 0): ?>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="websitesDropdown" role="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-globe me-2"></i>My Websites
                             </a>
                             <ul class="dropdown-menu">
-                                @foreach($activeWebsites as $website)
-                                <li><a class="dropdown-item" href="/t/{{ $website->slug }}" target="_blank">{{ $website->name }}</a></li>
-                                @endforeach
+                                <?php $__currentLoopData = $activeWebsites; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $website): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <li><a class="dropdown-item" href="/t/<?php echo e($website->slug); ?>" target="_blank"><?php echo e($website->name); ?></a></li>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </ul>
                         </li>
-                        @endif
+                        <?php endif; ?>
                     </ul>
                 </div>
                 
                 <ul class="navbar-nav d-flex flex-row mb-0">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-2"></i>{{ (Auth::guard('smartprep_admin')->user()->name ?? Auth::guard('smartprep')->user()->name) ?? 'User' }}
+                            <i class="fas fa-user-circle me-2"></i><?php echo e((Auth::guard('smartprep_admin')->user()->name ?? Auth::guard('smartprep')->user()->name) ?? 'User'); ?>
+
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{{ route('smartprep.home') }}"><i class="fas fa-home me-2"></i>Home</a></li>
+                            <li><a class="dropdown-item" href="<?php echo e(route('smartprep.home')); ?>"><i class="fas fa-home me-2"></i>Home</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <form method="POST" action="{{ route('smartprep.logout') }}" class="d-inline w-100">
-                                    @csrf
+                                <form method="POST" action="<?php echo e(route('smartprep.logout')); ?>" class="d-inline w-100">
+                                    <?php echo csrf_field(); ?>
                                     <button type="submit" class="dropdown-item text-danger">
                                         <i class="fas fa-sign-out-alt me-2"></i>Logout
                                     </button>
@@ -477,19 +478,21 @@
         </div>
     </nav>
     <div class="container pb-5">
-        @if(session('success'))
+        <?php if(session('success')): ?>
             <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-                <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
+                <i class="fas fa-check-circle me-2"></i><?php echo e(session('success')); ?>
 
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-                <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        @endif
+        <?php endif; ?>
+
+        <?php if(session('error')): ?>
+            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i><?php echo e(session('error')); ?>
+
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
 
         <!-- Stats Cards -->
         <div class="row g-4 stats-grid">
@@ -498,7 +501,7 @@
                     <div class="stats-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--success-color);">
                         <i class="fas fa-globe"></i>
                     </div>
-                    <div class="stats-number">{{ $activeWebsites->count() }}</div>
+                    <div class="stats-number"><?php echo e($activeWebsites->count()); ?></div>
                     <div class="stats-label">Active Websites</div>
                 </div>
             </div>
@@ -507,7 +510,7 @@
                     <div class="stats-icon" style="background: rgba(6, 182, 212, 0.1); color: var(--info-color);">
                         <i class="fas fa-list"></i>
                     </div>
-                    <div class="stats-number">{{ $websiteRequests->count() }}</div>
+                    <div class="stats-number"><?php echo e($websiteRequests->count()); ?></div>
                     <div class="stats-label">Total Requests</div>
                 </div>
             </div>
@@ -516,7 +519,7 @@
                     <div class="stats-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning-color);">
                         <i class="fas fa-clock"></i>
                     </div>
-                    <div class="stats-number">{{ $websiteRequests->where('status', 'pending')->count() }}</div>
+                    <div class="stats-number"><?php echo e($websiteRequests->where('status', 'pending')->count()); ?></div>
                     <div class="stats-label">Pending</div>
                 </div>
             </div>
@@ -525,7 +528,7 @@
                     <div class="stats-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--success-color);">
                         <i class="fas fa-check-circle"></i>
                     </div>
-                    <div class="stats-number">{{ $websiteRequests->where('status', 'completed')->count() }}</div>
+                    <div class="stats-number"><?php echo e($websiteRequests->where('status', 'completed')->count()); ?></div>
                     <div class="stats-label">Completed</div>
                 </div>
             </div>
@@ -539,7 +542,7 @@
                         <h5><i class="fas fa-globe me-2"></i>My Active Websites</h5>
                     </div>
                     <div class="card-body-custom">
-                        @if($activeWebsites->count() > 0)
+                        <?php if($activeWebsites->count() > 0): ?>
                             <div class="table-responsive">
                                 <table class="table table-modern">
                                     <thead>
@@ -551,16 +554,16 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($activeWebsites as $website)
+                                        <?php $__currentLoopData = $activeWebsites; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $website): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <tr>
                                             <td>
                                                 <div>
-                                                    <div class="fw-bold text-gray-900">{{ $website->name }}</div>
-                                                    <small class="text-muted">Created {{ $website->created_at->diffForHumans() }}</small>
+                                                    <div class="fw-bold text-gray-900"><?php echo e($website->name); ?></div>
+                                                    <small class="text-muted">Created <?php echo e($website->created_at->diffForHumans()); ?></small>
                                                 </div>
                                             </td>
                                             <td>
-                                                <code class="bg-gray-100 px-2 py-1 rounded">/t/{{ $website->slug }}</code>
+                                                <code class="bg-gray-100 px-2 py-1 rounded">/t/<?php echo e($website->slug); ?></code>
                                             </td>
                                             <td>
                                                 <span class="badge-status badge-success">
@@ -569,33 +572,33 @@
                                             </td>
                                             <td>
                                                 <div class="d-flex gap-2">
-                                                    <a href="/t/{{ $website->slug }}" class="btn-outline-custom btn-sm-custom" target="_blank" title="Visit Website">
+                                                    <a href="/t/<?php echo e($website->slug); ?>" class="btn-outline-custom btn-sm-custom" target="_blank" title="Visit Website">
                                                         <i class="fas fa-external-link-alt"></i>
                                                     </a>
-                                                    <a href="/t/{{ $website->slug }}/admin/dashboard" class="btn-primary-custom btn-sm-custom" target="_blank" title="Manage Website">
+                                                    <a href="/t/<?php echo e($website->slug); ?>/admin/dashboard" class="btn-primary-custom btn-sm-custom" target="_blank" title="Manage Website">
                                                         <i class="fas fa-cog"></i>
                                                     </a>
                                                 </div>
                                             </td>
                                         </tr>
-                                        @endforeach
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                     </tbody>
                                 </table>
                             </div>
-                        @else
+                        <?php else: ?>
                             <div class="empty-state">
                                 <i class="fas fa-globe"></i>
                                 <h6>No websites yet</h6>
                                 <p class="mb-0">Request your first website to get started with SmartPrep CMS</p>
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Website Requests -->
-        @if($websiteRequests->count() > 0)
+        <?php if($websiteRequests->count() > 0): ?>
         <div class="row mt-4">
             <div class="col-12">
                 <div class="content-card">
@@ -615,19 +618,19 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($websiteRequests as $request)
+                                    <?php $__currentLoopData = $websiteRequests; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $request): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <tr>
                                         <td>
                                             <div>
-                                                <div class="fw-bold text-gray-900">{{ $request->business_name }}</div>
-                                                <small class="text-muted">{{ $request->contact_email }}</small>
+                                                <div class="fw-bold text-gray-900"><?php echo e($request->business_name); ?></div>
+                                                <small class="text-muted"><?php echo e($request->contact_email); ?></small>
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="badge-status badge-info">{{ $request->business_type }}</span>
+                                            <span class="badge-status badge-info"><?php echo e($request->business_type); ?></span>
                                         </td>
                                         <td>
-                                            @php
+                                            <?php
                                                 $statusClass = match($request->status) {
                                                     'pending' => 'badge-warning',
                                                     'approved' => 'badge-success',
@@ -635,28 +638,30 @@
                                                     'rejected' => 'badge-danger',
                                                     default => 'badge-info'
                                                 };
-                                            @endphp
-                                            <span class="badge-status {{ $statusClass }}">
-                                                {{ ucfirst($request->status) }}
+                                            ?>
+                                            <span class="badge-status <?php echo e($statusClass); ?>">
+                                                <?php echo e(ucfirst($request->status)); ?>
+
                                             </span>
                                         </td>
                                         <td>
                                             <div>
-                                                <div class="fw-medium">{{ $request->created_at->format('M j, Y') }}</div>
-                                                <small class="text-muted">{{ $request->created_at->format('g:i A') }}</small>
+                                                <div class="fw-medium"><?php echo e($request->created_at->format('M j, Y')); ?></div>
+                                                <small class="text-muted"><?php echo e($request->created_at->format('g:i A')); ?></small>
                                             </div>
                                         </td>
                                         <td>
-                                            @if($request->admin_notes)
+                                            <?php if($request->admin_notes): ?>
                                                 <div class="text-muted" style="max-width: 200px;">
-                                                    {{ Str::limit($request->admin_notes, 60) }}
+                                                    <?php echo e(Str::limit($request->admin_notes, 60)); ?>
+
                                                 </div>
-                                            @else
+                                            <?php else: ?>
                                                 <small class="text-muted fst-italic">No notes available</small>
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>
                             </table>
                         </div>
@@ -664,10 +669,11 @@
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
     </div>
 </body>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </html>
 
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/smartprep/dashboard/client.blade.php ENDPATH**/ ?>

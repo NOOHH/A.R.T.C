@@ -314,7 +314,7 @@
                             {{ Auth::guard('smartprep')->user()->name }}
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                            <li><a class="dropdown-item" href="{{ route('smartprep.logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                 <i class="fas fa-sign-out-alt me-1"></i>
                                 Logout
                             </a></li>
@@ -326,7 +326,7 @@
     </nav>
 
     <!-- Logout Form -->
-    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+    <form id="logout-form" action="{{ route('smartprep.logout') }}" method="POST" class="d-none">
         @csrf
     </form>
 
