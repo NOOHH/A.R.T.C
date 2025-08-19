@@ -2770,6 +2770,7 @@ class AdminController extends Controller
 
         $dbError = null;
 
-        return view('admin.admin-dashboard', compact('registrations', 'analytics', 'dbError'));
+        // Simple preview response for admin dashboard
+        return response()->view('admin.simple-preview', compact('registrations', 'analytics'));
     }
 }

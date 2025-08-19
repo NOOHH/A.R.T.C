@@ -585,6 +585,10 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::get('/student/content/{contentId}/view', [StudentDashboardController::class, 'viewContent'])->name('student.content.view');
 }); // END OF MIDDLEWARE GROUP
 
+// Preview routes (no middleware) - must be after middleware group to override
+Route::get('/student/dashboard/preview', [StudentDashboardController::class, 'showPreviewDashboard'])
+     ->name('student.dashboard.preview');
+
 // Simple test route
 Route::get('/test-content-view/{contentId}', function($contentId) {
     try {

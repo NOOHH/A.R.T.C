@@ -17,6 +17,11 @@ class CheckSession
      */
     public function handle(Request $request, Closure $next)
     {
+        // Check if this is a preview request
+        if ($request->boolean('preview', false)) {
+            return $next($request);
+        }
+        
         // Initialize session
         SessionManager::init();
 

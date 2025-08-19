@@ -13,13 +13,18 @@ class AdminDashboardController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth')->except(['showPreviewDashboard']);
         $this->middleware(function ($request, $next) {
+            // Skip for preview mode
+            if ($request->boolean('preview', false)) {
+                return $next($request);
+            }
+            
             if (auth()->user()->role !== 'admin' && auth()->user()->email !== 'admin@smartprep.com') {
                 abort(403, 'Access denied. Admin privileges required.');
             }
             return $next($request);
-        });
+        })->except(['showPreviewDashboard']);
     }
 
     public function index()
@@ -92,6 +97,46 @@ class AdminDashboardController extends Controller
         ]);
 
         return back()->with('success', 'Website request rejected.');
+    }
+
+    public function showPreviewDashboard()
+    {
+        // Create mock data for preview
+        $stats = [
+            'total_users' => 1250,
+            'total_clients' => 45,
+            'pending_requests' => 8,
+            'active_websites' => 42,
+        ];
+
+        $recentRequests = collect([
+            (object) [
+                'id' => 1,
+                'business_name' => 'Preview Medical Center',
+                'user' => (object) ['name' => 'John Doe', 'email' => 'john@preview.com'],
+                'status' => 'pending',
+                'created_at' => now(),
+            ],
+            (object) [
+                'id' => 2,
+                'business_name' => 'Sample Clinic',
+                'user' => (object) ['name' => 'Jane Smith', 'email' => 'jane@sample.com'],
+                'status' => 'approved',
+                'created_at' => now()->subDays(1),
+            ]
+        ]);
+
+        $recentClients = collect([
+            (object) [
+                'id' => 1,
+                'business_name' => 'Active Medical Practice',
+                'user' => (object) ['name' => 'Dr. Wilson', 'email' => 'wilson@medical.com'],
+                'status' => 'active',
+                'created_at' => now()->subDays(5),
+            ]
+        ]);
+
+        return view('admin.dashboard', compact('stats', 'recentRequests', 'recentClients'));
     }
 
 

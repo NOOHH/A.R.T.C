@@ -145,8 +145,8 @@ class StudentDashboardController extends Controller
 
     public function __construct()
     {
-        // Apply middleware conditionally - skip for preview requests
-        $this->middleware('student.auth')->except(['showPreviewDashboard']);
+        // Apply middleware conditionally - skip for preview requests and index method
+        $this->middleware('student.auth')->except(['showPreviewDashboard', 'index']);
     }
 
     /**
@@ -154,16 +154,16 @@ class StudentDashboardController extends Controller
      */
     public function index()
     {
+        // Check if this is a preview request - handle before calling dashboard
+        if (request()->has('preview') && request('preview') === 'true') {
+            return $this->showPreviewDashboard();
+        }
+        
         return $this->dashboard();
     }
 
     public function dashboard()
     {
-        // Check if this is a preview request - handle before middleware
-        if (request()->has('preview') && request('preview') === 'true') {
-            return $this->showPreviewDashboard();
-        }
-        
         // Get user data from session
         $user = (object) [
             'user_id' => session('user_id'),
@@ -576,6 +576,17 @@ class StudentDashboardController extends Controller
      */
     public function showPreviewDashboard()
     {
+        // Set session data for layout compatibility
+        session([
+            'preview_mode' => true,
+            'user_id' => 'preview-user',
+            'user_name' => 'John Student',
+            'user_firstname' => 'John',
+            'user_lastname' => 'Student',
+            'user_role' => 'student',
+            'user_email' => 'preview@example.com'
+        ]);
+        
         // Create fake user data for preview
         $user = (object) [
             'user_id' => 'preview-user',

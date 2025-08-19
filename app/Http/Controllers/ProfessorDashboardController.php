@@ -30,6 +30,12 @@ class ProfessorDashboardController extends Controller
         
         // Get professor from session
         $professor = Professor::find(session('professor_id'));
+        
+        // If professor not found, redirect to login
+        if (!$professor) {
+            return redirect('/professor/login')->with('error', 'Professor session expired. Please login again.');
+        }
+        
         $assignedPrograms = $professor->programs()->with(['modules'])->get();
         
         // Calculate students for each program
@@ -135,6 +141,11 @@ class ProfessorDashboardController extends Controller
     public function profile()
     {
         $professor = Professor::with(['programs', 'batches'])->find(session('professor_id'));
+        
+        // If professor not found, redirect to login
+        if (!$professor) {
+            return redirect('/professor/login')->with('error', 'Professor session expired. Please login again.');
+        }
         
         // Get dynamic form fields for professors (if any exist)
         $dynamicFields = FormRequirement::where('entity_type', 'professor')

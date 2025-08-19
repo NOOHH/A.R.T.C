@@ -8,19 +8,32 @@
   <title>@yield('title', 'Student Dashboard')</title>
 
   @php
-    // Force student authentication context
-    $user = null;
-    if (session('user_id') && session('user_role') === 'student') {
+    // Check if this is a preview request
+    $isPreview = request()->has('preview') || request()->is('*/preview') || request()->query('preview') === 'true';
+    
+    if ($isPreview) {
+      // For preview mode, create a mock user
       $user = (object)[
-        'id'   => session('user_id'),
-        'name' => session('user_name') ?? session('user_firstname').' '.session('user_lastname'),
+        'id'   => 'preview-user',
+        'name' => isset($user) && isset($user->user_firstname) ? $user->user_firstname . ' Student' : 'John Student',
         'role' => 'student',
-        'email'=> session('user_email'),
+        'email'=> 'preview@example.com',
       ];
-    }
-    if (! $user) {
-      session()->flush();
-      redirect()->route('login')->send();
+    } else {
+      // Force student authentication context
+      $user = null;
+      if (session('user_id') && session('user_role') === 'student') {
+        $user = (object)[
+          'id'   => session('user_id'),
+          'name' => session('user_name') ?? session('user_firstname').' '.session('user_lastname'),
+          'role' => 'student',
+          'email'=> session('user_email'),
+        ];
+      }
+      if (! $user) {
+        session()->flush();
+        redirect()->route('login')->send();
+      }
     }
   @endphp
 
