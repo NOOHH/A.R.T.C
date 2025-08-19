@@ -100,15 +100,17 @@
 
     <!-- Professor-specific CSS -->
     <style>
+    {!! \App\Helpers\SettingsHelper::getSidebarCSS('professor') !!}
+    
     :root {
         --sidebar-width: 280px;
         --sidebar-collapsed-width: 70px;
-        --sidebar-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        --sidebar-text: #ffffff;
-        --sidebar-text-muted: #9ca3af;
-        --sidebar-hover: rgba(255, 255, 255, 0.1);
-        --sidebar-active: rgba(255, 255, 255, 0.2);
-        --sidebar-border: rgba(255, 255, 255, 0.1);
+        --sidebar-bg: var(--sidebar-primary, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+        --sidebar-text: var(--sidebar-text, #ffffff);
+        --sidebar-text-muted: var(--sidebar-text-muted, #9ca3af);
+        --sidebar-hover: var(--sidebar-hover, rgba(255, 255, 255, 0.1));
+        --sidebar-active: var(--sidebar-accent, rgba(255, 255, 255, 0.2));
+        --sidebar-border: var(--sidebar-secondary, rgba(255, 255, 255, 0.1));
         --sidebar-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
         --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         --border-radius: 12px;

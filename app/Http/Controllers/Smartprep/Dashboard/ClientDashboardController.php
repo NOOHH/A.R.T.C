@@ -22,11 +22,31 @@ class ClientDashboardController extends Controller
     public function getSidebarSettings(): JsonResponse
     {
         try {
-            // Determine user role (default to student for clients)
-            $userRole = auth()->user()->role ?? 'student';
+            // Determine user role from multiple sources
+            $userRole = 'student'; // default
+            
+            // Check Laravel Auth first
+            if (auth()->check()) {
+                $userRole = auth()->user()->role ?? 'student';
+            }
+            
+            // Check session data (common in this app)
+            if (session('user_role')) {
+                $userRole = session('user_role');
+            }
+            
+            // Check for professor-specific session
+            if (session('professor_id') || session('user_type') === 'professor') {
+                $userRole = 'professor';
+            }
             
             // Map client role to student if needed
             if ($userRole === 'client') {
+                $userRole = 'student';
+            }
+            
+            // Validate role
+            if (!in_array($userRole, ['student', 'professor', 'admin'])) {
                 $userRole = 'student';
             }
 
@@ -35,7 +55,13 @@ class ClientDashboardController extends Controller
             return response()->json([
                 'success' => true,
                 'role' => $userRole,
-                'colors' => $sidebarColors
+                'colors' => $sidebarColors,
+                'debug' => [
+                    'auth_user_role' => auth()->check() ? (auth()->user()->role ?? 'none') : 'not_logged_in',
+                    'session_user_role' => session('user_role'),
+                    'session_professor_id' => session('professor_id'),
+                    'final_role' => $userRole
+                ]
             ]);
 
         } catch (\Exception $e) {

@@ -1558,36 +1558,6 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Sidebar Preview -->
-                                <div class="row mt-3">
-                                    <div class="col-12">
-                                        <label class="form-label">Preview</label>
-                                        <div class="sidebar-preview-container">
-                                            <div class="sidebar-preview" id="professorSidebarPreview">
-                                                <div class="preview-header">
-                                                    <div class="preview-logo">
-                                                        <i class="fas fa-chalkboard-teacher"></i>
-                                                        <span>Professor Portal</span>
-                                                    </div>
-                                                </div>
-                                                <div class="preview-nav">
-                                                    <div class="preview-nav-item active">
-                                                        <i class="fas fa-tachometer-alt"></i>
-                                                        <span>Dashboard</span>
-                                                    </div>
-                                                    <div class="preview-nav-item">
-                                                        <i class="fas fa-users"></i>
-                                                        <span>My Classes</span>
-                                                    </div>
-                                                    <div class="preview-nav-item">
-                                                        <i class="fas fa-chart-bar"></i>
-                                                        <span>Reports</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                                 
                                 <div class="mt-3">
                                     <button type="button" class="btn btn-success btn-sm" onclick="saveProfessorSidebarColors()">
@@ -1770,37 +1740,7 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Sidebar Preview -->
-                                <div class="row mt-3">
-                                    <div class="col-12">
-                                        <label class="form-label">Preview</label>
-                                        <div class="sidebar-preview-container">
-                                            <div class="sidebar-preview" id="adminSidebarPreview">
-                                                <div class="preview-header">
-                                                    <div class="preview-logo">
-                                                        <i class="fas fa-cog"></i>
-                                                        <span>Admin Portal</span>
-                                                    </div>
-                                                </div>
-                                                <div class="preview-nav">
-                                                    <div class="preview-nav-item active">
-                                                        <i class="fas fa-tachometer-alt"></i>
-                                                        <span>Dashboard</span>
-                                                    </div>
-                                                    <div class="preview-nav-item">
-                                                        <i class="fas fa-users"></i>
-                                                        <span>Users</span>
-                                                    </div>
-                                                    <div class="preview-nav-item">
-                                                        <i class="fas fa-cogs"></i>
-                                                        <span>Settings</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
+                            
                                 <div class="mt-3">
                                     <button type="button" class="btn btn-success btn-sm" onclick="saveAdminSidebarColors()">
                                         <i class="fas fa-save me-1"></i>Save Sidebar Colors

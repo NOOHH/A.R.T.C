@@ -126,4 +126,55 @@
 <!-- Mobile Toggle Button -->
 <button class="mobile-sidebar-toggle" id="mobileSidebarToggle" title="Toggle Sidebar">
     <i class="bi bi-list"></i>
-</button><?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/professor/professor-layouts/professor-sidebar.blade.php ENDPATH**/ ?>
+</button>
+
+<script>
+// Load and apply custom sidebar colors for professor
+document.addEventListener('DOMContentLoaded', function() {
+    loadProfessorSidebarCustomization();
+});
+
+function loadProfessorSidebarCustomization() {
+    fetch('/smartprep/api/sidebar-settings')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.colors) {
+                applyProfessorSidebarColors(data.colors);
+            }
+        })
+        .catch(error => {
+            console.log('No custom professor sidebar settings found, using defaults');
+        });
+}
+
+function applyProfessorSidebarColors(settings) {
+    const sidebar = document.getElementById('modernSidebar');
+    if (sidebar && settings) {
+        // Apply custom CSS properties for professor sidebar
+        if (settings.primary_color) {
+            sidebar.style.setProperty('--sidebar-bg', settings.primary_color);
+            document.documentElement.style.setProperty('--sidebar-bg', settings.primary_color);
+        }
+        if (settings.secondary_color) {
+            sidebar.style.setProperty('--sidebar-hover', settings.secondary_color);
+            sidebar.style.setProperty('--sidebar-border', settings.secondary_color);
+            document.documentElement.style.setProperty('--sidebar-hover', settings.secondary_color);
+            document.documentElement.style.setProperty('--sidebar-border', settings.secondary_color);
+        }
+        if (settings.accent_color) {
+            sidebar.style.setProperty('--sidebar-active', settings.accent_color);
+            document.documentElement.style.setProperty('--sidebar-active', settings.accent_color);
+        }
+        if (settings.text_color) {
+            sidebar.style.setProperty('--sidebar-text', settings.text_color);
+            document.documentElement.style.setProperty('--sidebar-text', settings.text_color);
+        }
+        if (settings.hover_color) {
+            sidebar.style.setProperty('--sidebar-hover-bg', settings.hover_color);
+            document.documentElement.style.setProperty('--sidebar-hover-bg', settings.hover_color);
+        }
+
+        console.log('Professor sidebar colors applied:', settings);
+    }
+}
+</script><?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/professor/professor-layouts/professor-sidebar.blade.php ENDPATH**/ ?>
