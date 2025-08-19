@@ -71,6 +71,14 @@ class AdminSettingsController extends Controller
         $request->validate([
             'hero_title' => 'nullable|string|max:255',
             'hero_subtitle' => 'nullable|string|max:1000',
+            // Section content fields
+            'programs_title' => 'nullable|string|max:255',
+            'programs_subtitle' => 'nullable|string|max:500',
+            'modalities_title' => 'nullable|string|max:255',
+            'modalities_subtitle' => 'nullable|string|max:500',
+            'about_title' => 'nullable|string|max:255',
+            'about_subtitle' => 'nullable|string|max:500',
+            // Colors
             'homepage_background_color' => 'nullable|string|max:7',
             'homepage_gradient_color' => 'nullable|string|max:7',
             'homepage_text_color' => 'nullable|string|max:7',
@@ -85,6 +93,7 @@ class AdminSettingsController extends Controller
             'homepage_programs_subtitle_color' => 'nullable|string|max:7',
             'homepage_modalities_bg_color' => 'nullable|string|max:7',
             'homepage_modalities_text_color' => 'nullable|string|max:7',
+            'homepage_about_bg_color' => 'nullable|string|max:7',
             'homepage_about_title_color' => 'nullable|string|max:7',
             'homepage_about_text_color' => 'nullable|string|max:7',
             'cta_primary_text' => 'nullable|string|max:100',
@@ -98,6 +107,16 @@ class AdminSettingsController extends Controller
         // Save to database using UiSetting model
         UiSetting::set('homepage', 'hero_title', $request->input('hero_title', 'Review Smarter. Learn Better. Succeed Faster.'), 'text');
         UiSetting::set('homepage', 'hero_subtitle', $request->input('hero_subtitle', 'Your premier destination for comprehensive review programs and professional training.'), 'text');
+        
+        // Section content
+        UiSetting::set('homepage', 'programs_title', $request->input('programs_title', 'Our Programs'), 'text');
+        UiSetting::set('homepage', 'programs_subtitle', $request->input('programs_subtitle', 'Choose from our comprehensive range of review and training programs'), 'text');
+        UiSetting::set('homepage', 'modalities_title', $request->input('modalities_title', 'Learning Modalities'), 'text');
+        UiSetting::set('homepage', 'modalities_subtitle', $request->input('modalities_subtitle', 'Flexible learning options designed to fit your schedule and learning style'), 'text');
+        UiSetting::set('homepage', 'about_title', $request->input('about_title', 'About Us'), 'text');
+        UiSetting::set('homepage', 'about_subtitle', $request->input('about_subtitle', 'We are committed to providing high-quality education and training'), 'text');
+        
+        // Colors
         UiSetting::set('homepage', 'background_color', $request->input('homepage_background_color', '#667eea'), 'color');
         UiSetting::set('homepage', 'gradient_color', $request->input('homepage_gradient_color', '#764ba2'), 'color');
         UiSetting::set('homepage', 'text_color', $request->input('homepage_text_color', '#ffffff'), 'color');
@@ -113,6 +132,7 @@ class AdminSettingsController extends Controller
         UiSetting::set('homepage', 'programs_subtitle_color', $request->input('homepage_programs_subtitle_color', '#6c757d'), 'color');
         UiSetting::set('homepage', 'modalities_bg_color', $request->input('homepage_modalities_bg_color', '#667eea'), 'color');
         UiSetting::set('homepage', 'modalities_text_color', $request->input('homepage_modalities_text_color', '#ffffff'), 'color');
+        UiSetting::set('homepage', 'about_bg_color', $request->input('homepage_about_bg_color', '#ffffff'), 'color');
         UiSetting::set('homepage', 'about_title_color', $request->input('homepage_about_title_color', '#667eea'), 'color');
         UiSetting::set('homepage', 'about_text_color', $request->input('homepage_about_text_color', '#6c757d'), 'color');
         
@@ -128,6 +148,14 @@ class AdminSettingsController extends Controller
         $settings['homepage'] = array_merge($settings['homepage'] ?? [], [
             'hero_title' => $request->input('hero_title', $settings['homepage']['hero_title'] ?? 'Review Smarter. Learn Better. Succeed Faster.'),
             'hero_subtitle' => $request->input('hero_subtitle', $settings['homepage']['hero_subtitle'] ?? 'Your premier destination for comprehensive review programs and professional training.'),
+            // Section content
+            'programs_title' => $request->input('programs_title', $settings['homepage']['programs_title'] ?? 'Our Programs'),
+            'programs_subtitle' => $request->input('programs_subtitle', $settings['homepage']['programs_subtitle'] ?? 'Choose from our comprehensive range of review and training programs'),
+            'modalities_title' => $request->input('modalities_title', $settings['homepage']['modalities_title'] ?? 'Learning Modalities'),
+            'modalities_subtitle' => $request->input('modalities_subtitle', $settings['homepage']['modalities_subtitle'] ?? 'Flexible learning options designed to fit your schedule and learning style'),
+            'about_title' => $request->input('about_title', $settings['homepage']['about_title'] ?? 'About Us'),
+            'about_subtitle' => $request->input('about_subtitle', $settings['homepage']['about_subtitle'] ?? 'We are committed to providing high-quality education and training'),
+            // Colors
             'background_color' => $request->input('homepage_background_color', $settings['homepage']['background_color'] ?? '#667eea'),
             'gradient_color' => $request->input('homepage_gradient_color', $settings['homepage']['gradient_color'] ?? '#764ba2'),
             'text_color' => $request->input('homepage_text_color', $settings['homepage']['text_color'] ?? '#ffffff'),
@@ -142,6 +170,7 @@ class AdminSettingsController extends Controller
             'programs_subtitle_color' => $request->input('homepage_programs_subtitle_color', $settings['homepage']['programs_subtitle_color'] ?? '#6c757d'),
             'modalities_bg_color' => $request->input('homepage_modalities_bg_color', $settings['homepage']['modalities_bg_color'] ?? '#667eea'),
             'modalities_text_color' => $request->input('homepage_modalities_text_color', $settings['homepage']['modalities_text_color'] ?? '#ffffff'),
+            'about_bg_color' => $request->input('homepage_about_bg_color', $settings['homepage']['about_bg_color'] ?? '#ffffff'),
             'about_title_color' => $request->input('homepage_about_title_color', $settings['homepage']['about_title_color'] ?? '#667eea'),
             'about_text_color' => $request->input('homepage_about_text_color', $settings['homepage']['about_text_color'] ?? '#6c757d'),
             'cta_primary_text' => $request->input('cta_primary_text', $settings['homepage']['cta_primary_text'] ?? 'Get Started'),

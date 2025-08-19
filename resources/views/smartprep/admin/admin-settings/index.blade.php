@@ -707,6 +707,71 @@
                             <textarea class="form-control" name="hero_subtitle" rows="3" placeholder="Hero description">{{ $settings['homepage']['hero_subtitle'] ?? 'Your premier destination for comprehensive review programs and professional training.' }}</textarea>
                         </div>
                         
+                        <!-- Section Content Customization -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-edit me-2"></i>Section Content</h6>
+                            </div>
+                            <div class="card-body">
+                                <!-- Programs Section Content -->
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="text-primary mb-3"><i class="fas fa-book me-2"></i>Programs Section</h6>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Programs Title</label>
+                                            <input type="text" class="form-control" name="programs_title" value="{{ $settings['homepage']['programs_title'] ?? 'Our Programs' }}" placeholder="Programs section title">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Programs Subtitle</label>
+                                            <input type="text" class="form-control" name="programs_subtitle" value="{{ $settings['homepage']['programs_subtitle'] ?? 'Choose from our comprehensive range of review and training programs' }}" placeholder="Programs section subtitle">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Modalities Section Content -->
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="text-primary mb-3 mt-3"><i class="fas fa-laptop me-2"></i>Learning Modalities Section</h6>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Modalities Title</label>
+                                            <input type="text" class="form-control" name="modalities_title" value="{{ $settings['homepage']['modalities_title'] ?? 'Learning Modalities' }}" placeholder="Modalities section title">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Modalities Subtitle</label>
+                                            <input type="text" class="form-control" name="modalities_subtitle" value="{{ $settings['homepage']['modalities_subtitle'] ?? 'Flexible learning options designed to fit your schedule and learning style' }}" placeholder="Modalities section subtitle">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- About Section Content -->
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="text-primary mb-3 mt-3"><i class="fas fa-info-circle me-2"></i>About Section</h6>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">About Title</label>
+                                            <input type="text" class="form-control" name="about_title" value="{{ $settings['homepage']['about_title'] ?? 'About Us' }}" placeholder="About section title">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">About Text</label>
+                                            <textarea class="form-control" name="about_subtitle" rows="2" placeholder="About section description">{{ $settings['homepage']['about_subtitle'] ?? 'We are committed to providing high-quality education and training' }}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <!-- Color Customization Section -->
                         <div class="card mb-4">
                             <div class="card-header">
@@ -861,7 +926,17 @@
                                     <div class="col-12">
                                         <h6 class="text-primary mb-3 mt-3"><i class="fas fa-info-circle me-2"></i>About Section</h6>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">About Background Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="{{ $settings['homepage']['about_bg_color'] ?? '#ffffff' }}" onchange="updatePreviewColor('about_bg', this.value)">
+                                                <input type="text" class="form-control" name="homepage_about_bg_color" value="{{ $settings['homepage']['about_bg_color'] ?? '#ffffff' }}">
+                                            </div>
+                                            <small class="form-text text-muted">Background color for about section</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
                                         <div class="form-group mb-3">
                                             <label class="form-label">About Title Color</label>
                                             <div class="color-picker-group">
@@ -871,7 +946,7 @@
                                             <small class="form-text text-muted">"About Us" heading color</small>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="form-group mb-3">
                                             <label class="form-label">About Text Color</label>
                                             <div class="color-picker-group">
@@ -1402,7 +1477,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             // Add a "View Changes" button
                             const viewChangesBtn = document.createElement('button');
                             viewChangesBtn.className = 'btn btn-outline-primary btn-sm ms-2';
-                            viewChangesBtn.innerHTML = '<i class="fas fa-external-link-alt me-1"></i>View Changes';
                             viewChangesBtn.onclick = () => window.open('http://127.0.0.1/?v=' + Date.now(), '_blank');
                             
                             // Add the button to the notification area

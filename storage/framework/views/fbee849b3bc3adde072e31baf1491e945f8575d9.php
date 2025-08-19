@@ -461,6 +461,7 @@
     $programsSubtitleColor = $homepageContent['programs_subtitle_color'] ?? '#6c757d';
     $modalitiesBgColor = $homepageContent['modalities_bg_color'] ?? $backgroundColor;
     $modalitiesTextColor = $homepageContent['modalities_text_color'] ?? $textColor;
+    $aboutBgColor = $homepageContent['about_bg_color'] ?? '#ffffff';
     $aboutTitleColor = $homepageContent['about_title_color'] ?? $primaryColor;
     $aboutTextColor = $homepageContent['about_text_color'] ?? '#6c757d';
 ?>
@@ -623,7 +624,7 @@
     </div>
 
     <!-- About Section -->
-<section class="about-section">
+<section class="about-section" style="background-color: <?php echo e($aboutBgColor); ?>; padding: 60px 0;">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-8 text-center">
