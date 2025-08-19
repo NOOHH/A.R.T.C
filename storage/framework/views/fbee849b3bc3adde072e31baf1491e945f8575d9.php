@@ -20,6 +20,20 @@
     <?php echo App\Helpers\SettingsHelper::getHomepageStyles(); ?>
 
     
+    /* Dynamic color hover effects */
+    .enroll-btn:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+        transition: all 0.3s ease;
+    }
+    
+    .program-learn-more-btn:hover {
+        background-color: var(--secondary-color, #764ba2) !important;
+        color: white !important;
+        transform: translateY(-1px);
+        transition: all 0.3s ease;
+    }
+    
     /* Modern Program Card Design - Inspired by meme card layout */
 .program-card-modern {
     background: #ffffff;
@@ -416,28 +430,57 @@
 <?php $__env->stopPush(); ?>
 
 <?php $__env->startSection('content'); ?>
+<style>
+:root {
+    --primary-color: <?php echo e($primaryColor ?? '#667eea'); ?>;
+    --secondary-color: <?php echo e($secondaryColor ?? '#764ba2'); ?>;
+    --text-color: <?php echo e($textColor ?? '#ffffff'); ?>;
+    --button-color: <?php echo e($buttonColor ?? '#28a745'); ?>;
+    --background-color: <?php echo e($backgroundColor ?? '#667eea'); ?>;
+    --gradient-color: <?php echo e($gradientColor ?? '#764ba2'); ?>;
+}
+</style>
+
 <?php
     use App\Models\Module;
     // Note: $programs, $homepageTitle, and $homepageContent are now passed from HomepageController
     // The controller already handles getting the settings from the database
+    
+    // Extract colors for dynamic styling
+    $primaryColor = $homepageContent['primary_color'] ?? '#667eea';
+    $secondaryColor = $homepageContent['secondary_color'] ?? '#764ba2';
+    $textColor = $homepageContent['text_color'] ?? '#ffffff';
+    $buttonColor = $homepageContent['button_color'] ?? '#28a745';
+    $backgroundColor = $homepageContent['background_color'] ?? '#667eea';
+    $gradientColor = $homepageContent['gradient_color'] ?? '#764ba2';
+    
+    // Section-specific colors
+    $heroBgColor = $homepageContent['hero_bg_color'] ?? $backgroundColor;
+    $heroTitleColor = $homepageContent['hero_title_color'] ?? $textColor;
+    $programsTitleColor = $homepageContent['programs_title_color'] ?? $primaryColor;
+    $programsSubtitleColor = $homepageContent['programs_subtitle_color'] ?? '#6c757d';
+    $modalitiesBgColor = $homepageContent['modalities_bg_color'] ?? $backgroundColor;
+    $modalitiesTextColor = $homepageContent['modalities_text_color'] ?? $textColor;
+    $aboutTitleColor = $homepageContent['about_title_color'] ?? $primaryColor;
+    $aboutTextColor = $homepageContent['about_text_color'] ?? '#6c757d';
 ?>
 
 <!-- Hero Section -->
-<section class="homepage-hero">
+<section class="homepage-hero" style="background: linear-gradient(135deg, <?php echo e($heroBgColor); ?> 0%, <?php echo e($gradientColor); ?> 100%);">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-6">
                 <div class="hero-text">
-                    <h1 class="hero-title fade-in-up display-3 fw-bold">
+                    <h1 class="hero-title fade-in-up display-3 fw-bold" style="color: <?php echo e($heroTitleColor); ?>;">
                         <?php echo $homepageContent['hero_title']; ?>
 
                     </h1>
                     <!-- DEBUG: Current hero_title = <?php echo e($homepageContent['hero_title'] ?? 'NOT SET'); ?> -->
-                    <p class="hero-subtitle fade-in-up lead mb-4">
+                    <p class="hero-subtitle fade-in-up lead mb-4" style="color: <?php echo e($heroTitleColor); ?>; opacity: 0.9;">
                         <?php echo e($homepageContent['hero_subtitle']); ?>
 
                     </p>
-                    <a href="<?php echo e(url('/enrollment')); ?>" class="btn btn-lg btn-success enroll-btn fade-in-up">
+                    <a href="<?php echo e(url('/enrollment')); ?>" class="btn btn-lg enroll-btn fade-in-up" style="background-color: <?php echo e($buttonColor); ?>; border-color: <?php echo e($buttonColor); ?>; color: white;">
                         <i class="bi bi-mortarboard me-2"></i><?php echo e($homepageContent['hero_button_text']); ?>
 
                     </a>
@@ -456,8 +499,8 @@
 <section class="programs-section">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="display-4 fw-bold text-dark"><?php echo e($homepageContent['programs_title']); ?></h2>
-            <p class="lead text-muted"><?php echo e($homepageContent['programs_subtitle']); ?></p>
+            <h2 class="display-4 fw-bold" style="color: <?php echo e($programsTitleColor); ?>;"><?php echo e($homepageContent['programs_title']); ?></h2>
+            <p class="lead" style="color: <?php echo e($programsSubtitleColor); ?>;"><?php echo e($homepageContent['programs_subtitle']); ?></p>
         </div>
         
         <?php if($programs->count() > 0): ?>
@@ -468,13 +511,13 @@
                     <div class="program-card-wrapper">
                         <div class="program-card-modern">
                             <!-- Program Image -->
-                            <div class="program-image-container">
+                            <div class="program-image-container" style="background: linear-gradient(135deg, <?php echo e($primaryColor); ?> 0%, <?php echo e($secondaryColor); ?> 100%);">
                                 <?php if(isset($program->program_image) && $program->program_image): ?>
                                     <img src="<?php echo e(asset('storage/program-images/' . $program->program_image)); ?>" 
                                          alt="<?php echo e($program->program_name); ?>" 
                                          class="program-image">
                                 <?php else: ?>
-                                    <div class="program-image-placeholder">
+                                    <div class="program-image-placeholder" style="color: <?php echo e($textColor); ?>;">
                                         <i class="bi bi-mortarboard-fill"></i>
                                     </div>
                                 <?php endif; ?>
@@ -491,7 +534,7 @@
                                         Discover comprehensive learning opportunities designed to advance your career and knowledge in this specialized field.
                                     <?php endif; ?>
                                 </p>
-                                <button class="program-learn-more-btn" onclick="showProgramDetails(<?php echo e($program->program_id); ?>)">
+                                <button class="program-learn-more-btn" onclick="showProgramDetails(<?php echo e($program->program_id); ?>)" style="border-color: <?php echo e($secondaryColor); ?>; color: <?php echo e($secondaryColor); ?>;">
                                     Learn more
                                 </button>
                             </div>
@@ -544,34 +587,34 @@
 
 
 <!-- Available Modalities Section -->
-<section class="modalities-section">
+<section class="modalities-section" style="background: linear-gradient(135deg, <?php echo e($modalitiesBgColor); ?> 0%, <?php echo e($gradientColor); ?> 100%);">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="display-4 fw-bold mb-3"><?php echo e($homepageContent['modalities_title']); ?></h2>
-            <p class="lead opacity-75"><?php echo e($homepageContent['modalities_subtitle']); ?></p>
+            <h2 class="display-4 fw-bold mb-3" style="color: <?php echo e($modalitiesTextColor); ?>;"><?php echo e($homepageContent['modalities_title']); ?></h2>
+            <p class="lead opacity-75" style="color: <?php echo e($modalitiesTextColor); ?>;"><?php echo e($homepageContent['modalities_subtitle']); ?></p>
         </div>
         <div class="row g-4">
             <div class="col-lg-6">
-                <div class="card h-100 bg-transparent border-light text-white">
+                <div class="card h-100 bg-transparent border-light" style="color: <?php echo e($modalitiesTextColor); ?>;">
                     <div class="card-body text-center p-5">
                         <div class="mb-4">
-                            <i class="bi bi-laptop display-3"></i>
+                            <i class="bi bi-laptop display-3" style="color: <?php echo e($modalitiesTextColor); ?>;"></i>
                         </div>
-                        <h3 class="card-title fw-bold mb-3">Synchronous</h3>
-                        <p class="card-text">Real-time interactive online classes with live instructors. Participate in discussions, 
+                        <h3 class="card-title fw-bold mb-3" style="color: <?php echo e($modalitiesTextColor); ?>;">Synchronous</h3>
+                        <p class="card-text" style="color: <?php echo e($modalitiesTextColor); ?>; opacity: 0.9;">Real-time interactive online classes with live instructors. Participate in discussions, 
                            ask questions instantly, and engage with fellow students in a virtual classroom environment.</p>
                     </div>
                 </div>
             </div>
             
             <div class="col-lg-6">
-                <div class="card h-100 bg-transparent border-light text-white">
+                <div class="card h-100 bg-transparent border-light" style="color: <?php echo e($modalitiesTextColor); ?>;">
                     <div class="card-body text-center p-5">
                         <div class="mb-4">
-                            <i class="bi bi-clock-history display-3"></i>
+                            <i class="bi bi-clock-history display-3" style="color: <?php echo e($modalitiesTextColor); ?>;"></i>
                         </div>
-                        <h3 class="card-title fw-bold mb-3">Asynchronous</h3>
-                        <p class="card-text">Self-paced learning with recorded lectures and materials available 24/7. Study at your 
+                        <h3 class="card-title fw-bold mb-3" style="color: <?php echo e($modalitiesTextColor); ?>;">Asynchronous</h3>
+                        <p class="card-text" style="color: <?php echo e($modalitiesTextColor); ?>; opacity: 0.9;">Self-paced learning with recorded lectures and materials available 24/7. Study at your 
                            own convenience with full access to comprehensive review materials and practice tests.</p>
                     </div>
                 </div>
@@ -584,8 +627,8 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-8 text-center">
-                <h2 class="display-4 fw-bold text-dark mb-4"><?php echo e($homepageContent['about_title']); ?></h2>
-                <p class="lead text-muted">
+                <h2 class="display-4 fw-bold mb-4" style="color: <?php echo e($aboutTitleColor); ?>;"><?php echo e($homepageContent['about_title']); ?></h2>
+                <p class="lead" style="color: <?php echo e($aboutTextColor); ?>;">
                     <?php echo e($homepageContent['about_subtitle']); ?>
 
                 </p>

@@ -17,6 +17,20 @@
 <style>
     {!! App\Helpers\SettingsHelper::getHomepageStyles() !!}
     
+    /* Dynamic color hover effects */
+    .enroll-btn:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+        transition: all 0.3s ease;
+    }
+    
+    .program-learn-more-btn:hover {
+        background-color: var(--secondary-color, #764ba2) !important;
+        color: white !important;
+        transform: translateY(-1px);
+        transition: all 0.3s ease;
+    }
+    
     /* Modern Program Card Design - Inspired by meme card layout */
 .program-card-modern {
     background: #ffffff;
@@ -413,26 +427,55 @@
 @endpush
 
 @section('content')
+<style>
+:root {
+    --primary-color: {{ $primaryColor ?? '#667eea' }};
+    --secondary-color: {{ $secondaryColor ?? '#764ba2' }};
+    --text-color: {{ $textColor ?? '#ffffff' }};
+    --button-color: {{ $buttonColor ?? '#28a745' }};
+    --background-color: {{ $backgroundColor ?? '#667eea' }};
+    --gradient-color: {{ $gradientColor ?? '#764ba2' }};
+}
+</style>
+
 @php
     use App\Models\Module;
     // Note: $programs, $homepageTitle, and $homepageContent are now passed from HomepageController
     // The controller already handles getting the settings from the database
+    
+    // Extract colors for dynamic styling
+    $primaryColor = $homepageContent['primary_color'] ?? '#667eea';
+    $secondaryColor = $homepageContent['secondary_color'] ?? '#764ba2';
+    $textColor = $homepageContent['text_color'] ?? '#ffffff';
+    $buttonColor = $homepageContent['button_color'] ?? '#28a745';
+    $backgroundColor = $homepageContent['background_color'] ?? '#667eea';
+    $gradientColor = $homepageContent['gradient_color'] ?? '#764ba2';
+    
+    // Section-specific colors
+    $heroBgColor = $homepageContent['hero_bg_color'] ?? $backgroundColor;
+    $heroTitleColor = $homepageContent['hero_title_color'] ?? $textColor;
+    $programsTitleColor = $homepageContent['programs_title_color'] ?? $primaryColor;
+    $programsSubtitleColor = $homepageContent['programs_subtitle_color'] ?? '#6c757d';
+    $modalitiesBgColor = $homepageContent['modalities_bg_color'] ?? $backgroundColor;
+    $modalitiesTextColor = $homepageContent['modalities_text_color'] ?? $textColor;
+    $aboutTitleColor = $homepageContent['about_title_color'] ?? $primaryColor;
+    $aboutTextColor = $homepageContent['about_text_color'] ?? '#6c757d';
 @endphp
 
 <!-- Hero Section -->
-<section class="homepage-hero">
+<section class="homepage-hero" style="background: linear-gradient(135deg, {{ $heroBgColor }} 0%, {{ $gradientColor }} 100%);">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-6">
                 <div class="hero-text">
-                    <h1 class="hero-title fade-in-up display-3 fw-bold">
+                    <h1 class="hero-title fade-in-up display-3 fw-bold" style="color: {{ $heroTitleColor }};">
                         {!! $homepageContent['hero_title'] !!}
                     </h1>
                     <!-- DEBUG: Current hero_title = {{ $homepageContent['hero_title'] ?? 'NOT SET' }} -->
-                    <p class="hero-subtitle fade-in-up lead mb-4">
+                    <p class="hero-subtitle fade-in-up lead mb-4" style="color: {{ $heroTitleColor }}; opacity: 0.9;">
                         {{ $homepageContent['hero_subtitle'] }}
                     </p>
-                    <a href="{{ url('/enrollment') }}" class="btn btn-lg btn-success enroll-btn fade-in-up">
+                    <a href="{{ url('/enrollment') }}" class="btn btn-lg enroll-btn fade-in-up" style="background-color: {{ $buttonColor }}; border-color: {{ $buttonColor }}; color: white;">
                         <i class="bi bi-mortarboard me-2"></i>{{ $homepageContent['hero_button_text'] }}
                     </a>
                 </div>
@@ -450,8 +493,8 @@
 <section class="programs-section">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="display-4 fw-bold text-dark">{{ $homepageContent['programs_title'] }}</h2>
-            <p class="lead text-muted">{{ $homepageContent['programs_subtitle'] }}</p>
+            <h2 class="display-4 fw-bold" style="color: {{ $programsTitleColor }};">{{ $homepageContent['programs_title'] }}</h2>
+            <p class="lead" style="color: {{ $programsSubtitleColor }};">{{ $homepageContent['programs_subtitle'] }}</p>
         </div>
         
         @if($programs->count() > 0)
@@ -462,13 +505,13 @@
                     <div class="program-card-wrapper">
                         <div class="program-card-modern">
                             <!-- Program Image -->
-                            <div class="program-image-container">
+                            <div class="program-image-container" style="background: linear-gradient(135deg, {{ $primaryColor }} 0%, {{ $secondaryColor }} 100%);">
                                 @if(isset($program->program_image) && $program->program_image)
                                     <img src="{{ asset('storage/program-images/' . $program->program_image) }}" 
                                          alt="{{ $program->program_name }}" 
                                          class="program-image">
                                 @else
-                                    <div class="program-image-placeholder">
+                                    <div class="program-image-placeholder" style="color: {{ $textColor }};">
                                         <i class="bi bi-mortarboard-fill"></i>
                                     </div>
                                 @endif
@@ -484,7 +527,7 @@
                                         Discover comprehensive learning opportunities designed to advance your career and knowledge in this specialized field.
                                     @endif
                                 </p>
-                                <button class="program-learn-more-btn" onclick="showProgramDetails({{ $program->program_id }})">
+                                <button class="program-learn-more-btn" onclick="showProgramDetails({{ $program->program_id }})" style="border-color: {{ $secondaryColor }}; color: {{ $secondaryColor }};">
                                     Learn more
                                 </button>
                             </div>
@@ -537,34 +580,34 @@
 
 
 <!-- Available Modalities Section -->
-<section class="modalities-section">
+<section class="modalities-section" style="background: linear-gradient(135deg, {{ $modalitiesBgColor }} 0%, {{ $gradientColor }} 100%);">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="display-4 fw-bold mb-3">{{ $homepageContent['modalities_title'] }}</h2>
-            <p class="lead opacity-75">{{ $homepageContent['modalities_subtitle'] }}</p>
+            <h2 class="display-4 fw-bold mb-3" style="color: {{ $modalitiesTextColor }};">{{ $homepageContent['modalities_title'] }}</h2>
+            <p class="lead opacity-75" style="color: {{ $modalitiesTextColor }};">{{ $homepageContent['modalities_subtitle'] }}</p>
         </div>
         <div class="row g-4">
             <div class="col-lg-6">
-                <div class="card h-100 bg-transparent border-light text-white">
+                <div class="card h-100 bg-transparent border-light" style="color: {{ $modalitiesTextColor }};">
                     <div class="card-body text-center p-5">
                         <div class="mb-4">
-                            <i class="bi bi-laptop display-3"></i>
+                            <i class="bi bi-laptop display-3" style="color: {{ $modalitiesTextColor }};"></i>
                         </div>
-                        <h3 class="card-title fw-bold mb-3">Synchronous</h3>
-                        <p class="card-text">Real-time interactive online classes with live instructors. Participate in discussions, 
+                        <h3 class="card-title fw-bold mb-3" style="color: {{ $modalitiesTextColor }};">Synchronous</h3>
+                        <p class="card-text" style="color: {{ $modalitiesTextColor }}; opacity: 0.9;">Real-time interactive online classes with live instructors. Participate in discussions, 
                            ask questions instantly, and engage with fellow students in a virtual classroom environment.</p>
                     </div>
                 </div>
             </div>
             
             <div class="col-lg-6">
-                <div class="card h-100 bg-transparent border-light text-white">
+                <div class="card h-100 bg-transparent border-light" style="color: {{ $modalitiesTextColor }};">
                     <div class="card-body text-center p-5">
                         <div class="mb-4">
-                            <i class="bi bi-clock-history display-3"></i>
+                            <i class="bi bi-clock-history display-3" style="color: {{ $modalitiesTextColor }};"></i>
                         </div>
-                        <h3 class="card-title fw-bold mb-3">Asynchronous</h3>
-                        <p class="card-text">Self-paced learning with recorded lectures and materials available 24/7. Study at your 
+                        <h3 class="card-title fw-bold mb-3" style="color: {{ $modalitiesTextColor }};">Asynchronous</h3>
+                        <p class="card-text" style="color: {{ $modalitiesTextColor }}; opacity: 0.9;">Self-paced learning with recorded lectures and materials available 24/7. Study at your 
                            own convenience with full access to comprehensive review materials and practice tests.</p>
                     </div>
                 </div>
@@ -577,8 +620,8 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-8 text-center">
-                <h2 class="display-4 fw-bold text-dark mb-4">{{ $homepageContent['about_title'] }}</h2>
-                <p class="lead text-muted">
+                <h2 class="display-4 fw-bold mb-4" style="color: {{ $aboutTitleColor }};">{{ $homepageContent['about_title'] }}</h2>
+                <p class="lead" style="color: {{ $aboutTextColor }};">
                     {{ $homepageContent['about_subtitle'] }}
                 </p>
             </div>
