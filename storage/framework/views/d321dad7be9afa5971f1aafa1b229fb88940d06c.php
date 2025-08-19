@@ -428,6 +428,7 @@
         // Pull fresh settings from DB (collection of key => value)
         $navbarSettings = \App\Models\UiSetting::getSection('navbar');
         $footerSettings = \App\Models\UiSetting::getSection('footer');
+        $homepageSettings = \App\Models\UiSetting::getSection('homepage');
 
         // Preserve composer-injected $navbar if present, don't clobber it
         $composerNavbar = (isset($navbar) && is_array($navbar)) ? $navbar : null;
@@ -435,11 +436,15 @@
         // Prefer DB values when available, otherwise keep composer data
         $navbar = $navbarSettings ? $navbarSettings->toArray() : ($composerNavbar ?? []);
         $footer = $footerSettings ? $footerSettings->toArray() : [];
+        $homepageContent = $homepageSettings ? $homepageSettings->toArray() : [];
 
         // Single source of truth for brand name with sane fallbacks
         $brandName = $navbar['brand_name']
             ?? ($composerNavbar['brand_name'] ?? null)
             ?? ($settings['navbar']['brand_name'] ?? 'Ascendo Review and Training Center');
+            
+        // Get copyright text from homepage settings
+        $copyrightText = $homepageContent['copyright'] ?? '© Copyright Ascendo Review and Training Center. All Rights Reserved.';
     ?>
     
     
@@ -564,7 +569,9 @@
         <div class="container">
             <div class="footer-top d-flex justify-content-between align-items-center flex-wrap py-4">
                 <div class="footer-logo mb-3 mb-md-0">
-                    <img src="<?php echo e(asset('images/ARTC_Logo.png')); ?>" alt="ARTC Logo" style="height: 40px;">
+                    <img src="<?php echo e(\App\Helpers\SettingsHelper::getLogoUrl()); ?>" 
+                         alt="Logo" style="height: 40px;"
+                         onerror="this.src='<?php echo e(asset('images/ARTC_Logo.png')); ?>'">
                     <span class="footer-title ms-2"><?php echo e($brandName); ?></span>
                 </div>
                 <div class="footer-social">
@@ -600,7 +607,8 @@
             </div>
             <div class="footer-bottom d-flex flex-wrap justify-content-between align-items-center py-3">
                 <div class="footer-copyright">
-                    &copy; <?php echo e(date('Y')); ?> ARTC. All rights reserved.
+                    <?php echo e($copyrightText); ?>
+
                 </div>
                 <div class="footer-policies">
                     <a href="#">Terms and Conditions</a>

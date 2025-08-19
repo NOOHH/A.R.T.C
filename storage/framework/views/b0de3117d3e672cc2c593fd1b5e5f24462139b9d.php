@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Professor Dashboard')</title>
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+    <title><?php echo $__env->yieldContent('title', 'Professor Dashboard'); ?></title>
     
-    @php
+    <?php
         // Get user info for global variables
         $user = Auth::user();
         // If Laravel Auth user is not available, fallback to session data
@@ -54,16 +54,16 @@
         if (!isset($announcementManagementEnabled)) {
             $announcementManagementEnabled = \App\Models\AdminSetting::where('setting_key', 'professor_announcement_management_enabled')->value('setting_value') === '1';
         }
-    @endphp
+    ?>
 
     <!-- Global Variables for JavaScript - Must be loaded first -->
     <script>
         // Global variables accessible throughout the page
-        window.myId = @json(optional($user)->id);
-        window.myName = @json(optional($user)->name ?? 'Guest');
-        window.isAuthenticated = @json((bool) $user);
-        window.userRole = @json(optional($user)->role ?? 'guest');
-        window.csrfToken = @json(csrf_token());
+        window.myId = <?php echo json_encode(optional($user)->id, 15, 512) ?>;
+        window.myName = <?php echo json_encode(optional($user)->name ?? 'Guest', 15, 512) ?>;
+        window.isAuthenticated = <?php echo json_encode((bool) $user, 15, 512) ?>;
+        window.userRole = <?php echo json_encode(optional($user)->role ?? 'guest', 15, 512) ?>;
+        window.csrfToken = <?php echo json_encode(csrf_token(), 15, 512) ?>;
         
         // Global chat state
         window.currentChatType = null;
@@ -80,12 +80,12 @@
         
         // Debug session information
         console.log('Session Debug Info:', {
-            sessionUserRole: @json(session('user_role')),
-            sessionUserType: @json(session('user_type')),
-            sessionUserId: @json(session('user_id')),
-            sessionProfessorId: @json(session('professor_id')),
-            sessionLoggedIn: @json(session('logged_in')),
-            userObject: @json($user)
+            sessionUserRole: <?php echo json_encode(session('user_role'), 15, 512) ?>,
+            sessionUserType: <?php echo json_encode(session('user_type'), 15, 512) ?>,
+            sessionUserId: <?php echo json_encode(session('user_id'), 15, 512) ?>,
+            sessionProfessorId: <?php echo json_encode(session('professor_id'), 15, 512) ?>,
+            sessionLoggedIn: <?php echo json_encode(session('logged_in'), 15, 512) ?>,
+            userObject: <?php echo json_encode($user, 15, 512) ?>
         });
         
         console.log('Professor Global variables initialized:', { myId, myName, isAuthenticated, userRole });
@@ -100,7 +100,8 @@
 
     <!-- Professor-specific CSS -->
     <style>
-    {!! \App\Helpers\SettingsHelper::getSidebarCSS('professor') !!}
+    <?php echo \App\Helpers\SettingsHelper::getSidebarCSS('professor'); ?>
+
     
     :root {
         --sidebar-width: 280px;
@@ -918,25 +919,25 @@
     }
     </style>
 
-    {{-- Global UI Styles --}}
+    
    
 
-    {{-- Chat CSS + any overrides --}}
-    @stack('styles')
+    
+    <?php echo $__env->yieldPushContent('styles'); ?>
 </head>
 <body>
 <div class="professor-container">
     <!-- Include Sidebar Component -->
-    @include('professor.professor-layouts.professor-sidebar')
+    <?php echo $__env->make('professor.professor-layouts.professor-sidebar', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 
     <!-- Main Content Area -->
     <div class="main-content-area" id="mainContentArea">
         <!-- Include Header Component -->
-        @include('professor.professor-layouts.professor-header')
+        <?php echo $__env->make('professor.professor-layouts.professor-header', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 
         <!-- Page Content -->
         <div class="content-wrapper">
-            @yield('content')
+            <?php echo $__env->yieldContent('content'); ?>
         </div>
     </div>
 </div>
@@ -1081,12 +1082,13 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-@stack('scripts')
+<?php echo $__env->yieldPushContent('scripts'); ?>
 
 <!-- Include Global Chat Component -->
-@include('components.global-chat')
+<?php echo $__env->make('components.global-chat', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 
 <!-- Include Real-time Chat Component -->
-@include('components.realtime-chat')
+<?php echo $__env->make('components.realtime-chat', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 </body>
 </html>
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/professor/professor-layouts/professor-layout.blade.php ENDPATH**/ ?>

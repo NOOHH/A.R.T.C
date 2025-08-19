@@ -446,6 +446,198 @@
             padding: 2.5rem;
         }
     }
+    
+    /* ====== SIDEBAR CUSTOMIZATION STYLES ====== */
+    .customization-panel, .preview-panel {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 1.5rem;
+        height: fit-content;
+    }
+    
+    .customization-panel h5, .preview-panel h5 {
+        color: #6f42c1;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 0.5rem;
+    }
+    
+    .color-control-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .color-control-group label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    
+    .color-input-wrapper {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        margin-bottom: 0.25rem;
+    }
+    
+    .color-picker {
+        width: 50px;
+        height: 40px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        cursor: pointer;
+        background: none;
+        padding: 0;
+    }
+    
+    .color-picker::-webkit-color-swatch {
+        border: none;
+        border-radius: 6px;
+    }
+    
+    .color-text-input {
+        flex: 1;
+        height: 40px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 0 0.75rem;
+        font-family: monospace;
+        font-size: 0.9rem;
+    }
+    
+    .color-text-input:focus {
+        outline: none;
+        border-color: #6f42c1;
+        box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
+    }
+    
+    .customization-actions {
+        border-top: 2px solid #e9ecef;
+        padding-top: 1rem;
+    }
+    
+    /* SIDEBAR PREVIEW STYLES */
+    .sidebar-preview {
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1rem;
+        min-height: 400px;
+    }
+    
+    .preview-sidebar {
+        background: var(--preview-primary, #1a1a1a);
+        color: var(--preview-text, #e0e0e0);
+        border-radius: 8px;
+        padding: 1rem;
+        width: 100%;
+        min-height: 350px;
+    }
+    
+    .preview-profile {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--preview-secondary, #2d2d2d);
+        margin-bottom: 1rem;
+    }
+    
+    .preview-avatar-placeholder {
+        width: 40px;
+        height: 40px;
+        background: var(--preview-accent, #3b82f6);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.9rem;
+        color: white;
+    }
+    
+    .preview-profile-info {
+        flex: 1;
+    }
+    
+    .preview-name {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--preview-text, #e0e0e0);
+    }
+    
+    .preview-role {
+        font-size: 0.8rem;
+        color: var(--preview-text-muted, #9ca3af);
+        opacity: 0.8;
+    }
+    
+    .preview-nav {
+        margin-top: 1rem;
+    }
+    
+    .preview-section-title {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--preview-text-muted, #9ca3af);
+        margin-bottom: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .preview-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        margin-bottom: 0.25rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+    }
+    
+    .preview-nav-item:hover {
+        background: var(--preview-hover, #374151);
+    }
+    
+    .preview-nav-item.active {
+        background: var(--preview-accent, #3b82f6);
+        color: white;
+    }
+    
+    .preview-nav-item i {
+        width: 16px;
+        text-align: center;
+    }
+    
+    /* Responsive adjustments for customization */
+    @media (max-width: 768px) {
+        .customization-panel, .preview-panel {
+            margin-bottom: 1rem;
+        }
+        
+        .color-input-wrapper {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .color-picker {
+            width: 100%;
+            height: 50px;
+        }
+        
+        .customization-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .customization-actions .btn {
+            width: 100%;
+        }
+    }
 </style>
 @endpush
 
@@ -769,6 +961,120 @@
                 </div>
             </div>
         </form>
+    </div>
+
+    <!-- Sidebar Customization Card -->
+    <div class="settings-card">
+        <h3><i class="bi bi-palette me-2"></i>Sidebar Customization</h3>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="customization-panel">
+                    <h5>Color Settings</h5>
+                    <form id="sidebarCustomizationForm">
+                        @csrf
+                        
+                        <div class="color-control-group">
+                            <label for="primaryColor">Primary Background Color</label>
+                            <div class="color-input-wrapper">
+                                <input type="color" id="primaryColor" class="color-picker" value="#1a1a1a">
+                                <input type="text" id="primaryColorText" class="color-text-input" value="#1a1a1a">
+                            </div>
+                            <small class="text-muted">Main sidebar background</small>
+                        </div>
+
+                        <div class="color-control-group">
+                            <label for="secondaryColor">Secondary Background Color</label>
+                            <div class="color-input-wrapper">
+                                <input type="color" id="secondaryColor" class="color-picker" value="#2d2d2d">
+                                <input type="text" id="secondaryColorText" class="color-text-input" value="#2d2d2d">
+                            </div>
+                            <small class="text-muted">Hover and section backgrounds</small>
+                        </div>
+
+                        <div class="color-control-group">
+                            <label for="accentColor">Accent Color</label>
+                            <div class="color-input-wrapper">
+                                <input type="color" id="accentColor" class="color-picker" value="#3b82f6">
+                                <input type="text" id="accentColorText" class="color-text-input" value="#3b82f6">
+                            </div>
+                            <small class="text-muted">Active item and links</small>
+                        </div>
+
+                        <div class="color-control-group">
+                            <label for="textColor">Text Color</label>
+                            <div class="color-input-wrapper">
+                                <input type="color" id="textColor" class="color-picker" value="#e0e0e0">
+                                <input type="text" id="textColorText" class="color-text-input" value="#e0e0e0">
+                            </div>
+                            <small class="text-muted">Main text color</small>
+                        </div>
+
+                        <div class="color-control-group">
+                            <label for="hoverColor">Hover Color</label>
+                            <div class="color-input-wrapper">
+                                <input type="color" id="hoverColor" class="color-picker" value="#374151">
+                                <input type="text" id="hoverColorText" class="color-text-input" value="#374151">
+                            </div>
+                            <small class="text-muted">Item hover background</small>
+                        </div>
+
+                        <div class="customization-actions mt-4">
+                            <button type="button" class="btn btn-primary" onclick="applySidebarCustomization()">
+                                <i class="bi bi-check me-1"></i>Apply Changes
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary ms-2" onclick="resetSidebarCustomization()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Reset to Default
+                            </button>
+                            <button type="button" class="btn btn-success ms-2" onclick="saveSidebarCustomization()">
+                                <i class="bi bi-floppy me-1"></i>Save Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="preview-panel">
+                    <h5>Live Preview</h5>
+                    <div class="sidebar-preview" id="sidebarPreview">
+                        <div class="preview-sidebar">
+                            <!-- Profile Section -->
+                            <div class="preview-profile">
+                                <div class="preview-avatar">
+                                    <div class="preview-avatar-placeholder">JS</div>
+                                </div>
+                                <div class="preview-profile-info">
+                                    <div class="preview-name">John Student</div>
+                                    <div class="preview-role">Student</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Navigation -->
+                            <div class="preview-nav">
+                                <div class="preview-section-title">Main</div>
+                                <div class="preview-nav-item active">
+                                    <i class="bi bi-speedometer2"></i>
+                                    <span>Dashboard</span>
+                                </div>
+                                <div class="preview-nav-item">
+                                    <i class="bi bi-calendar-week"></i>
+                                    <span>Calendar</span>
+                                </div>
+                                <div class="preview-nav-item">
+                                    <i class="bi bi-journal-bookmark"></i>
+                                    <span>My Courses</span>
+                                </div>
+                                <div class="preview-nav-item">
+                                    <i class="bi bi-camera-video"></i>
+                                    <span>Meetings</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1203,5 +1509,207 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// ====== SIDEBAR CUSTOMIZATION FUNCTIONALITY ======
+document.addEventListener('DOMContentLoaded', function() {
+    // Load current settings from the server
+    loadCurrentSidebarSettings();
+    
+    // Setup color picker event listeners
+    setupColorPickers();
+    
+    // Initialize preview
+    updateSidebarPreview();
+});
+
+function loadCurrentSidebarSettings() {
+    fetch('/api/student/sidebar-settings')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('primaryColor').value = data.settings.primary_color || '#1a1a1a';
+                document.getElementById('primaryColorText').value = data.settings.primary_color || '#1a1a1a';
+                document.getElementById('secondaryColor').value = data.settings.secondary_color || '#2d2d2d';
+                document.getElementById('secondaryColorText').value = data.settings.secondary_color || '#2d2d2d';
+                document.getElementById('accentColor').value = data.settings.accent_color || '#3b82f6';
+                document.getElementById('accentColorText').value = data.settings.accent_color || '#3b82f6';
+                document.getElementById('textColor').value = data.settings.text_color || '#e0e0e0';
+                document.getElementById('textColorText').value = data.settings.text_color || '#e0e0e0';
+                document.getElementById('hoverColor').value = data.settings.hover_color || '#374151';
+                document.getElementById('hoverColorText').value = data.settings.hover_color || '#374151';
+                
+                updateSidebarPreview();
+            }
+        })
+        .catch(error => console.error('Error loading sidebar settings:', error));
+}
+
+function setupColorPickers() {
+    const colorInputs = [
+        { picker: 'primaryColor', text: 'primaryColorText' },
+        { picker: 'secondaryColor', text: 'secondaryColorText' },
+        { picker: 'accentColor', text: 'accentColorText' },
+        { picker: 'textColor', text: 'textColorText' },
+        { picker: 'hoverColor', text: 'hoverColorText' }
+    ];
+    
+    colorInputs.forEach(input => {
+        const picker = document.getElementById(input.picker);
+        const textInput = document.getElementById(input.text);
+        
+        // Update text input when color picker changes
+        picker.addEventListener('input', function() {
+            textInput.value = this.value;
+            updateSidebarPreview();
+        });
+        
+        // Update color picker when text input changes
+        textInput.addEventListener('input', function() {
+            if (isValidHexColor(this.value)) {
+                picker.value = this.value;
+                updateSidebarPreview();
+            }
+        });
+    });
+}
+
+function isValidHexColor(color) {
+    return /^#[0-9A-F]{6}$/i.test(color);
+}
+
+function updateSidebarPreview() {
+    const preview = document.getElementById('sidebarPreview');
+    const primaryColor = document.getElementById('primaryColor').value;
+    const secondaryColor = document.getElementById('secondaryColor').value;
+    const accentColor = document.getElementById('accentColor').value;
+    const textColor = document.getElementById('textColor').value;
+    const hoverColor = document.getElementById('hoverColor').value;
+    
+    preview.style.setProperty('--preview-primary', primaryColor);
+    preview.style.setProperty('--preview-secondary', secondaryColor);
+    preview.style.setProperty('--preview-accent', accentColor);
+    preview.style.setProperty('--preview-text', textColor);
+    preview.style.setProperty('--preview-hover', hoverColor);
+    preview.style.setProperty('--preview-text-muted', adjustColorOpacity(textColor, 0.7));
+}
+
+function adjustColorOpacity(hex, opacity) {
+    // Convert hex to rgba with opacity
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
+function applySidebarCustomization() {
+    const primaryColor = document.getElementById('primaryColor').value;
+    const secondaryColor = document.getElementById('secondaryColor').value;
+    const accentColor = document.getElementById('accentColor').value;
+    const textColor = document.getElementById('textColor').value;
+    const hoverColor = document.getElementById('hoverColor').value;
+    
+    // Apply to actual sidebar
+    const actualSidebar = document.getElementById('studentSidebar');
+    if (actualSidebar) {
+        actualSidebar.style.setProperty('--sidebar-bg', primaryColor);
+        actualSidebar.style.setProperty('--sidebar-hover', secondaryColor);
+        actualSidebar.style.setProperty('--sidebar-active', accentColor);
+        actualSidebar.style.setProperty('--sidebar-text', textColor);
+        actualSidebar.style.setProperty('--sidebar-border', secondaryColor);
+        
+        // Update CSS custom properties globally
+        document.documentElement.style.setProperty('--sidebar-bg', primaryColor);
+        document.documentElement.style.setProperty('--sidebar-hover', secondaryColor);
+        document.documentElement.style.setProperty('--sidebar-active', accentColor);
+        document.documentElement.style.setProperty('--sidebar-text', textColor);
+        document.documentElement.style.setProperty('--sidebar-border', secondaryColor);
+        
+        showNotification('Sidebar colors applied! Changes will persist until page reload.', 'success');
+    }
+}
+
+function resetSidebarCustomization() {
+    if (confirm('Reset sidebar colors to default? This will reload the page.')) {
+        fetch('/api/student/sidebar-settings/reset', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                showNotification('Error resetting sidebar settings', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error resetting sidebar settings', 'error');
+        });
+    }
+}
+
+function saveSidebarCustomization() {
+    const settings = {
+        primary_color: document.getElementById('primaryColor').value,
+        secondary_color: document.getElementById('secondaryColor').value,
+        accent_color: document.getElementById('accentColor').value,
+        text_color: document.getElementById('textColor').value,
+        hover_color: document.getElementById('hoverColor').value
+    };
+    
+    fetch('/api/student/sidebar-settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify(settings)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Sidebar settings saved successfully!', 'success');
+            // Apply the changes immediately
+            applySidebarCustomization();
+        } else {
+            showNotification('Error saving sidebar settings', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error saving sidebar settings', 'error');
+    });
+}
+
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = `
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        min-width: 300px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    `;
+    notification.innerHTML = `
+        <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
 </script>
 @endsection

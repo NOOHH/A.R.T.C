@@ -40,6 +40,11 @@ Route::get('/api/programs', function () {
     return response()->json($programs);
 })->name('smartprep.api.programs');
 
+// API endpoint for sidebar settings (for student/professor/admin dashboards)
+Route::get('/api/sidebar-settings', [ClientDashboardController::class, 'getSidebarSettings'])
+    ->middleware('smartprep.auth')
+    ->name('smartprep.api.sidebar-settings');
+
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.submit');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
@@ -83,6 +88,10 @@ Route::middleware(['smartprep.auth', 'debug.smartprep'])->group(function () {
     Route::post('/admin/settings/navbar', [AdminSettingsController::class, 'updateNavbar'])->name('admin.settings.update.navbar');
     Route::post('/admin/settings/homepage', [AdminSettingsController::class, 'updateHomepage'])->name('admin.settings.update.homepage');
     Route::post('/admin/settings/branding', [AdminSettingsController::class, 'updateBranding'])->name('admin.settings.update.branding');
+    Route::post('/admin/settings/student', [AdminSettingsController::class, 'updateStudent'])->name('admin.settings.update.student');
+    Route::post('/admin/settings/professor', [AdminSettingsController::class, 'updateProfessor'])->name('admin.settings.update.professor');
+    Route::post('/admin/settings/admin', [AdminSettingsController::class, 'updateAdmin'])->name('admin.settings.update.admin');
+    Route::post('/admin/settings/sidebar', [AdminSettingsController::class, 'updateSidebar'])->name('admin.settings.update.sidebar');
     Route::get('/admin/clients', [ClientsController::class, 'index'])->name('admin.clients');
     Route::get('/admin/clients/create', [ClientsController::class, 'create'])->name('admin.clients.create');
     Route::get('/admin/clients/{id}/edit', [ClientsController::class, 'edit'])->name('admin.clients.edit');

@@ -1,11 +1,11 @@
-@extends('student.student-dashboard.student-dashboard-layout')
 
-@section('title', 'Student Dashboard')
 
-@push('styles')
-<meta name="csrf-token" content="{{ csrf_token() }}">
+<?php $__env->startSection('title', 'Student Dashboard'); ?>
+
+<?php $__env->startPush('styles'); ?>
+<meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
 <meta name="page-id" content="student-dashboard">
-<link rel="stylesheet" href="{{ asset('css/student/student-dashboard.css') }}">
+<link rel="stylesheet" href="<?php echo e(asset('css/student/student-dashboard.css')); ?>">
 <style>
     /* Enhanced course cards with modern design */
     .courses-card {
@@ -995,9 +995,9 @@
  
 
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 
     <!-- Announcements Section -->
     <div class="dashboard-card announcement-card">
@@ -1005,27 +1005,27 @@
             <h2>Announcements</h2>
         </div>
         <div class="announcement-content">
-            @forelse($announcements as $announcement)
-                <div class="announcement-item-compact" onclick="openAnnouncementModal('{{ $announcement->id }}', '{{ addslashes($announcement->title) }}', '{{ addslashes($announcement->content) }}', '{{ $announcement->announcement_type }}', '{{ $announcement->created_at->diffForHumans() }}')" style="cursor: pointer;">
+            <?php $__empty_1 = true; $__currentLoopData = $announcements; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $announcement): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <div class="announcement-item-compact" onclick="openAnnouncementModal('<?php echo e($announcement->id); ?>', '<?php echo e(addslashes($announcement->title)); ?>', '<?php echo e(addslashes($announcement->content)); ?>', '<?php echo e($announcement->announcement_type); ?>', '<?php echo e($announcement->created_at->diffForHumans()); ?>')" style="cursor: pointer;">
                     <div class="announcement-header">
-                        <div class="announcement-title">{{ $announcement->title }}</div>
+                        <div class="announcement-title"><?php echo e($announcement->title); ?></div>
                         <div class="announcement-meta">
-                            @if($announcement->announcement_type === 'video')
+                            <?php if($announcement->announcement_type === 'video'): ?>
                                 <span class="announcement-badge video-badge">
                                     <i class="bi bi-camera-video"></i>
                                 </span>
-                            @endif
-                            <span class="announcement-time">{{ $announcement->created_at->diffForHumans() }}</span>
+                            <?php endif; ?>
+                            <span class="announcement-time"><?php echo e($announcement->created_at->diffForHumans()); ?></span>
                         </div>
                     </div>
-                    <div class="announcement-preview">{{ Str::limit($announcement->content, 80) }}</div>
+                    <div class="announcement-preview"><?php echo e(Str::limit($announcement->content, 80)); ?></div>
                 </div>
-            @empty
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                 <div class="empty-announcements">
                     <i class="bi bi-megaphone"></i>
                     <p>No announcements at the moment</p>
                 </div>
-            @endforelse
+            <?php endif; ?>
         </div>
     </div>
 
@@ -1036,89 +1036,97 @@
             <h2>My Programs</h2>
         </div>
         <div class="courses-list">
-            @forelse($courses as $course)
-                <div class="course-item" data-course-id="{{ $course['id'] }}" data-enrollment-id="{{ $course['enrollment_id'] ?? '' }}">
+            <?php $__empty_1 = true; $__currentLoopData = $courses; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $course): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <div class="course-item" data-course-id="<?php echo e($course['id']); ?>" data-enrollment-id="<?php echo e($course['enrollment_id'] ?? ''); ?>">
                     <div class="course-thumbnail">
                         <div class="course-placeholder">📚</div>
                     </div>
                     <div class="course-details">
-                        <h3>{{ $course['name'] }}</h3>
-                        <p>{{ $course['description'] }}</p>
+                        <h3><?php echo e($course['name']); ?></h3>
+                        <p><?php echo e($course['description']); ?></p>
                         
                         <!-- Program Details -->
                         <div class="course-enrollment-info">
-                            <span class="enrollment-badge">{{ $course['package_name'] }}</span>
-                            @if(isset($course['plan_name']))
-                                <span class="plan-badge">{{ $course['plan_name'] }}</span>
-                            @endif
-                            @if(isset($course['enrollment_type']))
-                                <span class="type-badge">{{ $course['enrollment_type'] }}</span>
-                            @endif
+                            <span class="enrollment-badge"><?php echo e($course['package_name']); ?></span>
+                            <?php if(isset($course['plan_name'])): ?>
+                                <span class="plan-badge"><?php echo e($course['plan_name']); ?></span>
+                            <?php endif; ?>
+                            <?php if(isset($course['enrollment_type'])): ?>
+                                <span class="type-badge"><?php echo e($course['enrollment_type']); ?></span>
+                            <?php endif; ?>
                         </div>
                         
                         <!-- Status Badge -->
-                        @if($course['enrollment_status'] === 'rejected')
+                        <?php if($course['enrollment_status'] === 'rejected'): ?>
                             <span class="badge bg-danger" style="margin-top: 8px;">Rejected</span>
-                            @if(isset($course['rejection_reason']) && $course['rejection_reason'])
-                                <span class="text-danger" style="display:block; margin-top:4px;">Reason: {{ $course['rejection_reason'] }}</span>
-                            @endif
-                        @elseif($course['enrollment_status'] === 'pending')
+                            <?php if(isset($course['rejection_reason']) && $course['rejection_reason']): ?>
+                                <span class="text-danger" style="display:block; margin-top:4px;">Reason: <?php echo e($course['rejection_reason']); ?></span>
+                            <?php endif; ?>
+                        <?php elseif($course['enrollment_status'] === 'pending'): ?>
                             <span class="badge bg-warning text-dark" style="margin-top: 8px;">Pending Admin Approval</span>
-                        @endif
+                        <?php endif; ?>
                         
                         <!-- Batch Information -->
-                        @if(isset($course['batch_name']) && $course['batch_name'])
+                        <?php if(isset($course['batch_name']) && $course['batch_name']): ?>
                         <div class="batch-info" style="margin-top: 10px; padding: 8px 12px; background: #e8f5e8; border-radius: 6px; font-size: 0.9rem;">
                             <div style="font-weight: 600; color: #27ae60; margin-bottom: 4px;">
-                                <i class="fas fa-users"></i> {{ $course['batch_name'] }}
+                                <i class="fas fa-users"></i> <?php echo e($course['batch_name']); ?>
+
                             </div>
-                            @if(isset($course['batch_dates']) && $course['batch_dates'])
+                            <?php if(isset($course['batch_dates']) && $course['batch_dates']): ?>
                             <div style="color: #2c3e50; font-size: 0.85rem;">
                                 <i class="fas fa-calendar-alt"></i> 
-                                Start: {{ $course['batch_dates']['start'] }}
-                                @if($course['batch_dates']['end'] !== 'TBA')
-                                    | End: {{ $course['batch_dates']['end'] }}
-                                @endif
+                                Start: <?php echo e($course['batch_dates']['start']); ?>
+
+                                <?php if($course['batch_dates']['end'] !== 'TBA'): ?>
+                                    | End: <?php echo e($course['batch_dates']['end']); ?>
+
+                                <?php endif; ?>
                             </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
-                        @endif
+                        <?php endif; ?>
                         
-                        <div class="progress-bar" style="--progress: {{ $course['progress'] }}%">
-                            <span class="progress-text">{{ $course['progress'] }}% complete</span>
+                        <div class="progress-bar" style="--progress: <?php echo e($course['progress']); ?>%">
+                            <span class="progress-text"><?php echo e($course['progress']); ?>% complete</span>
                         </div>
                         <div class="course-meta" style="margin-top: 10px; font-size: 0.9rem; color: #7f8c8d;">
-                            <span>{{ $course['completed_modules'] ?? 0 }} / {{ $course['total_modules'] ?? 0 }} modules complete</span>
+                            <span><?php echo e($course['completed_modules'] ?? 0); ?> / <?php echo e($course['total_modules'] ?? 0); ?> modules complete</span>
                         </div>
                     </div>
-                    @if($course['enrollment_status'] === 'rejected')
-                        <button class="{{ $course['button_class'] }}" onclick="showRejectedModal('{{ $course['name'] }}', {{ $course['registration_id'] ?? $course['enrollment_id'] ?? 'null' }})">
-                            {{ $course['button_text'] }}
+                    <?php if($course['enrollment_status'] === 'rejected'): ?>
+                        <button class="<?php echo e($course['button_class']); ?>" onclick="showRejectedModal('<?php echo e($course['name']); ?>', <?php echo e($course['registration_id'] ?? $course['enrollment_id'] ?? 'null'); ?>)">
+                            <?php echo e($course['button_text']); ?>
+
                         </button>
-                    @elseif($course['enrollment_status'] === 'resubmitted')
-                        <button class="{{ $course['button_class'] }}" onclick="showStatusModal('{{ $course['enrollment_status'] }}', '{{ $course['name'] }}', {{ $course['registration_id'] ?? $course['enrollment_id'] ?? 'null' }})" disabled>
-                            {{ $course['button_text'] }}
+                    <?php elseif($course['enrollment_status'] === 'resubmitted'): ?>
+                        <button class="<?php echo e($course['button_class']); ?>" onclick="showStatusModal('<?php echo e($course['enrollment_status']); ?>', '<?php echo e($course['name']); ?>', <?php echo e($course['registration_id'] ?? $course['enrollment_id'] ?? 'null'); ?>)" disabled>
+                            <?php echo e($course['button_text']); ?>
+
                         </button>
-                    @elseif($course['button_action'] === '#')
-                        <button class="{{ $course['button_class'] }}" onclick="showStatusModal('{{ $course['enrollment_status'] }}', '{{ $course['name'] }}', {{ $course['enrollment_id'] ?? 'null' }})" disabled>
-                            {{ $course['button_text'] }}
+                    <?php elseif($course['button_action'] === '#'): ?>
+                        <button class="<?php echo e($course['button_class']); ?>" onclick="showStatusModal('<?php echo e($course['enrollment_status']); ?>', '<?php echo e($course['name']); ?>', <?php echo e($course['enrollment_id'] ?? 'null'); ?>)" disabled>
+                            <?php echo e($course['button_text']); ?>
+
                         </button>
-                    @elseif($course['payment_status'] !== 'paid' && $course['enrollment_status'] === 'approved')
-                        <button class="{{ $course['button_class'] }}" onclick="showPaymentModal({{ $course['enrollment_id'] ?? 'null' }}, '{{ $course['name'] }}')">
-                            {{ $course['button_text'] }}
+                    <?php elseif($course['payment_status'] !== 'paid' && $course['enrollment_status'] === 'approved'): ?>
+                        <button class="<?php echo e($course['button_class']); ?>" onclick="showPaymentModal(<?php echo e($course['enrollment_id'] ?? 'null'); ?>, '<?php echo e($course['name']); ?>')">
+                            <?php echo e($course['button_text']); ?>
+
                         </button>
-                    @else
-                        <a href="{{ $course['button_action'] }}" class="{{ $course['button_class'] }}">
-                            {{ $course['button_text'] }}
+                    <?php else: ?>
+                        <a href="<?php echo e($course['button_action']); ?>" class="<?php echo e($course['button_class']); ?>">
+                            <?php echo e($course['button_text']); ?>
+
                         </a>
-                    @endif
+                    <?php endif; ?>
                 </div>
-            @empty
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                 <div class="no-courses">
                     <p>You are not enrolled in any programs yet.</p>
                     <p>Please contact your administrator to get enrolled in courses.</p>
                 </div>
-            @endforelse
+            <?php endif; ?>
         </div>
     </div>
 
@@ -1128,60 +1136,62 @@
             <h2><i class="bi bi-calendar-check me-2"></i>Deadlines</h2>
         </div>
         <div class="deadlines-content">
-            @forelse($deadlines as $deadline)
+            <?php $__empty_1 = true; $__currentLoopData = $deadlines; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $deadline): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
              <div class="card mb-3 deadline-item-modern shadow-sm border-0" 
-                 onclick="redirectToAssignment('{{ $deadline->reference_id ?? '' }}', '{{ $deadline->module_id ?? '' }}', '{{ $deadline->type ?? 'assignment' }}', '{{ $deadline->program_id ?? '' }}')"
+                 onclick="redirectToAssignment('<?php echo e($deadline->reference_id ?? ''); ?>', '<?php echo e($deadline->module_id ?? ''); ?>', '<?php echo e($deadline->type ?? 'assignment'); ?>', '<?php echo e($deadline->program_id ?? ''); ?>')"
                      style="cursor: pointer; transition: all 0.3s ease;">
                     <div class="card-body">
                         <!-- Header with Icon, Title and Status -->
                         <div class="d-flex align-items-start justify-content-between mb-3">
                             <div class="d-flex align-items-start">
                                 <div class="me-3">
-                                    @if(($deadline->type ?? 'assignment') === 'assignment')
+                                    <?php if(($deadline->type ?? 'assignment') === 'assignment'): ?>
                                         <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
                                             <i class="bi bi-file-earmark-text text-white fs-5"></i>
                                         </div>
-                                    @elseif(($deadline->type ?? '') === 'quiz')
+                                    <?php elseif(($deadline->type ?? '') === 'quiz'): ?>
                                         <div class="bg-success rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
                                             <i class="bi bi-question-circle text-white fs-5"></i>
                                         </div>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
                                 <div class="flex-grow-1">
-                                    <h5 class="card-title mb-1 fw-bold">{{ $deadline->title ?? 'Upcoming Task' }}</h5>
-                                    <p class="card-text text-muted mb-2">{{ $deadline->description ?? '' }}</p>
+                                    <h5 class="card-title mb-1 fw-bold"><?php echo e($deadline->title ?? 'Upcoming Task'); ?></h5>
+                                    <p class="card-text text-muted mb-2"><?php echo e($deadline->description ?? ''); ?></p>
                                     
                                     <!-- Program/Course Information -->
-                                    @if(!empty($deadline->course_name) || !empty($deadline->program_name))
+                                    <?php if(!empty($deadline->course_name) || !empty($deadline->program_name)): ?>
                                         <div class="mb-2">
                                             <span class="badge bg-light text-dark border me-2">
                                                 <i class="bi bi-folder2-open me-1"></i>
-                                                {{ $deadline->course_name ?? $deadline->program_name ?? 'Course' }}
+                                                <?php echo e($deadline->course_name ?? $deadline->program_name ?? 'Course'); ?>
+
                                             </span>
-                                            @if(!empty($deadline->module_name))
+                                            <?php if(!empty($deadline->module_name)): ?>
                                                 <span class="badge bg-light text-dark border">
                                                     <i class="bi bi-collection me-1"></i>
-                                                    {{ $deadline->module_name }}
+                                                    <?php echo e($deadline->module_name); ?>
+
                                                 </span>
-                                            @endif
+                                            <?php endif; ?>
                                         </div>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             <div class="text-end">
-                                @if($deadline->status === 'completed')
+                                <?php if($deadline->status === 'completed'): ?>
                                     <span class="badge bg-success fs-6">
                                         <i class="bi bi-check-circle-fill me-1"></i>Completed
                                     </span>
-                                @elseif($deadline->status === 'overdue')
+                                <?php elseif($deadline->status === 'overdue'): ?>
                                     <span class="badge bg-danger fs-6">
                                         <i class="bi bi-exclamation-triangle-fill me-1"></i>Overdue
                                     </span>
-                                @else
+                                <?php else: ?>
                                     <span class="badge bg-warning text-dark fs-6">
                                         <i class="bi bi-clock-fill me-1"></i>Pending
                                     </span>
-                                @endif
+                                <?php endif; ?>
                             </div>
                         </div>
                         
@@ -1189,52 +1199,53 @@
                         <div class="d-flex align-items-center justify-content-between mb-3">
                             <div class="d-flex align-items-center text-muted">
                                 <i class="bi bi-calendar3 me-2"></i>
-                                <span class="fw-medium">Due: {{ \Carbon\Carbon::parse($deadline->due_date)->format('M d, Y g:i A') }}</span>
+                                <span class="fw-medium">Due: <?php echo e(\Carbon\Carbon::parse($deadline->due_date)->format('M d, Y g:i A')); ?></span>
                             </div>
-                            <span class="badge {{ ($deadline->type ?? 'assignment') === 'assignment' ? 'bg-primary' : 'bg-success' }} rounded-pill">
-                                {{ ucfirst($deadline->type ?? 'assignment') }}
+                            <span class="badge <?php echo e(($deadline->type ?? 'assignment') === 'assignment' ? 'bg-primary' : 'bg-success'); ?> rounded-pill">
+                                <?php echo e(ucfirst($deadline->type ?? 'assignment')); ?>
+
                             </span>
                         </div>
                         
                         <!-- Feedback Section (if completed with feedback) -->
-                        @if($deadline->status === 'completed' && (!empty($deadline->feedback) || !empty($deadline->grade)))
+                        <?php if($deadline->status === 'completed' && (!empty($deadline->feedback) || !empty($deadline->grade))): ?>
                             <div class="alert alert-light border-start border-4 border-success mb-3">
                                 <div class="d-flex align-items-center justify-content-between mb-2">
                                     <h6 class="mb-0 text-success">
                                         <i class="bi bi-chat-text-fill me-2"></i>Instructor Feedback
                                     </h6>
-                                    @if(!empty($deadline->grade))
-                                        <span class="badge bg-success">Grade: {{ $deadline->grade }}%</span>
-                                    @endif
+                                    <?php if(!empty($deadline->grade)): ?>
+                                        <span class="badge bg-success">Grade: <?php echo e($deadline->grade); ?>%</span>
+                                    <?php endif; ?>
                                 </div>
-                                @if(!empty($deadline->feedback))
-                                    <p class="mb-0 small">{{ $deadline->feedback }}</p>
-                                @endif
+                                <?php if(!empty($deadline->feedback)): ?>
+                                    <p class="mb-0 small"><?php echo e($deadline->feedback); ?></p>
+                                <?php endif; ?>
                             </div>
-                        @endif
+                        <?php endif; ?>
                         
                         <!-- Action Indicator -->
                         <div class="border-top pt-3">
-                            @if($deadline->status === 'pending')
+                            <?php if($deadline->status === 'pending'): ?>
                                 <div class="d-flex align-items-center text-primary">
                                     <i class="bi bi-arrow-right-circle me-2"></i>
-                                    <span class="fw-medium">Click to {{ $deadline->type === 'assignment' ? 'submit assignment' : 'take quiz' }}</span>
+                                    <span class="fw-medium">Click to <?php echo e($deadline->type === 'assignment' ? 'submit assignment' : 'take quiz'); ?></span>
                                 </div>
-                            @elseif($deadline->status === 'completed')
+                            <?php elseif($deadline->status === 'completed'): ?>
                                 <div class="d-flex align-items-center text-success">
                                     <i class="bi bi-eye me-2"></i>
                                     <span class="fw-medium">Click to view details</span>
                                 </div>
-                            @elseif($deadline->status === 'overdue')
+                            <?php elseif($deadline->status === 'overdue'): ?>
                                 <div class="d-flex align-items-center text-danger">
                                     <i class="bi bi-exclamation-circle me-2"></i>
                                     <span class="fw-medium">Click to submit (overdue)</span>
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
-            @empty
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                 <div class="text-center py-5">
                     <div class="mb-4">
                         <i class="bi bi-calendar-check text-muted" style="font-size: 4rem;"></i>
@@ -1242,7 +1253,7 @@
                     <h4 class="text-muted">No upcoming deadlines</h4>
                     <p class="text-muted mb-0">You're all caught up! Check back later for new assignments.</p>
                 </div>
-            @endforelse
+            <?php endif; ?>
         </div>
     </div>
 
@@ -1276,7 +1287,7 @@
             </div>
             
             <div style="text-align: center; margin-top: 15px;">
-                <a href="{{ route('student.meetings') }}" class="btn btn-outline-primary btn-sm">
+                <a href="<?php echo e(route('student.meetings')); ?>" class="btn btn-outline-primary btn-sm">
                     <i class="bi bi-eye me-1"></i>See All Meetings
                 </a>
             </div>
@@ -1468,9 +1479,9 @@
 
 <!-- Inline scripts moved to student-dashboard.page.js for modular architecture -->
 
-@push('scripts')
-<script src="{{ asset('js/student/student-dashboard.page.js') }}"></script>
-@endpush
+<?php $__env->startPush('scripts'); ?>
+<script src="<?php echo e(asset('js/student/student-dashboard.page.js')); ?>"></script>
+<?php $__env->stopPush(); ?>
 
 <!-- Announcement Modal -->
 <div class="modal fade" id="announcementModal" tabindex="-1" aria-labelledby="announcementModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
@@ -1490,4 +1501,6 @@
         </div>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('student.student-dashboard.student-dashboard-layout', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/student/student-dashboard/student-dashboard.blade.php ENDPATH**/ ?>

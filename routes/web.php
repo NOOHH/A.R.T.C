@@ -537,6 +537,23 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
         
         return view('test-settings', compact('user', 'student', 'formRequirements'));
     })->name('test.student.settings');
+
+// Test route for UI settings
+Route::get('/test-ui-settings', function () {
+    try {
+        $settings = \App\Models\UiSetting::where('section', 'student_sidebar')->get();
+        $output = "UI Settings Test Results:\n\n";
+        $output .= "Found " . $settings->count() . " default sidebar settings:\n";
+        
+        foreach ($settings as $setting) {
+            $output .= "- {$setting->setting_key}: {$setting->setting_value}\n";
+        }
+        
+        return response($output)->header('Content-Type', 'text/plain');
+    } catch (\Exception $e) {
+        return response("Error: " . $e->getMessage())->header('Content-Type', 'text/plain');
+    }
+})->name('test.ui.settings');
     
     // Password management routes
     Route::post('/student/change-password', [StudentController::class, 'changePassword'])->name('student.change-password');
@@ -591,6 +608,10 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     // Content view route - moved back inside middleware for authentication
     Route::get('/student/content/{contentId}/view', [StudentDashboardController::class, 'viewContent'])->name('student.content.view');
 }); // END OF MIDDLEWARE GROUP
+
+// Preview routes (no middleware) - must be after middleware group to override
+Route::get('/student/dashboard/preview', [StudentDashboardController::class, 'showPreviewDashboard'])
+     ->name('student.dashboard.preview');
 
 // Simple test route
 Route::get('/test-content-view/{contentId}', function($contentId) {

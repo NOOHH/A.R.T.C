@@ -11,24 +11,25 @@
 
   <!-- User Profile Section -->
   <div class="sidebar-profile">
-    @php
+    <?php
       $student = \App\Models\Student::where('user_id', session('user_id'))->first();
       $profilePhoto = $student && $student->profile_photo ? $student->profile_photo : null;
-    @endphp
+    ?>
     
     <div class="profile-avatar">
-      @if($profilePhoto)
-        <img src="{{ asset('storage/profile-photos/' . $profilePhoto) }}" 
+      <?php if($profilePhoto): ?>
+        <img src="<?php echo e(asset('storage/profile-photos/' . $profilePhoto)); ?>" 
              alt="Profile" 
              class="avatar-image">
-      @else
+      <?php else: ?>
         <div class="avatar-placeholder">
-          {{ substr(session('user_firstname', 'S'), 0, 1) }}{{ substr(session('user_lastname', 'T'), 0, 1) }}
+          <?php echo e(substr(session('user_firstname', 'S'), 0, 1)); ?><?php echo e(substr(session('user_lastname', 'T'), 0, 1)); ?>
+
         </div>
-      @endif
+      <?php endif; ?>
     </div>
     <div class="profile-info">
-      <div class="profile-name">{{ session('user_firstname') }} {{ session('user_lastname') }}</div>
+      <div class="profile-name"><?php echo e(session('user_firstname')); ?> <?php echo e(session('user_lastname')); ?></div>
       <div class="profile-role">Student</div>
     </div>
        <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Toggle Sidebar">
@@ -42,8 +43,8 @@
       <div class="nav-section-title">Main</div>
       
       <!-- Dashboard -->
-      <a href="{{ route('student.dashboard') }}" 
-         class="nav-item @if(Route::currentRouteName()==='student.dashboard') active @endif">
+      <a href="<?php echo e(route('student.dashboard')); ?>" 
+         class="nav-item <?php if(Route::currentRouteName()==='student.dashboard'): ?> active <?php endif; ?>">
         <div class="nav-icon">
           <i class="bi bi-speedometer2"></i>
         </div>
@@ -51,8 +52,8 @@
       </a>
 
       <!-- Calendar -->
-      <a href="{{ route('student.calendar') }}" 
-         class="nav-item @if(Route::currentRouteName()==='student.calendar') active @endif">
+      <a href="<?php echo e(route('student.calendar')); ?>" 
+         class="nav-item <?php if(Route::currentRouteName()==='student.calendar'): ?> active <?php endif; ?>">
         <div class="nav-icon">
           <i class="bi bi-calendar-week"></i>
         </div>
@@ -60,8 +61,8 @@
       </a>
 
       <!-- Enrolled Courses -->
-      <a href="{{ route('student.enrolled-courses') }}" 
-         class="nav-item @if(Route::currentRouteName()==='student.enrolled-courses') active @endif">
+      <a href="<?php echo e(route('student.enrolled-courses')); ?>" 
+         class="nav-item <?php if(Route::currentRouteName()==='student.enrolled-courses'): ?> active <?php endif; ?>">
         <div class="nav-icon">
           <i class="bi bi-journal-bookmark"></i>
         </div>
@@ -69,8 +70,8 @@
       </a>
 
       <!-- Meetings -->
-      <a href="{{ route('student.meetings') }}" 
-         class="nav-item @if(Route::currentRouteName()==='student.meetings') active @endif">
+      <a href="<?php echo e(route('student.meetings')); ?>" 
+         class="nav-item <?php if(Route::currentRouteName()==='student.meetings'): ?> active <?php endif; ?>">
         <div class="nav-icon">
           <i class="bi bi-camera-video"></i>
         </div>
@@ -79,32 +80,32 @@
     </div>
 
     <!-- Programs Section -->
-    @if(isset($studentPrograms) && !empty($studentPrograms))
+    <?php if(isset($studentPrograms) && !empty($studentPrograms)): ?>
     <div class="nav-section">
       <div class="nav-section-title">My Programs</div>
       
-      @foreach($studentPrograms as $program)
-        <a href="{{ route('student.course', $program['program_id']) }}" 
-           class="nav-item program-item @if(request()->route('courseId')==$program['program_id']) active @endif">
+      <?php $__currentLoopData = $studentPrograms; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $program): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+        <a href="<?php echo e(route('student.course', $program['program_id'])); ?>" 
+           class="nav-item program-item <?php if(request()->route('courseId')==$program['program_id']): ?> active <?php endif; ?>">
           <div class="nav-icon">
             <i class="bi bi-book"></i>
           </div>
           <div class="nav-text">
-            <div class="program-name">{{ $program['program_name'] }}</div>
-            <small class="program-package">{{ $program['package_name'] }}</small>
+            <div class="program-name"><?php echo e($program['program_name']); ?></div>
+            <small class="program-package"><?php echo e($program['package_name']); ?></small>
           </div>
         </a>
-      @endforeach
+      <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
     </div>
-    @endif
+    <?php endif; ?>
 
     <!-- Account Section -->
     <div class="nav-section">
       <div class="nav-section-title">Account</div>
       
       <!-- Settings -->
-      <a href="{{ route('student.settings') }}" 
-         class="nav-item @if(Route::currentRouteName()==='student.settings') active @endif">
+      <a href="<?php echo e(route('student.settings')); ?>" 
+         class="nav-item <?php if(Route::currentRouteName()==='student.settings'): ?> active <?php endif; ?>">
         <div class="nav-icon">
           <i class="bi bi-gear"></i>
         </div>
@@ -124,7 +125,7 @@
   <!-- Sidebar Footer -->
   <div class="sidebar-footer">
     <div class="footer-text">
-      <small>ARTC © {{ date('Y') }}</small>
+      <small>ARTC © <?php echo e(date('Y')); ?></small>
     </div>
   </div>
 </aside>
@@ -185,3 +186,4 @@ function applySidebarColors(settings) {
     }
 }
 </script>
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/components/student-sidebar.blade.php ENDPATH**/ ?>

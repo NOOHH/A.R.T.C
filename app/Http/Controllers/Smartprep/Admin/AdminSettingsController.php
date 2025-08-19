@@ -18,8 +18,11 @@ class AdminSettingsController extends Controller
         // Ensure preview_url always targets ARTC preview route for admin panel
         $settings['general']['preview_url'] = url('/artc');
         
+        // Get sidebar customization settings for all roles
+        $sidebarSettings = $this->getSidebarSettings();
+        
         // Use the admin settings interface
-        return view('smartprep.admin.admin-settings.index', compact('settings'));
+        return view('smartprep.admin.admin-settings.index', compact('settings', 'sidebarSettings'));
     }
     
     public function save(Request $request)
@@ -33,6 +36,7 @@ class AdminSettingsController extends Controller
         $request->validate([
             'brand_name' => 'nullable|string|max:255',
             'navbar_brand_name' => 'nullable|string|max:255',
+            'navbar_brand_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'navbar_brand_image' => 'nullable|string|max:500',
             'navbar_style' => 'nullable|string|in:fixed-top,sticky-top,static',
             'navbar_menu_items' => 'nullable|string',
@@ -41,6 +45,14 @@ class AdminSettingsController extends Controller
 
         // Accept both field names for backward compatibility
         $brandName = $request->input('brand_name') ?? $request->input('navbar_brand_name', 'SmartPrep Admin');
+
+        // Handle brand logo upload
+        if ($request->hasFile('navbar_brand_logo')) {
+            $file = $request->file('navbar_brand_logo');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs('brand-logos', $filename, 'public');
+            UiSetting::set('navbar', 'brand_logo', 'storage/' . $path, 'file');
+        }
 
         // Save to database using UiSetting model
         UiSetting::set('navbar', 'brand_name', $brandName, 'text');
@@ -73,6 +85,7 @@ class AdminSettingsController extends Controller
         $request->validate([
             'hero_title' => 'nullable|string|max:255',
             'hero_subtitle' => 'nullable|string|max:1000',
+            'hero_background' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             // Section content fields
             'programs_title' => 'nullable|string|max:255',
             'programs_subtitle' => 'nullable|string|max:500',
@@ -93,22 +106,26 @@ class AdminSettingsController extends Controller
             'homepage_hero_title_color' => 'nullable|string|max:7',
             'homepage_programs_title_color' => 'nullable|string|max:7',
             'homepage_programs_subtitle_color' => 'nullable|string|max:7',
+            'homepage_programs_section_bg_color' => 'nullable|string|max:7',
             'homepage_modalities_bg_color' => 'nullable|string|max:7',
             'homepage_modalities_text_color' => 'nullable|string|max:7',
             'homepage_about_bg_color' => 'nullable|string|max:7',
             'homepage_about_title_color' => 'nullable|string|max:7',
             'homepage_about_text_color' => 'nullable|string|max:7',
-            'cta_primary_text' => 'nullable|string|max:100',
-            'cta_primary_link' => 'nullable|string|max:255',
-            'cta_secondary_text' => 'nullable|string|max:100',
-            'cta_secondary_link' => 'nullable|string|max:255',
-            'features_title' => 'nullable|string|max:255',
             'copyright' => 'nullable|string|max:500',
         ]);
 
         // Save to database using UiSetting model
         UiSetting::set('homepage', 'hero_title', $request->input('hero_title', 'Review Smarter. Learn Better. Succeed Faster.'), 'text');
         UiSetting::set('homepage', 'hero_subtitle', $request->input('hero_subtitle', 'Your premier destination for comprehensive review programs and professional training.'), 'text');
+        
+        // Handle hero background image upload
+        if ($request->hasFile('hero_background')) {
+            $file = $request->file('hero_background');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs('hero-images', $filename, 'public');
+            UiSetting::set('homepage', 'hero_background_image', 'storage/' . $path, 'file');
+        }
         
         // Section content
         UiSetting::set('homepage', 'programs_title', $request->input('programs_title', 'Our Programs'), 'text');
@@ -132,17 +149,13 @@ class AdminSettingsController extends Controller
         UiSetting::set('homepage', 'hero_title_color', $request->input('homepage_hero_title_color', '#ffffff'), 'color');
         UiSetting::set('homepage', 'programs_title_color', $request->input('homepage_programs_title_color', '#667eea'), 'color');
         UiSetting::set('homepage', 'programs_subtitle_color', $request->input('homepage_programs_subtitle_color', '#6c757d'), 'color');
+        UiSetting::set('homepage', 'programs_section_bg_color', $request->input('homepage_programs_section_bg_color', '#667eea'), 'color');
         UiSetting::set('homepage', 'modalities_bg_color', $request->input('homepage_modalities_bg_color', '#667eea'), 'color');
         UiSetting::set('homepage', 'modalities_text_color', $request->input('homepage_modalities_text_color', '#ffffff'), 'color');
         UiSetting::set('homepage', 'about_bg_color', $request->input('homepage_about_bg_color', '#ffffff'), 'color');
         UiSetting::set('homepage', 'about_title_color', $request->input('homepage_about_title_color', '#667eea'), 'color');
         UiSetting::set('homepage', 'about_text_color', $request->input('homepage_about_text_color', '#6c757d'), 'color');
         
-        UiSetting::set('homepage', 'cta_primary_text', $request->input('cta_primary_text', 'Get Started'), 'text');
-        UiSetting::set('homepage', 'cta_primary_link', $request->input('cta_primary_link', '/programs'), 'text');
-        UiSetting::set('homepage', 'cta_secondary_text', $request->input('cta_secondary_text', 'Learn More'), 'text');
-        UiSetting::set('homepage', 'cta_secondary_link', $request->input('cta_secondary_link', '/about'), 'text');
-        UiSetting::set('homepage', 'features_title', $request->input('features_title', 'Why Choose Us?'), 'text');
         UiSetting::set('homepage', 'copyright', $request->input('copyright', '© Copyright Ascendo Review and Training Center. All Rights Reserved.'), 'text');
 
         // Also save to JSON file for backward compatibility
@@ -170,16 +183,12 @@ class AdminSettingsController extends Controller
             'hero_title_color' => $request->input('homepage_hero_title_color', $settings['homepage']['hero_title_color'] ?? '#ffffff'),
             'programs_title_color' => $request->input('homepage_programs_title_color', $settings['homepage']['programs_title_color'] ?? '#667eea'),
             'programs_subtitle_color' => $request->input('homepage_programs_subtitle_color', $settings['homepage']['programs_subtitle_color'] ?? '#6c757d'),
+            'programs_section_bg_color' => $request->input('homepage_programs_section_bg_color', $settings['homepage']['programs_section_bg_color'] ?? '#667eea'),
             'modalities_bg_color' => $request->input('homepage_modalities_bg_color', $settings['homepage']['modalities_bg_color'] ?? '#667eea'),
             'modalities_text_color' => $request->input('homepage_modalities_text_color', $settings['homepage']['modalities_text_color'] ?? '#ffffff'),
             'about_bg_color' => $request->input('homepage_about_bg_color', $settings['homepage']['about_bg_color'] ?? '#ffffff'),
             'about_title_color' => $request->input('homepage_about_title_color', $settings['homepage']['about_title_color'] ?? '#667eea'),
             'about_text_color' => $request->input('homepage_about_text_color', $settings['homepage']['about_text_color'] ?? '#6c757d'),
-            'cta_primary_text' => $request->input('cta_primary_text', $settings['homepage']['cta_primary_text'] ?? 'Get Started'),
-            'cta_primary_link' => $request->input('cta_primary_link', $settings['homepage']['cta_primary_link'] ?? '/programs'),
-            'cta_secondary_text' => $request->input('cta_secondary_text', $settings['homepage']['cta_secondary_text'] ?? 'Learn More'),
-            'cta_secondary_link' => $request->input('cta_secondary_link', $settings['homepage']['cta_secondary_link'] ?? '/about'),
-            'features_title' => $request->input('features_title', $settings['homepage']['features_title'] ?? 'Why Choose Us?'),
             'copyright' => $request->input('copyright', $settings['homepage']['copyright'] ?? '© Copyright Ascendo Review and Training Center. All Rights Reserved.'),
             'updated_at' => now()->toISOString()
         ]);
@@ -282,6 +291,122 @@ class AdminSettingsController extends Controller
         return back()->with('success', 'General settings updated successfully!');
     }
 
+    public function updateStudent(Request $request)
+    {
+        $request->validate([
+            'dashboard_header_bg' => 'nullable|string',
+            'dashboard_header_text' => 'nullable|string',
+            'sidebar_bg' => 'nullable|string',
+            'active_menu_color' => 'nullable|string',
+            'course_card_bg' => 'nullable|string',
+            'progress_bar_color' => 'nullable|string',
+            'course_title_color' => 'nullable|string',
+            'due_date_color' => 'nullable|string',
+            'primary_btn_bg' => 'nullable|string',
+            'primary_btn_text' => 'nullable|string',
+            'secondary_btn_bg' => 'nullable|string',
+            'link_color' => 'nullable|string',
+            'success_color' => 'nullable|string',
+            'warning_color' => 'nullable|string',
+            'error_color' => 'nullable|string',
+            'info_color' => 'nullable|string',
+        ]);
+
+        // Dashboard Colors
+        UiSetting::set('student_portal', 'dashboard_header_bg', $request->input('dashboard_header_bg', '#0d6efd'), 'color');
+        UiSetting::set('student_portal', 'dashboard_header_text', $request->input('dashboard_header_text', '#ffffff'), 'color');
+        UiSetting::set('student_portal', 'sidebar_bg', $request->input('sidebar_bg', '#f8f9fa'), 'color');
+        UiSetting::set('student_portal', 'active_menu_color', $request->input('active_menu_color', '#0d6efd'), 'color');
+        
+        // Course Interface Colors
+        UiSetting::set('student_portal', 'course_card_bg', $request->input('course_card_bg', '#ffffff'), 'color');
+        UiSetting::set('student_portal', 'progress_bar_color', $request->input('progress_bar_color', '#28a745'), 'color');
+        UiSetting::set('student_portal', 'course_title_color', $request->input('course_title_color', '#212529'), 'color');
+        UiSetting::set('student_portal', 'due_date_color', $request->input('due_date_color', '#dc3545'), 'color');
+        
+        // Button Colors
+        UiSetting::set('student_portal', 'primary_btn_bg', $request->input('primary_btn_bg', '#0d6efd'), 'color');
+        UiSetting::set('student_portal', 'primary_btn_text', $request->input('primary_btn_text', '#ffffff'), 'color');
+        UiSetting::set('student_portal', 'secondary_btn_bg', $request->input('secondary_btn_bg', '#6c757d'), 'color');
+        UiSetting::set('student_portal', 'link_color', $request->input('link_color', '#0d6efd'), 'color');
+        
+        // Status Colors
+        UiSetting::set('student_portal', 'success_color', $request->input('success_color', '#28a745'), 'color');
+        UiSetting::set('student_portal', 'warning_color', $request->input('warning_color', '#ffc107'), 'color');
+        UiSetting::set('student_portal', 'error_color', $request->input('error_color', '#dc3545'), 'color');
+        UiSetting::set('student_portal', 'info_color', $request->input('info_color', '#17a2b8'), 'color');
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Student portal settings updated successfully!']);
+        }
+
+        return back()->with('student_success', 'Student portal settings updated successfully!');
+    }
+
+    public function updateProfessor(Request $request)
+    {
+        $request->validate([
+            'sidebar_bg' => 'nullable|string',
+            'sidebar_text' => 'nullable|string',
+            'active_menu_color' => 'nullable|string',
+            'menu_hover_color' => 'nullable|string',
+            'header_bg' => 'nullable|string',
+            'header_text' => 'nullable|string',
+            'primary_btn' => 'nullable|string',
+            'secondary_btn' => 'nullable|string',
+        ]);
+
+        // Sidebar Colors
+        UiSetting::set('professor_panel', 'sidebar_bg', $request->input('sidebar_bg', '#f8f9fa'), 'color');
+        UiSetting::set('professor_panel', 'sidebar_text', $request->input('sidebar_text', '#212529'), 'color');
+        UiSetting::set('professor_panel', 'active_menu_color', $request->input('active_menu_color', '#0d6efd'), 'color');
+        UiSetting::set('professor_panel', 'menu_hover_color', $request->input('menu_hover_color', '#e9ecef'), 'color');
+        
+        // Dashboard Colors
+        UiSetting::set('professor_panel', 'header_bg', $request->input('header_bg', '#0d6efd'), 'color');
+        UiSetting::set('professor_panel', 'header_text', $request->input('header_text', '#ffffff'), 'color');
+        UiSetting::set('professor_panel', 'primary_btn', $request->input('primary_btn', '#28a745'), 'color');
+        UiSetting::set('professor_panel', 'secondary_btn', $request->input('secondary_btn', '#6c757d'), 'color');
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Professor panel settings updated successfully!']);
+        }
+
+        return back()->with('professor_success', 'Professor panel settings updated successfully!');
+    }
+
+    public function updateAdmin(Request $request)
+    {
+        $request->validate([
+            'sidebar_bg' => 'nullable|string',
+            'sidebar_text' => 'nullable|string',
+            'active_menu_color' => 'nullable|string',
+            'menu_hover_color' => 'nullable|string',
+            'header_bg' => 'nullable|string',
+            'header_text' => 'nullable|string',
+            'primary_btn' => 'nullable|string',
+            'secondary_btn' => 'nullable|string',
+        ]);
+
+        // Sidebar Colors
+        UiSetting::set('admin_panel', 'sidebar_bg', $request->input('sidebar_bg', '#343a40'), 'color');
+        UiSetting::set('admin_panel', 'sidebar_text', $request->input('sidebar_text', '#ffffff'), 'color');
+        UiSetting::set('admin_panel', 'active_menu_color', $request->input('active_menu_color', '#0d6efd'), 'color');
+        UiSetting::set('admin_panel', 'menu_hover_color', $request->input('menu_hover_color', '#495057'), 'color');
+        
+        // Dashboard Colors
+        UiSetting::set('admin_panel', 'header_bg', $request->input('header_bg', '#dc3545'), 'color');
+        UiSetting::set('admin_panel', 'header_text', $request->input('header_text', '#ffffff'), 'color');
+        UiSetting::set('admin_panel', 'primary_btn', $request->input('primary_btn', '#dc3545'), 'color');
+        UiSetting::set('admin_panel', 'secondary_btn', $request->input('secondary_btn', '#6c757d'), 'color');
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Admin panel settings updated successfully!']);
+        }
+
+        return back()->with('admin_success', 'Admin panel settings updated successfully!');
+    }
+
     private function getCurrentSettings()
     {
         // Use the main settings file that controls the main A.R.T.C homepage
@@ -350,5 +475,83 @@ class AdminSettingsController extends Controller
         // Save to the main settings file that controls the main A.R.T.C homepage
         $settingsPath = storage_path('app/settings.json');
         File::put($settingsPath, json_encode($settings, JSON_PRETTY_PRINT));
+    }
+
+    /**
+     * Update sidebar customization settings
+     */
+    private function getSidebarSettings()
+    {
+        $roles = ['student', 'professor', 'admin'];
+        $sidebarSettings = [];
+        
+        foreach ($roles as $role) {
+            $section = $role . '_sidebar';
+            $settings = UiSetting::getSection($section);
+            
+            if (!empty($settings)) {
+                $sidebarSettings[$role] = $settings;
+            } else {
+                // Default colors for each role
+                $sidebarSettings[$role] = [
+                    'primary_color' => '#001F3F',
+                    'secondary_color' => '#2d2d2d',
+                    'accent_color' => '#3b82f6',
+                    'text_color' => '#ffffff',
+                    'hover_color' => '#004080'
+                ];
+            }
+        }
+        
+        return $sidebarSettings;
+    }
+
+    public function updateSidebar(Request $request)
+    {
+        try {
+            $request->validate([
+                'role' => 'required|string|in:student,professor,admin',
+                'colors' => 'required|array',
+                'colors.primary_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
+                'colors.secondary_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
+                'colors.accent_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
+                'colors.text_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
+                'colors.hover_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
+            ]);
+
+            $role = $request->input('role');
+            $colors = $request->input('colors');
+            $section = $role . '_sidebar';
+
+            // Save each color setting to the database
+            foreach ($colors as $key => $value) {
+                UiSetting::updateOrCreate(
+                    ['section' => $section, 'setting_key' => $key],
+                    ['setting_value' => $value, 'setting_type' => 'color']
+                );
+            }
+
+            Log::info("Sidebar colors updated for {$role}", $colors);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Sidebar colors updated successfully for {$role}",
+                'role' => $role,
+                'colors' => $colors
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid color format. Please use valid hex colors.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error updating sidebar settings: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating sidebar settings'
+            ], 500);
+        }
     }
 }

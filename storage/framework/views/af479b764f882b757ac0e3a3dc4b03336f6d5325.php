@@ -408,6 +408,183 @@
                 height: 500px;
             }
         }
+        
+        /* ====== SIDEBAR CUSTOMIZATION STYLES ====== */
+        .sidebar-preview-container {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 1rem;
+            min-height: 400px;
+        }
+        
+        .sidebar-preview {
+            background: var(--preview-primary, #1a1a1a);
+            color: var(--preview-text, #e0e0e0);
+            border-radius: 8px;
+            padding: 1rem;
+            width: 100%;
+            min-height: 350px;
+            transition: all 0.3s ease;
+        }
+        
+        .preview-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--preview-secondary, #2d2d2d);
+            margin-bottom: 1rem;
+        }
+        
+        .preview-avatar-placeholder {
+            width: 40px;
+            height: 40px;
+            background: var(--preview-accent, #3b82f6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: white;
+        }
+        
+        .preview-profile-info {
+            flex: 1;
+        }
+        
+        .preview-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--preview-text, #e0e0e0);
+        }
+        
+        .preview-role {
+            font-size: 0.8rem;
+            color: var(--preview-text-muted, #9ca3af);
+            opacity: 0.8;
+        }
+        
+        .preview-toggle {
+            background: none;
+            border: none;
+            color: var(--preview-text, #e0e0e0);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .preview-toggle:hover {
+            background: var(--preview-hover, #374151);
+        }
+        
+        .preview-nav {
+            margin-top: 1rem;
+        }
+        
+        .preview-section-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--preview-text-muted, #9ca3af);
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .preview-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.25rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+        
+        .preview-nav-item:hover {
+            background: var(--preview-hover, #374151);
+        }
+        
+        .preview-nav-item.active {
+            background: var(--preview-accent, #3b82f6);
+            color: white;
+        }
+        
+        .preview-nav-item i {
+            width: 16px;
+            text-align: center;
+        }
+        
+        .color-preview {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            margin-right: 0.25rem;
+            border: 1px solid #ccc;
+        }
+        
+        .color-picker-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .color-input {
+            width: 50px;
+            height: 38px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 0;
+            background: none;
+        }
+        
+        .color-input::-webkit-color-swatch {
+            border: none;
+            border-radius: 4px;
+        }
+        
+        /* Role selector styles */
+        .btn-check:checked + .btn-outline-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+        
+        /* Preset buttons */
+        .btn-sm .color-preview {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+        
+        /* Animation for color changes */
+        .sidebar-preview * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        /* Mobile responsiveness for sidebar customization */
+        @media (max-width: 768px) {
+            .color-picker-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .color-input {
+                width: 100%;
+                height: 50px;
+            }
+            
+            .sidebar-preview-container {
+                margin-top: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -703,7 +880,7 @@
                         <h5><i class="fas fa-bars me-2"></i>Navigation Bar</h5>
                     </div>
                     
-                    <form id="navbarForm" onsubmit="updateNavbar(event)">
+                    <form id="navbarForm" onsubmit="updateNavbar(event)" enctype="multipart/form-data">
                         <?php echo csrf_field(); ?>
                         <div class="form-group mb-3">
                             <label class="form-label">Brand Name</label>
@@ -711,48 +888,15 @@
                         </div>
                         
                         <div class="form-group mb-3">
-                            <label class="form-label">Brand Image</label>
-                            <input type="file" class="form-control" name="brand_image" accept="image/*">
-                            <small class="form-text text-muted">Logo for navigation bar</small>
-                        </div>
-                        
-                        <div class="form-group mb-3">
-                            <label class="form-label">Navigation Style</label>
-                            <select class="form-control" name="navbar_style">
-                                <option value="fixed-top">Fixed Top</option>
-                                <option value="sticky-top">Sticky Top</option>
-                                <option value="static">Static</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group mb-3">
-                            <label class="form-label">Menu Items</label>
-                            <div class="nav-items-container">
-                                <div class="nav-item d-flex align-items-center mb-2">
-                                    <input type="text" class="form-control me-2" name="nav_items[]" value="Home" placeholder="Menu label">
-                                    <input type="text" class="form-control me-2" name="nav_links[]" value="/" placeholder="Link">
-                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeNavItem(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                            <label class="form-label">Brand Logo</label>
+                            <input type="file" class="form-control" name="navbar_brand_logo" accept="image/*">
+                            <small class="form-text text-muted">Upload a logo for the navigation bar. Recommended: 40px height, PNG format with transparent background</small>
+                            <?php if(isset($settings['navbar']['brand_logo']) && $settings['navbar']['brand_logo']): ?>
+                                <div class="mt-2">
+                                    <small class="text-muted">Current logo:</small><br>
+                                    <img src="<?php echo e(\Illuminate\Support\Facades\Storage::url($settings['navbar']['brand_logo'])); ?>" alt="Current brand logo" style="max-height: 40px;" class="img-thumbnail">
                                 </div>
-                                <div class="nav-item d-flex align-items-center mb-2">
-                                    <input type="text" class="form-control me-2" name="nav_items[]" value="Review Programs" placeholder="Menu label">
-                                    <input type="text" class="form-control me-2" name="nav_links[]" value="/programs" placeholder="Link">
-                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeNavItem(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                                <div class="nav-item d-flex align-items-center mb-2">
-                                    <input type="text" class="form-control me-2" name="nav_items[]" value="About Us" placeholder="Menu label">
-                                    <input type="text" class="form-control me-2" name="nav_links[]" value="/about" placeholder="Link">
-                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeNavItem(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="addNavItem()">
-                                <i class="fas fa-plus me-2"></i>Add Menu Item
-                            </button>
+                            <?php endif; ?>
                         </div>
                         
                         <div class="form-group mb-3">
@@ -888,58 +1032,269 @@
                         <h5><i class="fas fa-user-graduate me-2"></i>Student Portal</h5>
                     </div>
                     
-                    <form id="studentForm" onsubmit="updateStudent(event)">
+                    <form id="studentForm" method="POST" action="<?php echo e(route('smartprep.admin.settings.update.student')); ?>">
                         <?php echo csrf_field(); ?>
-                        <div class="form-group mb-3">
-                            <label class="form-label">Student Dashboard Title</label>
-                            <input type="text" class="form-control" name="student_dashboard_title" value="Student Dashboard" placeholder="Dashboard title">
+                        
+                        <?php if(session('student_success')): ?>
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i><?php echo e(session('student_success')); ?>
+
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <!-- Dashboard Colors -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>Dashboard Colors</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Dashboard Header Background</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['dashboard_header_bg'] ?? '#0d6efd'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="dashboard_header_bg" value="<?php echo e($settings['student_portal']['dashboard_header_bg'] ?? '#0d6efd'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Dashboard Header Text</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['dashboard_header_text'] ?? '#ffffff'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="dashboard_header_text" value="<?php echo e($settings['student_portal']['dashboard_header_text'] ?? '#ffffff'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Sidebar Background</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['sidebar_bg'] ?? '#f8f9fa'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="sidebar_bg" value="<?php echo e($settings['student_portal']['sidebar_bg'] ?? '#f8f9fa'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Active Menu Item</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['active_menu_color'] ?? '#0d6efd'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="active_menu_color" value="<?php echo e($settings['student_portal']['active_menu_color'] ?? '#0d6efd'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="form-group mb-3">
-                            <label class="form-label">Welcome Message</label>
-                            <textarea class="form-control" name="student_welcome_message" rows="3" placeholder="Welcome message for students">Welcome to your learning portal. Access your courses, track progress, and achieve your goals.</textarea>
+                        <!-- Course Interface Colors -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-book me-2"></i>Course Interface Colors</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Course Card Background</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['course_card_bg'] ?? '#ffffff'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="course_card_bg" value="<?php echo e($settings['student_portal']['course_card_bg'] ?? '#ffffff'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Course Progress Bar</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['progress_bar_color'] ?? '#28a745'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="progress_bar_color" value="<?php echo e($settings['student_portal']['progress_bar_color'] ?? '#28a745'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Course Title Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['course_title_color'] ?? '#212529'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="course_title_color" value="<?php echo e($settings['student_portal']['course_title_color'] ?? '#212529'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Assignment Due Date</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['due_date_color'] ?? '#dc3545'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="due_date_color" value="<?php echo e($settings['student_portal']['due_date_color'] ?? '#dc3545'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <h6 class="mt-4 mb-3">Student Features</h6>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="student_features[]" value="course_access" checked>
-                            <label class="form-check-label">Course Access</label>
+                        <!-- Buttons and Interactive Elements -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-mouse-pointer me-2"></i>Buttons & Interactive Elements</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Primary Button Background</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['primary_btn_bg'] ?? '#0d6efd'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="primary_btn_bg" value="<?php echo e($settings['student_portal']['primary_btn_bg'] ?? '#0d6efd'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Primary Button Text</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['primary_btn_text'] ?? '#ffffff'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="primary_btn_text" value="<?php echo e($settings['student_portal']['primary_btn_text'] ?? '#ffffff'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Secondary Button Background</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['secondary_btn_bg'] ?? '#6c757d'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="secondary_btn_bg" value="<?php echo e($settings['student_portal']['secondary_btn_bg'] ?? '#6c757d'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Link Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['link_color'] ?? '#0d6efd'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="link_color" value="<?php echo e($settings['student_portal']['link_color'] ?? '#0d6efd'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="student_features[]" value="progress_tracking" checked>
-                            <label class="form-check-label">Progress Tracking</label>
+                        <!-- Status and Notification Colors -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-bell me-2"></i>Status & Notification Colors</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Success Message</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['success_color'] ?? '#28a745'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="success_color" value="<?php echo e($settings['student_portal']['success_color'] ?? '#28a745'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Warning Message</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['warning_color'] ?? '#ffc107'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="warning_color" value="<?php echo e($settings['student_portal']['warning_color'] ?? '#ffc107'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Error Message</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['error_color'] ?? '#dc3545'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="error_color" value="<?php echo e($settings['student_portal']['error_color'] ?? '#dc3545'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Info Message</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['info_color'] ?? '#17a2b8'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="info_color" value="<?php echo e($settings['student_portal']['info_color'] ?? '#17a2b8'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="student_features[]" value="assignments" checked>
-                            <label class="form-check-label">Assignments</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="student_features[]" value="grades" checked>
-                            <label class="form-check-label">Grades & Results</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="student_features[]" value="calendar" checked>
-                            <label class="form-check-label">Calendar & Schedule</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="student_features[]" value="messages" checked>
-                            <label class="form-check-label">Messages</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="student_features[]" value="resources" checked>
-                            <label class="form-check-label">Learning Resources</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="student_features[]" value="certificates">
-                            <label class="form-check-label">Certificates</label>
+                        <!-- Sidebar Customization -->
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-bars me-2"></i>Sidebar Customization</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Primary Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="studentSidebarPrimary" value="#1a1a1a" onchange="updateStudentSidebarColor('primary', this.value)">
+                                                <input type="text" class="form-control" id="studentSidebarPrimaryText" value="#1a1a1a">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Secondary Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="studentSidebarSecondary" value="#2d2d2d" onchange="updateStudentSidebarColor('secondary', this.value)">
+                                                <input type="text" class="form-control" id="studentSidebarSecondaryText" value="#2d2d2d">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Accent Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="studentSidebarAccent" value="#3b82f6" onchange="updateStudentSidebarColor('accent', this.value)">
+                                                <input type="text" class="form-control" id="studentSidebarAccentText" value="#3b82f6">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Text Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="studentSidebarText" value="#e0e0e0" onchange="updateStudentSidebarColor('text', this.value)">
+                                                <input type="text" class="form-control" id="studentSidebarTextText" value="#e0e0e0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Hover Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="studentSidebarHover" value="#374151" onchange="updateStudentSidebarColor('hover', this.value)">
+                                                <input type="text" class="form-control" id="studentSidebarHoverText" value="#374151">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-success btn-sm" onclick="saveStudentSidebarColors()">
+                                        <i class="fas fa-save me-1"></i>Save Sidebar Colors
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetStudentSidebarColors()">
+                                        <i class="fas fa-undo me-1"></i>Reset to Default
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                         
                         <button type="submit" class="btn btn-primary">
@@ -954,68 +1309,175 @@
                         <h5><i class="fas fa-chalkboard-teacher me-2"></i>Professor Panel</h5>
                     </div>
                     
-                    <form id="professorForm" onsubmit="updateProfessor(event)">
+                    <form id="professorForm" method="POST" action="<?php echo e(route('smartprep.admin.settings.update.professor')); ?>">
                         <?php echo csrf_field(); ?>
-                        <div class="form-group mb-3">
-                            <label class="form-label">Professor Dashboard Title</label>
-                            <input type="text" class="form-control" name="professor_dashboard_title" value="Instructor Dashboard" placeholder="Dashboard title">
+                        
+                        <?php if(session('professor_success')): ?>
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i><?php echo e(session('professor_success')); ?>
+
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <!-- Sidebar Colors -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-bars me-2"></i>Sidebar Colors</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Sidebar Background</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['professor_panel']['sidebar_bg'] ?? '#f8f9fa'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="sidebar_bg" value="<?php echo e($settings['professor_panel']['sidebar_bg'] ?? '#f8f9fa'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Sidebar Text Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['professor_panel']['sidebar_text'] ?? '#212529'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="sidebar_text" value="<?php echo e($settings['professor_panel']['sidebar_text'] ?? '#212529'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Active Menu Item</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['professor_panel']['active_menu_color'] ?? '#0d6efd'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="active_menu_color" value="<?php echo e($settings['professor_panel']['active_menu_color'] ?? '#0d6efd'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Menu Hover Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['professor_panel']['menu_hover_color'] ?? '#e9ecef'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="menu_hover_color" value="<?php echo e($settings['professor_panel']['menu_hover_color'] ?? '#e9ecef'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="form-group mb-3">
-                            <label class="form-label">Welcome Message</label>
-                            <textarea class="form-control" name="professor_welcome_message" rows="3" placeholder="Welcome message for professors">Welcome to your instructor portal. Manage your courses, students, and teaching materials.</textarea>
+                        <!-- Dashboard Colors -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>Dashboard Colors</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Header Background</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['professor_panel']['header_bg'] ?? '#0d6efd'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="header_bg" value="<?php echo e($settings['professor_panel']['header_bg'] ?? '#0d6efd'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Header Text</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['professor_panel']['header_text'] ?? '#ffffff'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="header_text" value="<?php echo e($settings['professor_panel']['header_text'] ?? '#ffffff'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Primary Button</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['professor_panel']['primary_btn'] ?? '#28a745'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="primary_btn" value="<?php echo e($settings['professor_panel']['primary_btn'] ?? '#28a745'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Secondary Button</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['professor_panel']['secondary_btn'] ?? '#6c757d'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="secondary_btn" value="<?php echo e($settings['professor_panel']['secondary_btn'] ?? '#6c757d'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <h6 class="mt-4 mb-3">Professor Features</h6>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="course_management" checked>
-                            <label class="form-check-label">Course Management</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="student_management" checked>
-                            <label class="form-check-label">Student Management</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="grading" checked>
-                            <label class="form-check-label">Grading System</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="attendance" checked>
-                            <label class="form-check-label">Attendance Tracking</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="materials">
-                            <label class="form-check-label">Learning Materials Upload</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="quiz_generation">
-                            <label class="form-check-label">AI Quiz Generation</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="reports" checked>
-                            <label class="form-check-label">Student Reports</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="announcements" checked>
-                            <label class="form-check-label">Announcements</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="video_upload">
-                            <label class="form-check-label">Video Upload</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="professor_features[]" value="meeting_creation">
-                            <label class="form-check-label">Virtual Meeting Creation</label>
+                        <!-- Sidebar Customization -->
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-bars me-2"></i>Sidebar Customization</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Primary Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="professorSidebarPrimary" value="#1e293b" onchange="updateProfessorSidebarColor('primary', this.value)">
+                                                <input type="text" class="form-control" id="professorSidebarPrimaryText" value="#1e293b">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Secondary Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="professorSidebarSecondary" value="#334155" onchange="updateProfessorSidebarColor('secondary', this.value)">
+                                                <input type="text" class="form-control" id="professorSidebarSecondaryText" value="#334155">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Accent Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="professorSidebarAccent" value="#10b981" onchange="updateProfessorSidebarColor('accent', this.value)">
+                                                <input type="text" class="form-control" id="professorSidebarAccentText" value="#10b981">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Text Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="professorSidebarText" value="#f1f5f9" onchange="updateProfessorSidebarColor('text', this.value)">
+                                                <input type="text" class="form-control" id="professorSidebarTextText" value="#f1f5f9">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Hover Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="professorSidebarHover" value="#475569" onchange="updateProfessorSidebarColor('hover', this.value)">
+                                                <input type="text" class="form-control" id="professorSidebarHoverText" value="#475569">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-success btn-sm" onclick="saveProfessorSidebarColors()">
+                                        <i class="fas fa-save me-1"></i>Save Sidebar Colors
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetProfessorSidebarColors()">
+                                        <i class="fas fa-undo me-1"></i>Reset to Default
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                         
                         <button type="submit" class="btn btn-primary">
@@ -1030,58 +1492,175 @@
                         <h5><i class="fas fa-user-shield me-2"></i>Admin Panel</h5>
                     </div>
                     
-                    <form id="adminForm" onsubmit="updateAdmin(event)">
+                    <form id="adminForm" method="POST" action="<?php echo e(route('smartprep.admin.settings.update.admin')); ?>">
                         <?php echo csrf_field(); ?>
-                        <div class="form-group mb-3">
-                            <label class="form-label">Admin Dashboard Title</label>
-                            <input type="text" class="form-control" name="admin_dashboard_title" value="Administrative Dashboard" placeholder="Dashboard title">
+                        
+                        <?php if(session('admin_success')): ?>
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i><?php echo e(session('admin_success')); ?>
+
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <!-- Sidebar Colors -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-bars me-2"></i>Sidebar Colors</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Sidebar Background</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['admin_panel']['sidebar_bg'] ?? '#343a40'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="sidebar_bg" value="<?php echo e($settings['admin_panel']['sidebar_bg'] ?? '#343a40'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Sidebar Text Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['admin_panel']['sidebar_text'] ?? '#ffffff'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="sidebar_text" value="<?php echo e($settings['admin_panel']['sidebar_text'] ?? '#ffffff'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Active Menu Item</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['admin_panel']['active_menu_color'] ?? '#0d6efd'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="active_menu_color" value="<?php echo e($settings['admin_panel']['active_menu_color'] ?? '#0d6efd'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Menu Hover Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['admin_panel']['menu_hover_color'] ?? '#495057'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="menu_hover_color" value="<?php echo e($settings['admin_panel']['menu_hover_color'] ?? '#495057'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="form-group mb-3">
-                            <label class="form-label">Welcome Message</label>
-                            <textarea class="form-control" name="admin_welcome_message" rows="3" placeholder="Welcome message for admins">Welcome to the administrative control panel. Manage your training center efficiently.</textarea>
+                        <!-- Dashboard Colors -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>Dashboard Colors</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Header Background</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['admin_panel']['header_bg'] ?? '#dc3545'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="header_bg" value="<?php echo e($settings['admin_panel']['header_bg'] ?? '#dc3545'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Header Text</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['admin_panel']['header_text'] ?? '#ffffff'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="header_text" value="<?php echo e($settings['admin_panel']['header_text'] ?? '#ffffff'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Primary Button</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['admin_panel']['primary_btn'] ?? '#dc3545'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="primary_btn" value="<?php echo e($settings['admin_panel']['primary_btn'] ?? '#dc3545'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Secondary Button</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['admin_panel']['secondary_btn'] ?? '#6c757d'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="secondary_btn" value="<?php echo e($settings['admin_panel']['secondary_btn'] ?? '#6c757d'); ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <h6 class="mt-4 mb-3">Admin Features</h6>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="admin_features[]" value="user_management" checked>
-                            <label class="form-check-label">User Management</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="admin_features[]" value="course_oversight" checked>
-                            <label class="form-check-label">Course Oversight</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="admin_features[]" value="financial_reports" checked>
-                            <label class="form-check-label">Financial Reports</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="admin_features[]" value="analytics" checked>
-                            <label class="form-check-label">Analytics & Statistics</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="admin_features[]" value="system_settings" checked>
-                            <label class="form-check-label">System Settings</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="admin_features[]" value="backup_restore">
-                            <label class="form-check-label">Backup & Restore</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="admin_features[]" value="email_notifications" checked>
-                            <label class="form-check-label">Email Notifications</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="admin_features[]" value="audit_logs">
-                            <label class="form-check-label">Audit Logs</label>
+                        <!-- Sidebar Customization -->
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-bars me-2"></i>Sidebar Customization</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Primary Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="adminSidebarPrimary" value="#111827" onchange="updateAdminSidebarColor('primary', this.value)">
+                                                <input type="text" class="form-control" id="adminSidebarPrimaryText" value="#111827">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Secondary Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="adminSidebarSecondary" value="#1f2937" onchange="updateAdminSidebarColor('secondary', this.value)">
+                                                <input type="text" class="form-control" id="adminSidebarSecondaryText" value="#1f2937">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Accent Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="adminSidebarAccent" value="#f59e0b" onchange="updateAdminSidebarColor('accent', this.value)">
+                                                <input type="text" class="form-control" id="adminSidebarAccentText" value="#f59e0b">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Text Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="adminSidebarText" value="#f9fafb" onchange="updateAdminSidebarColor('text', this.value)">
+                                                <input type="text" class="form-control" id="adminSidebarTextText" value="#f9fafb">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Hover Color</label>
+                                            <div class="color-picker-group">
+                                                <input type="color" class="color-input" id="adminSidebarHover" value="#374151" onchange="updateAdminSidebarColor('hover', this.value)">
+                                                <input type="text" class="form-control" id="adminSidebarHoverText" value="#374151">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                            
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-success btn-sm" onclick="saveAdminSidebarColors()">
+                                        <i class="fas fa-save me-1"></i>Save Sidebar Colors
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetAdminSidebarColors()">
+                                        <i class="fas fa-undo me-1"></i>Reset to Default
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                         
                         <button type="submit" class="btn btn-primary">
@@ -1220,6 +1799,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     document.getElementById(section + '-settings').style.display = 'block';
                     document.getElementById(section + '-settings').classList.add('active');
+                    
+                    // Update preview URL based on section
+                    updatePreviewForSection(section);
                 });
             });
             
@@ -1379,6 +1961,67 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        // Update preview based on section
+        function updatePreviewForSection(section) {
+            const iframe = document.getElementById('previewFrame');
+            const openInNewTabLink = document.getElementById('openInNewTabLink');
+            const previewTitle = document.querySelector('.preview-title');
+            
+            if (!iframe || !openInNewTabLink || !previewTitle) {
+                console.error('Preview elements not found');
+                return;
+            }
+            
+            let previewUrl = 'http://127.0.0.1:8000/';
+            let titleText = 'Live Preview';
+            
+            switch(section) {
+                case 'student':
+                    previewUrl = 'http://127.0.0.1:8000/student/dashboard';
+                    titleText = 'Student Portal Preview';
+                    break;
+                case 'professor':
+                    previewUrl = 'http://127.0.0.1:8000/professor/dashboard';
+                    titleText = 'Professor Panel Preview';
+                    break;
+                case 'admin':
+                    previewUrl = 'http://127.0.0.1:8000/admin-dashboard';
+                    titleText = 'Admin Panel Preview';
+                    break;
+                case 'homepage':
+                    previewUrl = 'http://127.0.0.1:8000/';
+                    titleText = 'Homepage Preview';
+                    break;
+                case 'navbar':
+                case 'branding':
+                    previewUrl = 'http://127.0.0.1:8000/';
+                    titleText = 'Live Preview';
+                    break;
+                default:
+                    previewUrl = 'http://127.0.0.1:8000/';
+                    titleText = 'Live Preview';
+            }
+            
+            // Add preview parameter and timestamp to bypass cache
+            const finalUrl = previewUrl + '?preview=true&t=' + Date.now();
+            
+            console.log('Updating preview for section:', section, 'URL:', finalUrl);
+            
+            // Update iframe
+            iframe.src = finalUrl;
+            
+            // Update open in new tab link
+            openInNewTabLink.href = finalUrl;
+            
+            // Update title
+            previewTitle.innerHTML = `<i class="fas fa-eye me-2"></i>${titleText}`;
+            
+            // Show loading state
+            showLoading();
+
+            // Do not auto-open new tab; keep preview within iframe only
+        }
+
         // Color picker management
         function updatePreviewColor(type, color) {
             const textInput = event.target.nextElementSibling;
@@ -1536,6 +2179,138 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (loading) loading.style.display = 'none';
                 if (iframe) iframe.style.opacity = '1';
             }, 500);
+        }
+
+        function showLoading() {
+            const loading = document.getElementById('previewLoading');
+            const iframe = document.getElementById('previewFrame');
+            
+            if (loading) {
+                loading.style.display = 'flex';
+                loading.innerHTML = `
+                    <div class="loading-spinner"></div>
+                    <span class="text-muted">Loading preview...</span>
+                `;
+            }
+            if (iframe) {
+                iframe.style.opacity = '0.5';
+            }
+        }
+        
+        // Initialize preview URL from settings
+        async function initializePreviewUrl() {
+            try {
+                const response = await fetch('<?php echo e(route("smartprep.api.ui-settings")); ?>');
+                if (response.ok) {
+                    const settings = await response.json();
+                    const previewUrl = settings.data.general?.preview_url || 'http://127.0.0.1:8000/';
+                    
+                    // Update iframe src
+                    const iframe = document.getElementById('previewFrame');
+                    if (iframe) {
+                        iframe.src = previewUrl;
+                    }
+                    
+                    // Update "Open in New Tab" link
+                    const openInNewTabLink = document.getElementById('openInNewTabLink');
+                    if (openInNewTabLink) {
+                        const hrefWithPreview = previewUrl + (previewUrl.includes('?') ? '&' : '?') + 'preview=true';
+                        openInNewTabLink.href = hrefWithPreview;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to initialize preview URL:', error);
+            }
+        }
+
+        // Refresh homepage form with latest data
+        async function refreshHomepageForm() {
+            try {
+                const response = await fetch('<?php echo e(route("smartprep.api.ui-settings")); ?>');
+                if (response.ok) {
+                    const settings = await response.json();
+                    const homepageSettings = settings.data.homepage;
+                    
+                    if (homepageSettings) {
+                        // Update form fields with latest data
+                        const form = document.getElementById('homepageForm');
+                        if (form) {
+                            // Update text inputs
+                            const heroTitleInput = form.querySelector('input[name="hero_title"]');
+                            if (heroTitleInput) {
+                                heroTitleInput.value = homepageSettings.hero_title || '';
+                            }
+                            
+                            const heroSubtitleInput = form.querySelector('textarea[name="hero_subtitle"]');
+                            if (heroSubtitleInput) {
+                                heroSubtitleInput.value = homepageSettings.hero_subtitle || '';
+                            }
+                            
+                            const ctaPrimaryTextInput = form.querySelector('input[name="cta_primary_text"]');
+                            if (ctaPrimaryTextInput) {
+                                ctaPrimaryTextInput.value = homepageSettings.cta_primary_text || '';
+                            }
+                            
+                            const ctaPrimaryLinkInput = form.querySelector('input[name="cta_primary_link"]');
+                            if (ctaPrimaryLinkInput) {
+                                ctaPrimaryLinkInput.value = homepageSettings.cta_primary_link || '';
+                            }
+                            
+                            const ctaSecondaryTextInput = form.querySelector('input[name="cta_secondary_text"]');
+                            if (ctaSecondaryTextInput) {
+                                ctaSecondaryTextInput.value = homepageSettings.cta_secondary_text || '';
+                            }
+                            
+                            const ctaSecondaryLinkInput = form.querySelector('input[name="cta_secondary_link"]');
+                            if (ctaSecondaryLinkInput) {
+                                ctaSecondaryLinkInput.value = homepageSettings.cta_secondary_link || '';
+                            }
+                            
+                            const featuresTitleInput = form.querySelector('input[name="features_title"]');
+                            if (featuresTitleInput) {
+                                featuresTitleInput.value = homepageSettings.features_title || '';
+                            }
+                            
+                            const copyrightInput = form.querySelector('input[name="copyright"]');
+                            if (copyrightInput) {
+                                copyrightInput.value = homepageSettings.copyright || '';
+                            }
+                            
+                            // Update color inputs
+                            const backgroundColorInput = form.querySelector('input[name="homepage_background_color"]');
+                            if (backgroundColorInput) {
+                                backgroundColorInput.value = homepageSettings.background_color || '#667eea';
+                            }
+                            
+                            const gradientColorInput = form.querySelector('input[name="homepage_gradient_color"]');
+                            if (gradientColorInput) {
+                                gradientColorInput.value = homepageSettings.gradient_color || '#764ba2';
+                            }
+                            
+                            const textColorInput = form.querySelector('input[name="homepage_text_color"]');
+                            if (textColorInput) {
+                                textColorInput.value = homepageSettings.text_color || '#ffffff';
+                            }
+                            
+                            const buttonColorInput = form.querySelector('input[name="homepage_button_color"]');
+                            if (buttonColorInput) {
+                                buttonColorInput.value = homepageSettings.button_color || '#28a745';
+                            }
+                            
+                            // Update color pickers
+                            const colorPickers = form.querySelectorAll('.color-input');
+                            colorPickers.forEach(picker => {
+                                const textInput = picker.nextElementSibling;
+                                if (textInput && textInput.value) {
+                                    picker.value = textInput.value;
+                                }
+                            });
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to refresh homepage form:', error);
+            }
         }
         
         function showError() {
@@ -1841,6 +2616,239 @@ document.addEventListener('DOMContentLoaded', function() {
         // Call loadProgramsModal on page load if needed
         // Uncomment if you want to load programs on page initialization
         // loadProgramsModal();
+
+        // ====== ROLE-SPECIFIC SIDEBAR FUNCTIONS ======
+
+        // Student Sidebar Functions
+        function updateStudentSidebarColor(type, value) {
+            document.getElementById(`studentSidebar${type.charAt(0).toUpperCase() + type.slice(1)}Text`).value = value;
+            updateStudentSidebarPreview();
+        }
+
+        function updateStudentSidebarPreview() {
+            const preview = document.getElementById('studentSidebarPreview');
+            if (!preview) return;
+
+            const primaryColor = document.getElementById('studentSidebarPrimary').value;
+            const secondaryColor = document.getElementById('studentSidebarSecondary').value;
+            const accentColor = document.getElementById('studentSidebarAccent').value;
+            const textColor = document.getElementById('studentSidebarText').value;
+            const hoverColor = document.getElementById('studentSidebarHover').value;
+
+            preview.style.setProperty('--preview-primary', primaryColor);
+            preview.style.setProperty('--preview-secondary', secondaryColor);
+            preview.style.setProperty('--preview-accent', accentColor);
+            preview.style.setProperty('--preview-text', textColor);
+            preview.style.setProperty('--preview-hover', hoverColor);
+        }
+
+        function saveStudentSidebarColors() {
+            const colors = {
+                primary_color: document.getElementById('studentSidebarPrimary').value,
+                secondary_color: document.getElementById('studentSidebarSecondary').value,
+                accent_color: document.getElementById('studentSidebarAccent').value,
+                text_color: document.getElementById('studentSidebarText').value,
+                hover_color: document.getElementById('studentSidebarHover').value
+            };
+
+            saveSidebarColorsForRole('student', colors);
+        }
+
+        function resetStudentSidebarColors() {
+            if (confirm('Reset student sidebar colors to default?')) {
+                document.getElementById('studentSidebarPrimary').value = '#1a1a1a';
+                document.getElementById('studentSidebarSecondary').value = '#2d2d2d';
+                document.getElementById('studentSidebarAccent').value = '#3b82f6';
+                document.getElementById('studentSidebarText').value = '#e0e0e0';
+                document.getElementById('studentSidebarHover').value = '#374151';
+                updateStudentSidebarPreview();
+                showNotification('Student sidebar colors reset to default', 'info');
+            }
+        }
+
+        // Professor Sidebar Functions
+        function updateProfessorSidebarColor(type, value) {
+            document.getElementById(`professorSidebar${type.charAt(0).toUpperCase() + type.slice(1)}Text`).value = value;
+            updateProfessorSidebarPreview();
+        }
+
+        function updateProfessorSidebarPreview() {
+            const preview = document.getElementById('professorSidebarPreview');
+            if (!preview) return;
+
+            const primaryColor = document.getElementById('professorSidebarPrimary').value;
+            const secondaryColor = document.getElementById('professorSidebarSecondary').value;
+            const accentColor = document.getElementById('professorSidebarAccent').value;
+            const textColor = document.getElementById('professorSidebarText').value;
+            const hoverColor = document.getElementById('professorSidebarHover').value;
+
+            preview.style.setProperty('--preview-primary', primaryColor);
+            preview.style.setProperty('--preview-secondary', secondaryColor);
+            preview.style.setProperty('--preview-accent', accentColor);
+            preview.style.setProperty('--preview-text', textColor);
+            preview.style.setProperty('--preview-hover', hoverColor);
+        }
+
+        function saveProfessorSidebarColors() {
+            const colors = {
+                primary_color: document.getElementById('professorSidebarPrimary').value,
+                secondary_color: document.getElementById('professorSidebarSecondary').value,
+                accent_color: document.getElementById('professorSidebarAccent').value,
+                text_color: document.getElementById('professorSidebarText').value,
+                hover_color: document.getElementById('professorSidebarHover').value
+            };
+
+            saveSidebarColorsForRole('professor', colors);
+        }
+
+        function resetProfessorSidebarColors() {
+            if (confirm('Reset professor sidebar colors to default?')) {
+                document.getElementById('professorSidebarPrimary').value = '#1e293b';
+                document.getElementById('professorSidebarSecondary').value = '#334155';
+                document.getElementById('professorSidebarAccent').value = '#10b981';
+                document.getElementById('professorSidebarText').value = '#f1f5f9';
+                document.getElementById('professorSidebarHover').value = '#475569';
+                updateProfessorSidebarPreview();
+                showNotification('Professor sidebar colors reset to default', 'info');
+            }
+        }
+
+        // Admin Sidebar Functions
+        function updateAdminSidebarColor(type, value) {
+            document.getElementById(`adminSidebar${type.charAt(0).toUpperCase() + type.slice(1)}Text`).value = value;
+            updateAdminSidebarPreview();
+        }
+
+        function updateAdminSidebarPreview() {
+            const preview = document.getElementById('adminSidebarPreview');
+            if (!preview) return;
+
+            const primaryColor = document.getElementById('adminSidebarPrimary').value;
+            const secondaryColor = document.getElementById('adminSidebarSecondary').value;
+            const accentColor = document.getElementById('adminSidebarAccent').value;
+            const textColor = document.getElementById('adminSidebarText').value;
+            const hoverColor = document.getElementById('adminSidebarHover').value;
+
+            preview.style.setProperty('--preview-primary', primaryColor);
+            preview.style.setProperty('--preview-secondary', secondaryColor);
+            preview.style.setProperty('--preview-accent', accentColor);
+            preview.style.setProperty('--preview-text', textColor);
+            preview.style.setProperty('--preview-hover', hoverColor);
+        }
+
+        function saveAdminSidebarColors() {
+            const colors = {
+                primary_color: document.getElementById('adminSidebarPrimary').value,
+                secondary_color: document.getElementById('adminSidebarSecondary').value,
+                accent_color: document.getElementById('adminSidebarAccent').value,
+                text_color: document.getElementById('adminSidebarText').value,
+                hover_color: document.getElementById('adminSidebarHover').value
+            };
+
+            saveSidebarColorsForRole('admin', colors);
+        }
+
+        function resetAdminSidebarColors() {
+            if (confirm('Reset admin sidebar colors to default?')) {
+                document.getElementById('adminSidebarPrimary').value = '#111827';
+                document.getElementById('adminSidebarSecondary').value = '#1f2937';
+                document.getElementById('adminSidebarAccent').value = '#f59e0b';
+                document.getElementById('adminSidebarText').value = '#f9fafb';
+                document.getElementById('adminSidebarHover').value = '#374151';
+                updateAdminSidebarPreview();
+                showNotification('Admin sidebar colors reset to default', 'info');
+            }
+        }
+
+        // Shared function for saving sidebar colors
+        function saveSidebarColorsForRole(role, colors) {
+            fetch('/smartprep/admin/settings/sidebar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    role: role,
+                    colors: colors
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`${role.charAt(0).toUpperCase() + role.slice(1)} sidebar colors saved successfully!`, 'success');
+                } else {
+                    showNotification('Error saving sidebar colors', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error saving sidebar colors', 'danger');
+            });
+        }
+
+        // Initialize role-specific previews when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load saved colors from database
+            const sidebarSettings = <?php echo json_encode($sidebarSettings ?? [], 15, 512) ?>;
+            
+            // Load student sidebar colors
+            if (sidebarSettings.student) {
+                const studentColors = sidebarSettings.student;
+                document.getElementById('studentSidebarPrimary').value = studentColors.primary_color || '#1a1a1a';
+                document.getElementById('studentSidebarSecondary').value = studentColors.secondary_color || '#2d2d2d';
+                document.getElementById('studentSidebarAccent').value = studentColors.accent_color || '#3b82f6';
+                document.getElementById('studentSidebarText').value = studentColors.text_color || '#e0e0e0';
+                document.getElementById('studentSidebarHover').value = studentColors.hover_color || '#374151';
+                
+                // Sync text inputs
+                document.getElementById('studentSidebarPrimaryText').value = studentColors.primary_color || '#1a1a1a';
+                document.getElementById('studentSidebarSecondaryText').value = studentColors.secondary_color || '#2d2d2d';
+                document.getElementById('studentSidebarAccentText').value = studentColors.accent_color || '#3b82f6';
+                document.getElementById('studentSidebarTextText').value = studentColors.text_color || '#e0e0e0';
+                document.getElementById('studentSidebarHoverText').value = studentColors.hover_color || '#374151';
+            }
+            
+            // Load professor sidebar colors
+            if (sidebarSettings.professor) {
+                const professorColors = sidebarSettings.professor;
+                document.getElementById('professorSidebarPrimary').value = professorColors.primary_color || '#1e293b';
+                document.getElementById('professorSidebarSecondary').value = professorColors.secondary_color || '#334155';
+                document.getElementById('professorSidebarAccent').value = professorColors.accent_color || '#10b981';
+                document.getElementById('professorSidebarText').value = professorColors.text_color || '#f1f5f9';
+                document.getElementById('professorSidebarHover').value = professorColors.hover_color || '#475569';
+                
+                // Sync text inputs
+                document.getElementById('professorSidebarPrimaryText').value = professorColors.primary_color || '#1e293b';
+                document.getElementById('professorSidebarSecondaryText').value = professorColors.secondary_color || '#334155';
+                document.getElementById('professorSidebarAccentText').value = professorColors.accent_color || '#10b981';
+                document.getElementById('professorSidebarTextText').value = professorColors.text_color || '#f1f5f9';
+                document.getElementById('professorSidebarHoverText').value = professorColors.hover_color || '#475569';
+            }
+            
+            // Load admin sidebar colors
+            if (sidebarSettings.admin) {
+                const adminColors = sidebarSettings.admin;
+                document.getElementById('adminSidebarPrimary').value = adminColors.primary_color || '#111827';
+                document.getElementById('adminSidebarSecondary').value = adminColors.secondary_color || '#1f2937';
+                document.getElementById('adminSidebarAccent').value = adminColors.accent_color || '#f59e0b';
+                document.getElementById('adminSidebarText').value = adminColors.text_color || '#f9fafb';
+                document.getElementById('adminSidebarHover').value = adminColors.hover_color || '#374151';
+                
+                // Sync text inputs
+                document.getElementById('adminSidebarPrimaryText').value = adminColors.primary_color || '#111827';
+                document.getElementById('adminSidebarSecondaryText').value = adminColors.secondary_color || '#1f2937';
+                document.getElementById('adminSidebarAccentText').value = adminColors.accent_color || '#f59e0b';
+                document.getElementById('adminSidebarTextText').value = adminColors.text_color || '#f9fafb';
+                document.getElementById('adminSidebarHoverText').value = adminColors.hover_color || '#374151';
+            }
+            
+            setTimeout(() => {
+                updateStudentSidebarPreview();
+                updateProfessorSidebarPreview();
+                updateAdminSidebarPreview();
+            }, 100);
+        });
     </script>
 
     <!-- Website Request Modal -->

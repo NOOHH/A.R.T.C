@@ -456,11 +456,15 @@
     $heroTitleColor = $homepageContent['hero_title_color'] ?? $textColor;
     $programsTitleColor = $homepageContent['programs_title_color'] ?? $primaryColor;
     $programsSubtitleColor = $homepageContent['programs_subtitle_color'] ?? '#6c757d';
+    $programsSectionBgColor = $homepageContent['programs_section_bg_color'] ?? $primaryColor;
     $modalitiesBgColor = $homepageContent['modalities_bg_color'] ?? $backgroundColor;
     $modalitiesTextColor = $homepageContent['modalities_text_color'] ?? $textColor;
     $aboutBgColor = $homepageContent['about_bg_color'] ?? '#ffffff';
     $aboutTitleColor = $homepageContent['about_title_color'] ?? $primaryColor;
     $aboutTextColor = $homepageContent['about_text_color'] ?? '#6c757d';
+    
+    // Hero background image
+    $heroBackgroundImage = $homepageContent['hero_background_image'] ?? 'images/Home page image.png';
 @endphp
 
 <!-- Hero Section -->
@@ -483,7 +487,7 @@
             </div>
             <div class="col-lg-6">
                 <div class="hero-image fade-in-up text-center">
-                    <img src="{{ asset('images/Home page image.png') }}" alt="Student studying with laptop" class="img-fluid rounded-3 shadow-lg">
+                    <img src="{{ asset($heroBackgroundImage) }}" alt="Student studying with laptop" class="img-fluid rounded-3 shadow-lg">
                 </div>
             </div>
         </div>
@@ -491,7 +495,7 @@
 </section>
 
 <!-- Programs Offered Section -->
-<section class="programs-section">
+<section class="programs-section" style="background: linear-gradient(135deg, {{ $programsSectionBgColor }} 0%, {{ $gradientColor }} 100%);">
     <div class="container">
         <div class="text-center mb-5">
             <h2 class="display-4 fw-bold" style="color: {{ $programsTitleColor }};">{{ $homepageContent['programs_title'] }}</h2>

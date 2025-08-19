@@ -1,13 +1,13 @@
-{{-- resources/views/student/student-dashboard/student-dashboard-layout.blade.php --}}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>@yield('title', 'Student Dashboard')</title>
+  <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+  <title><?php echo $__env->yieldContent('title', 'Student Dashboard'); ?></title>
 
-  @php
+  <?php
     // Check if this is a preview request
     $isPreview = request()->has('preview') || request()->is('*/preview') || request()->query('preview') === 'true';
     
@@ -35,31 +35,32 @@
         redirect()->route('login')->send();
       }
     }
-  @endphp
+  ?>
 
   <!-- Global JS vars -->
   <script>
-    window.myId            = {{ $user->id }};
-    window.myName          = @json($user->name);
+    window.myId            = <?php echo e($user->id); ?>;
+    window.myName          = <?php echo json_encode($user->name, 15, 512) ?>;
     window.isAuthenticated = true;
-    window.userRole        = @json($user->role);
-    window.csrfToken       = @json(csrf_token());
+    window.userRole        = <?php echo json_encode($user->role, 15, 512) ?>;
+    window.csrfToken       = <?php echo json_encode(csrf_token(), 15, 512) ?>;
     console.log('Globals:', { myId, myName, isAuthenticated, userRole });
   </script>
 
   <!-- Fonts & CSS -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link href="{{ asset('css/student/student-dashboard-layout.css') }}" rel="stylesheet">
-  <link href="{{ asset('css/student/student-sidebar-professional.css') }}" rel="stylesheet">
-  <link href="{{ asset('css/student/student-navbar.css') }}" rel="stylesheet">
+  <link href="<?php echo e(asset('css/student/student-dashboard-layout.css')); ?>" rel="stylesheet">
+  <link href="<?php echo e(asset('css/student/student-sidebar-professional.css')); ?>" rel="stylesheet">
+  <link href="<?php echo e(asset('css/student/student-navbar.css')); ?>" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 
-  @yield('head')
-  @stack('styles')
+  <?php echo $__env->yieldContent('head'); ?>
+  <?php echo $__env->yieldPushContent('styles'); ?>
 
   <style>
-    {!! \App\Helpers\SettingsHelper::getSidebarCSS('student') !!}
+    <?php echo \App\Helpers\SettingsHelper::getSidebarCSS('student'); ?>
+
 
     /* Global text rendering optimization */
     * {
@@ -159,31 +160,31 @@
       <i class="bi bi-list"></i>
     </button>
 
-    {{-- Professional Sidebar --}}
-    @if(!isset($hideSidebar) || !$hideSidebar)
-      @include('components.student-sidebar')
-    @endif
+    
+    <?php if(!isset($hideSidebar) || !$hideSidebar): ?>
+      <?php echo $__env->make('components.student-sidebar', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    <?php endif; ?>
 
-    {{-- Main Content Area --}}
+    
     <div class="main-content-area">
-      {{-- Top Header --}}
-      @include('components.student-navbar')
+      
+      <?php echo $__env->make('components.student-navbar', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 
-      {{-- Page Content --}}
+      
       <div class="content-wrapper">
-        @yield('content')
+        <?php echo $__env->yieldContent('content'); ?>
       </div>
     </div>
 
-    {{-- Floating Course Toggle (Only shown when sidebar is hidden) --}}
-    @if(isset($hideSidebar) && $hideSidebar)
+    
+    <?php if(isset($hideSidebar) && $hideSidebar): ?>
       <div class="floating-course-toggle" id="floatingCourseToggle">
         <button class="course-toggle-btn" id="courseToggleBtn" title="Show Navigation">
           <i class="bi bi-list"></i>
         </button>
       </div>
       
-      {{-- Compact Course Sidebar (Hidden by default) --}}
+      
       <div class="compact-course-sidebar" id="compactCourseSidebar">
         <div class="compact-sidebar-header">
           <div class="compact-brand">
@@ -196,53 +197,53 @@
         </div>
         <div class="compact-sidebar-content">
           <div class="compact-nav-section">
-            <a href="{{ route('student.dashboard') }}" class="compact-nav-item">
+            <a href="<?php echo e(route('student.dashboard')); ?>" class="compact-nav-item">
               <i class="bi bi-speedometer2"></i>
               <span>Dashboard</span>
             </a>
-            <a href="{{ route('student.calendar') }}" class="compact-nav-item">
+            <a href="<?php echo e(route('student.calendar')); ?>" class="compact-nav-item">
               <i class="bi bi-calendar-week"></i>
               <span>Calendar</span>
             </a>
-            <a href="{{ route('student.enrolled-courses') }}" class="compact-nav-item">
+            <a href="<?php echo e(route('student.enrolled-courses')); ?>" class="compact-nav-item">
               <i class="bi bi-journal-bookmark"></i>
               <span>My Courses</span>
             </a>
-            <a href="{{ route('student.meetings') }}" class="compact-nav-item">
+            <a href="<?php echo e(route('student.meetings')); ?>" class="compact-nav-item">
               <i class="bi bi-camera-video"></i>
               <span>Meetings</span>
             </a>
           </div>
           
-          @if(isset($studentPrograms) && !empty($studentPrograms))
+          <?php if(isset($studentPrograms) && !empty($studentPrograms)): ?>
           <div class="compact-nav-section">
             <div class="compact-section-title">My Programs</div>
-            @foreach($studentPrograms as $program)
-              <a href="{{ route('student.course', $program['program_id']) }}" 
+            <?php $__currentLoopData = $studentPrograms; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $program): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+              <a href="<?php echo e(route('student.course', $program['program_id'])); ?>" 
                  class="compact-nav-item program-item">
                 <i class="bi bi-book"></i>
                 <div class="compact-program-info">
-                  <div class="compact-program-name">{{ $program['program_name'] }}</div>
-                  <small class="compact-program-package">{{ $program['package_name'] }}</small>
+                  <div class="compact-program-name"><?php echo e($program['program_name']); ?></div>
+                  <small class="compact-program-package"><?php echo e($program['package_name']); ?></small>
                 </div>
               </a>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
           </div>
-          @endif
+          <?php endif; ?>
         </div>
       </div>
       
-      {{-- Compact Sidebar Backdrop --}}
+      
       <div class="compact-sidebar-backdrop" id="compactSidebarBackdrop"></div>
-    @endif
+    <?php endif; ?>
   </div>
 
-  {{-- Hidden Logout Form --}}
-  <form id="logout-form" action="{{ route('student.logout') }}" method="POST" style="display:none;">
-    @csrf
+  
+  <form id="logout-form" action="<?php echo e(route('student.logout')); ?>" method="POST" style="display:none;">
+    <?php echo csrf_field(); ?>
   </form>
 
-  @stack('scripts')
+  <?php echo $__env->yieldPushContent('scripts'); ?>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   
   <!-- Professional Sidebar JavaScript -->
@@ -449,3 +450,4 @@ document.addEventListener('DOMContentLoaded', function() {
   <!-- Global chat is already included in student-navbar component, no need to duplicate -->
 </body>
 </html>
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/student/student-dashboard/student-dashboard-layout.blade.php ENDPATH**/ ?>
