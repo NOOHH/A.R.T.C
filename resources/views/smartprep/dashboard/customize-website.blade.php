@@ -1193,8 +1193,32 @@ document.addEventListener('DOMContentLoaded', function() {
                         referrerpolicy="no-referrer" 
                         sandbox="allow-same-origin allow-scripts allow-forms allow-popups" 
                         title="Website Preview"
-                        onload="hideLoading()"
-                        onerror="showError()"></iframe>
+                        ></iframe>
+                    <script>
+                        // Early lightweight stubs so iframe events never fail even if main script later has a parse error
+                        if(!window.hideLoading){
+                            window.hideLoading = function(){
+                                var loading = document.getElementById('previewLoading');
+                                var iframe = document.getElementById('previewFrame');
+                                if(loading) loading.style.display='none';
+                                if(iframe) iframe.style.opacity='1';
+                            };
+                        }
+                        if(!window.showError){
+                            window.showError = function(){
+                                var loading = document.getElementById('previewLoading');
+                                if(loading){
+                                    loading.innerHTML = '<div class="text-center text-danger"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><div>Preview failed to load</div><small>Server may be offline</small></div>';
+                                }
+                            };
+                        }
+                        (function(){
+                            var iframe = document.getElementById('previewFrame');
+                            if(!iframe) return;
+                            iframe.addEventListener('load', function(){ try{ window.hideLoading(); }catch(e){} });
+                            iframe.addEventListener('error', function(){ try{ window.showError(); }catch(e){} });
+                        })();
+                    </script>
                 </div>
             </div>
         </div>
@@ -1530,14 +1554,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        function hideLoading() {
+        // Enhanced hideLoading replaces early stub (defined above iframe) once main script parsed
+        window.hideLoading = function() {
             const loading = document.getElementById('previewLoading');
             const iframe = document.getElementById('previewFrame');
-            
             setTimeout(() => {
                 if (loading) loading.style.display = 'none';
                 if (iframe) iframe.style.opacity = '1';
-            }, 500);
+            }, 300);
         }
         
         function showError() {
@@ -1784,23 +1808,34 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(endpoint, {
                 method: 'POST',
                 body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
+            .then(async response => {
+                const contentType = response.headers.get('content-type') || '';
+                let data;
+                try {
+                    if (contentType.includes('application/json')) {
+                        data = await response.json();
+                    } else {
+                        const text = await response.text();
+                        // Attempt lenient parse only if it looks like JSON; otherwise treat as HTML error page
+                        if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                            try { data = JSON.parse(text); } catch(e){ data = { success:false, parse_error:true, raw:text.slice(0,200) }; }
+                        } else {
+                            data = { success:false, non_json:true, status: response.status, snippet: text.slice(0,200) };
+                        }
+                    }
+                } catch (e) {
+                    data = { success:false, exception:true, message:e.message };
+                }
+                if (data && data.success) {
                     console.log('Auto-saved successfully:', fieldName);
-                    // Update specific elements in preview or refresh iframe
                     updatePreviewElement(fieldName, fieldValue);
                 } else {
-                    console.error('Auto-save failed:', data.message);
+                    console.warn('Auto-save response not JSON or failed', data);
                 }
             })
-            .catch(error => {
-                console.error('Auto-save error:', error);
-            });
+            .catch(error => console.error('Auto-save fetch error:', error));
         }
 
         // Keyboard shortcuts
@@ -1820,24 +1855,26 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Add missing loadProgramsModal function to prevent errors
         function loadProgramsModal() {
-            // Use the SmartPrep API endpoint with full URL to avoid resolution issues
             const apiUrl = '{{ url("smartprep/api/programs") }}';
-            
             fetch(apiUrl)
-                .then(response => {
+                .then(async response => {
+                    const ct = response.headers.get('content-type') || '';
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        const text = await response.text();
+                        throw new Error('HTTP '+response.status+': '+text.slice(0,120));
                     }
-                    return response.json();
+                    if (ct.includes('application/json')) return response.json();
+                    const text = await response.text();
+                    try { return JSON.parse(text); } catch { return { success:false, non_json:true, body:text.slice(0,200) }; }
                 })
                 .then(data => {
+                    if (data && data.non_json) {
+                        console.warn('Programs endpoint returned non-JSON snippet:', data.body);
+                        return;
+                    }
                     console.log('Programs loaded successfully:', data);
-                    // Handle programs data if needed
                 })
-                .catch(error => {
-                    console.error('Error loading programs:', error);
-                    // Don't show error to user in this context since it's not critical
-                });
+                .catch(error => console.error('Error loading programs:', error));
         }
         
         // Call loadProgramsModal on page load if needed

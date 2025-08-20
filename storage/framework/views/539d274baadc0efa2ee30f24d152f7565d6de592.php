@@ -170,12 +170,10 @@
             document.body.appendChild(form);
             form.submit();
         }
-
-        <?php if($selectedWebsite): ?>
-            // Include customization scripts
-            <?php echo $__env->make('smartprep.dashboard.partials.customize-scripts', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
-        <?php endif; ?>
     </script>
+    <?php if($selectedWebsite): ?>
+        <?php echo $__env->make('smartprep.dashboard.partials.customize-scripts', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    <?php endif; ?>
 </body>
 </html>
 <?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/smartprep/dashboard/customize-website-complete.blade.php ENDPATH**/ ?>

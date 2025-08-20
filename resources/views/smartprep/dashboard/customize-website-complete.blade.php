@@ -167,11 +167,9 @@
             document.body.appendChild(form);
             form.submit();
         }
-
-        @if($selectedWebsite)
-            // Include customization scripts
-            @include('smartprep.dashboard.partials.customize-scripts')
-        @endif
     </script>
+    @if($selectedWebsite)
+        @include('smartprep.dashboard.partials.customize-scripts')
+    @endif
 </body>
 </html>
