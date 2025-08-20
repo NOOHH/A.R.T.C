@@ -9,6 +9,9 @@ class Client extends Model
 {
     use HasFactory;
 
+    // Force this model to always use the main database connection
+    protected $connection = 'mysql';
+
     protected $fillable = [
         'name',
         'slug',

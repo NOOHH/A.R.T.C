@@ -69,10 +69,115 @@ class TenantProvisioner
     }
 
     /**
-     * Create a tenant database from a SQL dump file.
+     * Create a new tenant database by cloning from smartprep_artc template database.
      * Returns the connection credentials array similar to createDraftDatabase().
      */
     public static function createDatabaseFromSqlDump(string $businessName, ?string $dumpPath = null): array
+    {
+        // Use the template database cloning method instead of SQL dump
+        return self::createDatabaseFromTemplate($businessName);
+    }
+
+    /**
+     * Create a new tenant database by cloning from smartprep_artc template database.
+     * Returns the connection credentials array.
+     */
+    public static function createDatabaseFromTemplate(string $businessName): array
+    {
+        // Desired pattern: smartprep_<firstword> (e.g. "brian review center" => smartprep_brian)
+        $fullSlug = Str::slug($businessName, '_');
+        $firstWord = Str::before($fullSlug, '_');
+        $core = substr($firstWord ?: ($fullSlug ?: 'site'), 0, 32);
+        $baseName = 'smartprep_' . $core; // do not include rest of words
+
+        $exists = function (string $name) {
+            return (bool) DB::selectOne('SELECT SCHEMA_NAME as s FROM information_schema.schemata WHERE SCHEMA_NAME = ?', [$name]);
+        };
+
+        // Ensure uniqueness by appending incremental integer (smartprep_brian2, smartprep_brian3, ...)
+        $dbName = $baseName;
+        $counter = 2;
+        while ($exists($dbName) && $counter < 50) { // safety cap
+            $dbName = $baseName . $counter; // no underscore to keep it clean
+            $counter++;
+        }
+        if ($exists($dbName)) { // fallback randomness if too many existing
+            $dbName = $baseName . '_' . Str::lower(Str::random(4));
+        }
+
+        // 1) Create database
+        DB::statement("CREATE DATABASE `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        $originalDb = config('database.connections.mysql.database');
+        DB::statement("USE `{$dbName}`");
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+
+        // 2) Clone structure and data from smartprep_artc template database
+        $templateDb = 'smartprep_artc';
+        $tables = DB::select("SELECT table_name as t FROM information_schema.tables WHERE table_schema = ?", [$templateDb]);
+
+        foreach ($tables as $row) {
+            $table = $row->t;
+            
+            // Create table structure in new db
+            $createStmtRow = DB::selectOne("SHOW CREATE TABLE `{$templateDb}`.`{$table}`");
+            $createSql = $createStmtRow->{'Create Table'} ?? null;
+            if ($createSql) {
+                DB::statement($createSql);
+                
+                // Copy table data (excluding sensitive user data for new tenants)
+                if (self::shouldCopyTableData($table)) {
+                    DB::statement("INSERT INTO `{$dbName}`.`{$table}` SELECT * FROM `{$templateDb}`.`{$table}`");
+                }
+            }
+        }
+
+        // Table count verification
+        $actual = self::countTables($dbName);
+        if ($actual < 10) { // Expect at least 10 tables
+            // If missing tables, raise an exception early to surface provisioning issue
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            DB::statement("USE `{$originalDb}`");
+            throw new \RuntimeException("Provisioned database '{$dbName}' has {$actual} tables; expected at least 10. Check template database integrity.");
+        }
+
+        // Restore FK checks and original database
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        DB::statement("USE `{$originalDb}`");
+
+        return [
+            'db_name' => $dbName,
+            'db_host' => env('DB_HOST'),
+            'db_port' => env('DB_PORT', 3306),
+            'db_username' => env('DB_USERNAME'),
+            'db_password' => env('DB_PASSWORD'),
+        ];
+    }
+
+    /**
+     * Determine if we should copy data for a specific table
+     */
+    private static function shouldCopyTableData($tableName)
+    {
+        // Don't copy user-specific data for new tenants
+        $excludeDataTables = [
+            'users',
+            'password_resets',
+            'personal_access_tokens',
+            'sessions',
+            'quiz_attempts',
+            'enrollments',
+            'user_progress',
+            'notifications'
+        ];
+        
+        return !in_array($tableName, $excludeDataTables);
+    }
+
+    /**
+     * Create a tenant database from a SQL dump file.
+     * Returns the connection credentials array similar to createDraftDatabase().
+     */
+    public static function createDatabaseFromSqlDumpFile(string $businessName, ?string $dumpPath = null): array
     {
         // Desired pattern: smartprep_<firstword> (e.g. "brian review center" => smartprep_brian)
         $fullSlug = Str::slug($businessName, '_');

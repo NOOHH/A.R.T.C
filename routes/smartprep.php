@@ -75,7 +75,7 @@ Route::post('/password/confirm', [ConfirmPasswordController::class, 'confirm'])
     ->name('password.confirm.submit');
 
 // Auth-protected routes
-Route::middleware(['smartprep.auth', 'debug.smartprep'])->group(function () {
+Route::middleware(['smartprep.db', 'smartprep.auth', 'debug.smartprep'])->group(function () {
     // Admin
     Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
     Route::get('/admin/website-requests', [WebsiteRequestsController::class, 'index'])->name('admin.website-requests');
