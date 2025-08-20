@@ -21,12 +21,15 @@ class LoginController extends Controller
 
     public function login(Request $request)
     {
+        // Accept either email OR username (dynamic form configuration)
         $request->validate([
-            'email' => ['required'],
             'password' => ['required'],
         ]);
+        if(!$request->filled('email') && !$request->filled('username')) {
+            return back()->withErrors(['email' => 'Email or Username is required.']);
+        }
 
-        $login = $request->input('email');
+        $login = $request->input('email') ?: $request->input('username');
         $password = $request->input('password');
 
         // Step 1: Check SmartPrep-admins table (main DB)
@@ -68,18 +71,19 @@ class LoginController extends Controller
         $user = User::where('email', $login)
             ->orWhere(function($q) use ($login) {
                 $q->where('username', $login)->whereNotNull('username');
-            })->first();
+            })
+            ->first();
 
         if ($user) {
-            Log::info('SmartPrep Login: User found', ['email' => $login, 'user_id' => $user->id, 'role' => $user->role]);
+            Log::info('SmartPrep Login: User found', ['email' => $login, 'user_id' => $user->getKey(), 'role' => $user->role]);
             
             if (Hash::check($password, $user->password)) {
-                Log::info('SmartPrep Login: User password valid, logging in', ['user_id' => $user->id]);
+                Log::info('SmartPrep Login: User password valid, logging in', ['user_id' => $user->getKey()]);
                 
                 Auth::guard('smartprep')->login($user, $request->boolean('remember'));
                 $request->session()->regenerate();
                 
-                Log::info('SmartPrep Login: User login successful, redirecting to dashboard', ['user_id' => $user->id]);
+                Log::info('SmartPrep Login: User login successful, redirecting to dashboard', ['user_id' => $user->getKey()]);
                 return redirect()->route('smartprep.dashboard');
             } else {
                 Log::warning('SmartPrep Login: User password invalid', ['email' => $login]);

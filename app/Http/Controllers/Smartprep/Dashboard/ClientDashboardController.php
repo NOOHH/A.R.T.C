@@ -21,8 +21,9 @@ class ClientDashboardController extends Controller
 
         $spUser = Auth::guard('smartprep')->user();
 
-        $websiteRequests = WebsiteRequest::where('user_id', $spUser?->id)->orderByDesc('created_at')->get();
-        $activeWebsites = Client::where('user_id', $spUser?->id)
+        $userKey = $spUser?->getKey();
+        $websiteRequests = WebsiteRequest::where('user_id', $userKey)->orderByDesc('created_at')->get();
+        $activeWebsites = Client::where('user_id', $userKey)
             ->whereIn('status', ['active', 'draft']) // show drafts too for visibility
             ->orderByRaw("FIELD(status,'active','draft')")
             ->latest('created_at')

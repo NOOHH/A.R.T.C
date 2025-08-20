@@ -95,6 +95,7 @@ Route::middleware(['smartprep.auth', 'debug.smartprep'])->group(function () {
     Route::get('/admin/clients', [ClientsController::class, 'index'])->name('admin.clients');
     Route::get('/admin/clients/create', [ClientsController::class, 'create'])->name('admin.clients.create');
     Route::get('/admin/clients/{id}/edit', [ClientsController::class, 'edit'])->name('admin.clients.edit');
+    Route::post('/admin/clients/provision', [ClientsController::class, 'provision'])->name('admin.clients.provision');
     Route::patch('/admin/clients/{id}/archive', [ClientsController::class, 'archive'])->name('admin.clients.archive');
     Route::patch('/admin/clients/{id}/unarchive', [ClientsController::class, 'unarchive'])->name('admin.clients.unarchive');
     Route::delete('/admin/clients/{id}', [ClientsController::class, 'destroy'])->name('admin.clients.destroy');
@@ -150,3 +151,33 @@ Route::get('/debug/which-db', function () {
     $db = DB::select('select database() as db');
     return ['connection' => config('database.default'), 'database' => $db[0]->db ?? null];
 })->name('debug.db');
+
+// Local-only debug seeder for SmartPrep users
+if (app()->environment(['local', 'development'])) {
+    Route::get('/debug/seed-smartprep-user', function() {
+        try {
+            $email = request('email', 'bryan@gmail.com');
+            $password = request('password', '12345678');
+
+            $user = \App\Models\Smartprep\User::firstOrNew(['email' => $email]);
+            if (!$user->exists) {
+                $user->user_firstname = 'Bryan';
+                $user->user_lastname = 'User';
+                $user->username = 'bryan';
+            }
+            $user->role = $user->role ?? 'student';
+            $user->password = $password; // mutator will hash if needed
+            $user->save();
+
+            return response()->json([
+                'ok' => true,
+                'message' => 'SmartPrep user ensured',
+                'email' => $email,
+                'password' => $password,
+                'user_id' => $user->getKey(),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'error' => $e->getMessage()], 500);
+        }
+    })->name('debug.seed.smartprep.user');
+}
