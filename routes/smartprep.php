@@ -135,6 +135,18 @@ Route::middleware(['smartprep.auth', 'debug.smartprep'])->group(function () {
     Route::get('/dashboard', [ClientDashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/cache-test', [CustomizeWebsiteController::class, 'cacheTest'])->name('dashboard.cache-test');
     Route::get('/dashboard/customize-website', [CustomizeWebsiteController::class, 'current'])->name('dashboard.customize');
+    
+    // Client-side settings management (similar to admin but for tenant databases)
+    Route::post('/dashboard/settings/general', [CustomizeWebsiteController::class, 'updateGeneral'])->name('dashboard.settings.update.general');
+    Route::post('/dashboard/settings/navbar', [CustomizeWebsiteController::class, 'updateNavbar'])->name('dashboard.settings.update.navbar');
+    Route::post('/dashboard/settings/homepage', [CustomizeWebsiteController::class, 'updateHomepage'])->name('dashboard.settings.update.homepage');
+    Route::post('/dashboard/settings/branding', [CustomizeWebsiteController::class, 'updateBranding'])->name('dashboard.settings.update.branding');
+    Route::post('/dashboard/settings/student', [CustomizeWebsiteController::class, 'updateStudent'])->name('dashboard.settings.update.student');
+    Route::post('/dashboard/settings/professor', [CustomizeWebsiteController::class, 'updateProfessor'])->name('dashboard.settings.update.professor');
+    Route::post('/dashboard/settings/admin', [CustomizeWebsiteController::class, 'updateAdmin'])->name('dashboard.settings.update.admin');
+    Route::post('/dashboard/settings/advanced', [CustomizeWebsiteController::class, 'updateAdvanced'])->name('dashboard.settings.update.advanced');
+    Route::post('/dashboard/settings/sidebar', [CustomizeWebsiteController::class, 'updateSidebar'])->name('dashboard.settings.update.sidebar');
+    
     // User-managed website deletion (non-admin) – allows a client to delete their own draft/ inactive site
     Route::delete('/dashboard/websites/{id}', [CustomizeWebsiteController::class, 'destroy'])
         ->name('dashboard.websites.destroy');
