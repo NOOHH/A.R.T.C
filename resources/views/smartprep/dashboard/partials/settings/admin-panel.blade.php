@@ -4,7 +4,7 @@
         <i class="fas fa-cog me-2"></i>Admin Panel Settings
     </h3>
     
-    <form id="adminForm" action="{{ route('smartprep.dashboard.settings.update.admin', ['website' => $selectedWebsite->id]) }}" method="POST">
+    <form id="adminForm" action="{{ route('smartprep.dashboard.settings.update.admin', ['website' => $selectedWebsite->id]) }}" method="POST" onsubmit="updateAdmin(event)">
         @csrf
         <input type="hidden" name="website_id" value="{{ $currentWebsite->id ?? '' }}">
         

@@ -4,7 +4,7 @@
         <h5><i class="fas fa-cog me-2"></i>General Settings</h5>
     </div>
     
-    <form id="generalForm" method="POST" action="<?php echo e(route('smartprep.dashboard.settings.update.general', ['website' => $selectedWebsite->id])); ?>">
+    <form id="generalForm" method="POST" action="<?php echo e(route('smartprep.dashboard.settings.update.general', ['website' => $selectedWebsite->id])); ?>" onsubmit="updateGeneral(event)">
         <?php echo csrf_field(); ?>
         
         <?php if(session('success')): ?>

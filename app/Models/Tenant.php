@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Config;
 
 class Tenant extends Model
 {
+    // Always use main database connection for tenant lookups
+    protected $connection = 'mysql';
+    
     protected $fillable = [
         'name',
         'slug',

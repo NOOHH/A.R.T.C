@@ -15,7 +15,8 @@ class Setting extends Model
     protected $fillable = [
         'group',
         'key', 
-        'value'
+        'value',
+        'type'
     ];
 
     /**
@@ -33,11 +34,11 @@ class Setting extends Model
     /**
      * Set a setting value
      */
-    public static function set($group, $key, $value)
+    public static function set($group, $key, $value, $type = 'text')
     {
         return self::updateOrCreate(
             ['group' => $group, 'key' => $key],
-            ['value' => $value]
+            ['value' => $value, 'type' => $type]
         );
     }
 

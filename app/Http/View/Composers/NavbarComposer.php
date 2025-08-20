@@ -4,10 +4,20 @@ namespace App\Http\View\Composers;
 
 use Illuminate\View\View;
 use App\Models\UiSetting;
+use App\Models\Setting;
+use App\Models\Tenant;
 use App\Helpers\SettingsHelper;
+use App\Services\TenantService;
 
 class NavbarComposer
 {
+    protected $tenantService;
+    
+    public function __construct(TenantService $tenantService)
+    {
+        $this->tenantService = $tenantService;
+    }
+    
     /**
      * Bind navbar data to the view.
      *
@@ -16,28 +26,52 @@ class NavbarComposer
      */
     public function compose(View $view)
     {
-        // Get navbar settings from database first, then fallback to SettingsHelper
+        $navbar = [];
+        
         try {
-            $navbarSettings = UiSetting::getSection('navbar');
+            // Check if we're in a tenant context
+            $tenant = $this->getCurrentTenant();
             
-            // Convert to array if it's a collection
-            if ($navbarSettings && method_exists($navbarSettings, 'toArray')) {
-                $navbar = $navbarSettings->toArray();
+            if ($tenant) {
+                // We're in a tenant context, load settings from tenant database
+                $this->tenantService->switchToTenant($tenant);
+                
+                $navbarSettings = Setting::getGroup('navbar');
+                if ($navbarSettings) {
+                    $navbar = $navbarSettings->toArray();
+                }
+                
+                // Switch back to main database
+                $this->tenantService->switchToMain();
             } else {
-                $navbar = $navbarSettings ?: [];
+                // We're in main context, load settings from main database
+                $navbarSettings = UiSetting::getSection('navbar');
+                
+                // Convert to array if it's a collection
+                if ($navbarSettings && method_exists($navbarSettings, 'toArray')) {
+                    $navbar = $navbarSettings->toArray();
+                } else {
+                    $navbar = $navbarSettings ?: [];
+                }
             }
             
-            // Ensure brand_name is always available
+            // Ensure brand_name is always available with appropriate fallbacks
             if (empty($navbar['brand_name'])) {
-                $fallbackSettings = SettingsHelper::getSettings();
-                $navbar['brand_name'] = $fallbackSettings['navbar']['brand_name'] ?? 'Ascendo Review and Training Center';
+                if ($tenant) {
+                    // For tenants, use a generic fallback
+                    $navbar['brand_name'] = 'Your Company Name';
+                } else {
+                    // For main context, use the default
+                    $fallbackSettings = SettingsHelper::getSettings();
+                    $navbar['brand_name'] = $fallbackSettings['navbar']['brand_name'] ?? 'Ascendo Review and Training Center';
+                }
             }
             
         } catch (\Exception $e) {
             // Fallback to SettingsHelper if database fails
             $fallbackSettings = SettingsHelper::getSettings();
             $navbar = $fallbackSettings['navbar'] ?? [
-                'brand_name' => 'Ascendo Review and Training Center',
+                'brand_name' => 'Your Company Name',
                 'background_color' => '#f1f1f1',
                 'text_color' => '#222222'
             ];
@@ -57,5 +91,30 @@ class NavbarComposer
             'navbar' => $navbar
         ];
         $view->with('uiSettings', $uiSettings);
+    }
+    
+    /**
+     * Get current tenant from request context
+     */
+    private function getCurrentTenant()
+    {
+        $request = request();
+        
+        // Check for tenant in path-based routing (/t/{slug})
+        if ($request->is('t/*')) {
+            $segments = $request->segments();
+            if (count($segments) >= 2 && $segments[0] === 't') {
+                $tenantSlug = $segments[1];
+                return Tenant::where('slug', $tenantSlug)->first();
+            }
+        }
+        
+        // Check for tenant in subdomain routing
+        $domain = $request->getHost();
+        if (!in_array($domain, ['localhost', '127.0.0.1', 'artc.test'])) {
+            return Tenant::where('domain', $domain)->first();
+        }
+        
+        return null;
     }
 }

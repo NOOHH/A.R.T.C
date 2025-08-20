@@ -4,7 +4,7 @@
         <h5><i class="fas fa-user-graduate me-2"></i>Student Portal</h5>
     </div>
 
-    <form id="studentForm" method="POST" action="<?php echo e(route('smartprep.dashboard.settings.update.student', ['website' => $selectedWebsite->id])); ?>">
+    <form id="studentForm" method="POST" action="<?php echo e(route('smartprep.dashboard.settings.update.student', ['website' => $selectedWebsite->id])); ?>" onsubmit="updateStudent(event)">
         <?php echo csrf_field(); ?>
 
         <!-- Dashboard Colors -->

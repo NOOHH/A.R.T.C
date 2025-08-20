@@ -4,7 +4,7 @@
         <i class="fas fa-chalkboard-teacher me-2"></i>Professor Panel Settings
     </h3>
     
-    <form id="professorForm" action="<?php echo e(route('smartprep.dashboard.settings.update.professor', ['website' => $selectedWebsite->id])); ?>" method="POST">
+    <form id="professorForm" action="<?php echo e(route('smartprep.dashboard.settings.update.professor', ['website' => $selectedWebsite->id])); ?>" method="POST" onsubmit="updateProfessor(event)">
         <?php echo csrf_field(); ?>
         <input type="hidden" name="website_id" value="<?php echo e($currentWebsite->id ?? ''); ?>">
         

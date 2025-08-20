@@ -4,7 +4,7 @@
         <h5><i class="fas fa-cog me-2"></i>General Settings</h5>
     </div>
     
-    <form id="generalForm" method="POST" action="{{ route('smartprep.dashboard.settings.update.general', ['website' => $selectedWebsite->id]) }}">
+    <form id="generalForm" method="POST" action="{{ route('smartprep.dashboard.settings.update.general', ['website' => $selectedWebsite->id]) }}" onsubmit="updateGeneral(event)">
         @csrf
         
         @if(session('success'))

@@ -4,7 +4,7 @@
         <i class="fas fa-code me-2"></i>Advanced Settings
     </h3>
 
-    <form id="advancedForm" action="<?php echo e(route('smartprep.dashboard.settings.update.advanced', ['website' => $selectedWebsite->id])); ?>" method="POST">
+    <form id="advancedForm" action="<?php echo e(route('smartprep.dashboard.settings.update.advanced', ['website' => $selectedWebsite->id])); ?>" method="POST" onsubmit="updateAdvanced(event)">
         <?php echo csrf_field(); ?>
         <div class="mb-3">
             <label class="form-label">Custom CSS</label>

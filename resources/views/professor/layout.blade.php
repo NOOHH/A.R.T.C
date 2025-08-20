@@ -668,13 +668,32 @@
 <body style="overflow-x: hidden;">
 <div class="admin-container">
     <!-- Top Header -->
+    @php
+        // Get brand name from tenant settings if available, otherwise use default
+        $brandName = $settings['navbar']['brand_name'] ?? 
+                     $navbarBrandName ?? 
+                     'Ascendo Review & Training Center';
+        
+        // Get brand logo from tenant settings if available
+        $brandLogo = $settings['navbar']['brand_logo'] ?? null;
+        $defaultLogo = asset('images/ARTC_logo.png');
+    @endphp
+    
     <header class="main-header">
         <div class="header-left">
             <!-- Brand Logo and Text -->
             <div class="brand-container d-flex align-items-center gap-3" style="height:68px;">
-                <img src="{{ asset('images/ARTC_logo.png') }}" alt="A.R.T.C" class="brand-logo" style="height:56px; width:auto; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.08); background:#fff;">
+                @if($brandLogo)
+                    <img src="{{ \Illuminate\Support\Facades\Storage::url($brandLogo) }}" 
+                         alt="{{ $brandName }}" 
+                         class="brand-logo" 
+                         style="height:56px; width:auto; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.08); background:#fff;"
+                         onerror="this.src='{{ $defaultLogo }}'">
+                @else
+                    <img src="{{ $defaultLogo }}" alt="{{ $brandName }}" class="brand-logo" style="height:56px; width:auto; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.08); background:#fff;">
+                @endif
                 <div class="brand-text-area d-flex flex-column justify-content-center">
-                    <span class="brand-text fw-bold" style="font-size:1.25rem; color:#764ba2; letter-spacing:1px;">Ascendo Review &amp; Training Center</span>
+                    <span class="brand-text fw-bold" style="font-size:1.25rem; color:#764ba2; letter-spacing:1px;">{{ $brandName }}</span>
                     <span class="brand-subtext text-muted" style="font-size:0.9rem;">Professor Portal</span>
                 </div>
             </div>
