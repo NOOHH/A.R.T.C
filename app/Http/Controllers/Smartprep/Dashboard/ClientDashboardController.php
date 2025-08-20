@@ -47,32 +47,40 @@ class ClientDashboardController extends Controller
     public function getSidebarSettings(): JsonResponse
     {
         try {
+            // Check if role is explicitly requested via query parameter
+            $requestedRole = request()->query('role');
+            
             // Determine user role from multiple sources
             $userRole = 'student'; // default
             
-            // Check Laravel Auth first
-            if (auth()->check()) {
-                $userRole = auth()->user()->role ?? 'student';
-            }
-            
-            // Check session data (common in this app)
-            if (session('user_role')) {
-                $userRole = session('user_role');
-            }
-            
-            // Check for professor-specific session
-            if (session('professor_id') || session('user_type') === 'professor') {
-                $userRole = 'professor';
-            }
-            
-            // Map client role to student if needed
-            if ($userRole === 'client') {
-                $userRole = 'student';
-            }
-            
-            // Validate role
-            if (!in_array($userRole, ['student', 'professor', 'admin'])) {
-                $userRole = 'student';
+            // If a specific role is requested and it's valid, use it
+            if ($requestedRole && in_array($requestedRole, ['student', 'professor', 'admin'])) {
+                $userRole = $requestedRole;
+            } else {
+                // Check Laravel Auth first
+                if (auth()->check()) {
+                    $userRole = auth()->user()->role ?? 'student';
+                }
+                
+                // Check session data (common in this app)
+                if (session('user_role')) {
+                    $userRole = session('user_role');
+                }
+                
+                // Check for professor-specific session
+                if (session('professor_id') || session('user_type') === 'professor') {
+                    $userRole = 'professor';
+                }
+                
+                // Map client role to student if needed
+                if ($userRole === 'client') {
+                    $userRole = 'student';
+                }
+                
+                // Validate role
+                if (!in_array($userRole, ['student', 'professor', 'admin'])) {
+                    $userRole = 'student';
+                }
             }
 
             $sidebarColors = SettingsHelper::getSidebarColors($userRole);
@@ -82,6 +90,7 @@ class ClientDashboardController extends Controller
                 'role' => $userRole,
                 'colors' => $sidebarColors,
                 'debug' => [
+                    'requested_role' => $requestedRole,
                     'auth_user_role' => auth()->check() ? (auth()->user()->role ?? 'none') : 'not_logged_in',
                     'session_user_role' => session('user_role'),
                     'session_professor_id' => session('professor_id'),

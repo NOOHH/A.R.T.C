@@ -36,6 +36,12 @@ class UiSettingsHelper
             'navbar' => self::getSection('navbar')->toArray(),
             'branding' => self::getSection('branding')->toArray(),
             'homepage' => self::getSection('homepage')->toArray(),
+            'student_portal' => self::getSection('student_portal')->toArray(),
+            'student_sidebar' => self::getSection('student_sidebar')->toArray(),
+            'professor_sidebar' => self::getSection('professor_sidebar')->toArray(),
+            'admin_sidebar' => self::getSection('admin_sidebar')->toArray(),
+            'professor_panel' => self::getSection('professor_panel')->toArray(),
+            'admin_panel' => self::getSection('admin_panel')->toArray(),
         ];
     }
 

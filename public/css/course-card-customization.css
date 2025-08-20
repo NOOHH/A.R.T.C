@@ -1,0 +1,59 @@
+:root {
+    --badge-text-color: #ffffff;
+    --course-card-bg: #ffffff;
+    --course-title-color: #212529;
+    --course-title-font-size: 1.4rem;
+    --course-title-font-style: normal;
+    --course-title-font-weight: 700;
+    --placeholder-color: #ffffff;
+    --premium-badge-bg: #8e44ad;
+    --progress-bar-bg: #e9ecef;
+    --progress-bar-color: #28a745;
+    --progress-bar-fill: #667eea;
+    --progress-text-color: #6c757d;
+    --resume-btn-bg: #667eea;
+    --resume-btn-hover: #5a67d8;
+    --resume-btn-text: #ffffff;
+    --type-badge-bg: #e67e22;
+}
+
+/* Course Card Customization Styles */
+.course-placeholder {
+    color: var(--placeholder-color, #ffffff) !important;
+}
+
+.course-details h3 {
+    color: var(--course-title-color, #2c3e50) !important;
+    font-size: var(--course-title-font-size, 1.4rem) !important;
+    font-weight: var(--course-title-font-weight, 700) !important;
+    font-style: var(--course-title-font-style, normal) !important;
+}
+
+.progress-bar {
+    background: var(--progress-bar-bg, #e9ecef) !important;
+}
+
+.progress-bar::before {
+    background: linear-gradient(90deg, var(--progress-bar-fill, #667eea), var(--progress-bar-fill, #667eea)) !important;
+}
+
+.progress-text {
+    color: var(--progress-text-color, #6c757d) !important;
+}
+
+.resume-btn {
+    background: linear-gradient(135deg, var(--resume-btn-bg, #667eea) 0%, var(--resume-btn-hover, #5a67d8) 100%) !important;
+    color: var(--resume-btn-text, #ffffff) !important;
+}
+
+.enrollment-badge {
+    background: linear-gradient(135deg, var(--premium-badge-bg, #8e44ad) 0%, #3498db 100%) !important;
+    color: var(--badge-text-color, #ffffff) !important;
+}
+
+.type-badge {
+    background: rgba(e67e22, 0.1) !important;
+    color: var(--type-badge-bg, #e67e22) !important;
+    border: 1px solid rgba(e67e22, 0.3) !important;
+}
+

@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadProfessorSidebarCustomization() {
-    fetch('/smartprep/api/sidebar-settings')
+    fetch('/smartprep/api/sidebar-settings?role=professor')
         .then(response => response.json())
         .then(data => {
             if (data.success && data.colors) {

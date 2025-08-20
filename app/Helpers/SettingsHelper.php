@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class SettingsHelper
 {
@@ -727,9 +728,9 @@ class SettingsHelper
                 'hover_color' => '#374151'
             ],
             'professor' => [
-                'primary_color' => '#1e293b',
-                'secondary_color' => '#334155',
-                'accent_color' => '#10b981',
+                'primary_color' => '#238ea9',
+                'secondary_color' => '#32cd32',
+                'accent_color' => '#ff3814',
                 'text_color' => '#f1f5f9',
                 'hover_color' => '#475569'
             ],

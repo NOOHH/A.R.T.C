@@ -51,7 +51,7 @@ class AdminSettingsController extends Controller
             $file = $request->file('navbar_brand_logo');
             $filename = time() . '_' . $file->getClientOriginalName();
             $path = $file->storeAs('brand-logos', $filename, 'public');
-            UiSetting::set('navbar', 'brand_logo', 'storage/' . $path, 'file');
+            UiSetting::set('navbar', 'brand_logo', $path, 'file');
         }
 
         // Save to database using UiSetting model
@@ -310,6 +310,20 @@ class AdminSettingsController extends Controller
             'warning_color' => 'nullable|string',
             'error_color' => 'nullable|string',
             'info_color' => 'nullable|string',
+            // New course card component fields
+            'progress_bar_bg' => 'nullable|string',
+            'progress_bar_fill' => 'nullable|string',
+            'progress_text_color' => 'nullable|string',
+            'resume_btn_bg' => 'nullable|string',
+            'resume_btn_text' => 'nullable|string',
+            'resume_btn_hover' => 'nullable|string',
+            'premium_badge_bg' => 'nullable|string',
+            'type_badge_bg' => 'nullable|string',
+            'badge_text_color' => 'nullable|string',
+            'placeholder_color' => 'nullable|string',
+            'course_title_font_size' => 'nullable|string',
+            'course_title_font_weight' => 'nullable|string',
+            'course_title_font_style' => 'nullable|string',
         ]);
 
         // Dashboard Colors
@@ -335,6 +349,21 @@ class AdminSettingsController extends Controller
         UiSetting::set('student_portal', 'warning_color', $request->input('warning_color', '#ffc107'), 'color');
         UiSetting::set('student_portal', 'error_color', $request->input('error_color', '#dc3545'), 'color');
         UiSetting::set('student_portal', 'info_color', $request->input('info_color', '#17a2b8'), 'color');
+
+        // New Course Card Component Settings
+        UiSetting::set('student_portal', 'progress_bar_bg', $request->input('progress_bar_bg', '#e9ecef'), 'color');
+        UiSetting::set('student_portal', 'progress_bar_fill', $request->input('progress_bar_fill', '#667eea'), 'color');
+        UiSetting::set('student_portal', 'progress_text_color', $request->input('progress_text_color', '#6c757d'), 'color');
+        UiSetting::set('student_portal', 'resume_btn_bg', $request->input('resume_btn_bg', '#667eea'), 'color');
+        UiSetting::set('student_portal', 'resume_btn_text', $request->input('resume_btn_text', '#ffffff'), 'color');
+        UiSetting::set('student_portal', 'resume_btn_hover', $request->input('resume_btn_hover', '#5a67d8'), 'color');
+        UiSetting::set('student_portal', 'premium_badge_bg', $request->input('premium_badge_bg', '#8e44ad'), 'color');
+        UiSetting::set('student_portal', 'type_badge_bg', $request->input('type_badge_bg', '#e67e22'), 'color');
+        UiSetting::set('student_portal', 'badge_text_color', $request->input('badge_text_color', '#ffffff'), 'color');
+        UiSetting::set('student_portal', 'placeholder_color', $request->input('placeholder_color', '#ffffff'), 'color');
+        UiSetting::set('student_portal', 'course_title_font_size', $request->input('course_title_font_size', '1.4rem'), 'text');
+        UiSetting::set('student_portal', 'course_title_font_weight', $request->input('course_title_font_weight', '700'), 'text');
+        UiSetting::set('student_portal', 'course_title_font_style', $request->input('course_title_font_style', 'normal'), 'text');
 
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json(['success' => true, 'message' => 'Student portal settings updated successfully!']);
@@ -493,13 +522,23 @@ class AdminSettingsController extends Controller
                 $sidebarSettings[$role] = $settings;
             } else {
                 // Default colors for each role
-                $sidebarSettings[$role] = [
-                    'primary_color' => '#001F3F',
-                    'secondary_color' => '#2d2d2d',
-                    'accent_color' => '#3b82f6',
-                    'text_color' => '#ffffff',
-                    'hover_color' => '#004080'
-                ];
+                if ($role === 'professor') {
+                    $sidebarSettings[$role] = [
+                        'primary_color' => '#238ea9',
+                        'secondary_color' => '#32cd32',
+                        'accent_color' => '#ff3814',
+                        'text_color' => '#f1f5f9',
+                        'hover_color' => '#475569'
+                    ];
+                } else {
+                    $sidebarSettings[$role] = [
+                        'primary_color' => '#001F3F',
+                        'secondary_color' => '#2d2d2d',
+                        'accent_color' => '#3b82f6',
+                        'text_color' => '#ffffff',
+                        'hover_color' => '#004080'
+                    ];
+                }
             }
         }
         

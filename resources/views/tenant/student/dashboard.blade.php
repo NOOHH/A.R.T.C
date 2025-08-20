@@ -62,13 +62,13 @@
     
     .course-item {
         display: flex;
-        background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
-        border-radius: 15px;
+        background: var(--course-card-bg);
+        border-radius: var(--course-card-border-radius);
         margin-bottom: 25px;
         overflow: hidden;
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         box-shadow: 0 8px 25px rgba(0,0,0,0.06);
-        border: 1px solid rgba(0,0,0,0.05);
+        border: 1px solid var(--course-card-border-color);
         position: relative;
     }
     
@@ -116,7 +116,7 @@
     .course-placeholder {
         font-size: 3rem;
         opacity: 0.8;
-        color: white;
+        color: var(--placeholder-color);
         text-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     
@@ -991,6 +991,78 @@
         to { transform: translateX(0); }
     }
 
+    /* Dynamic Course Card Customization */
+    @php
+        $courseSettings = \App\Helpers\UiSettingsHelper::getSection('student_portal');
+    @endphp
+    
+    :root {
+        --course-card-bg: {{ $courseSettings['course_card_bg_color'] ?? '#ffffff' }};
+        --progress-bar-bg: {{ $courseSettings['progress_bg_color'] ?? '#e9ecef' }};
+        --progress-bar-fill: {{ $courseSettings['progress_bar_color'] ?? '#667eea' }};
+        --progress-text-color: {{ $courseSettings['progress_text_color'] ?? '#6c757d' }};
+        --resume-btn-bg: {{ $courseSettings['resume_button_color'] ?? '#667eea' }};
+        --resume-btn-text: {{ $courseSettings['resume_button_text_color'] ?? '#ffffff' }};
+        --resume-btn-hover: {{ $courseSettings['resume_btn_hover'] ?? '#5a67d8' }};
+        --premium-badge-bg: {{ $courseSettings['enrollment_badge_color'] ?? '#8e44ad' }};
+        --type-badge-bg: {{ $courseSettings['type_badge_bg'] ?? '#e67e22' }};
+        --badge-text-color: {{ $courseSettings['enrollment_badge_text_color'] ?? '#ffffff' }};
+        --placeholder-color: {{ $courseSettings['course_placeholder_color'] ?? '#ffffff' }};
+        --course-title-color: {{ $courseSettings['course_title_color'] ?? '#333333' }};
+        --course-card-border-color: {{ $courseSettings['course_card_border_color'] ?? '#dee2e6' }};
+        --course-title-font-size: {{ $courseSettings['course_title_font_size'] ?? '1.25rem' }};
+        --course-title-font-weight: {{ $courseSettings['course_title_font_weight'] ?? '600' }};
+        --course-card-border-radius: {{ $courseSettings['course_card_border_radius'] ?? '15px' }};
+        --course-title-font-style: {{ $courseSettings['course_title_font_style'] ?? 'normal' }};
+    }
+
+    /* Apply customizations to course card elements */
+    .course-item {
+        background: var(--course-card-bg) !important;
+    }
+
+    .course-placeholder {
+        color: var(--placeholder-color) !important;
+    }
+
+    .course-details h3 {
+        color: var(--course-title-color) !important;
+        font-size: var(--course-title-font-size) !important;
+        font-weight: var(--course-title-font-weight) !important;
+        font-style: var(--course-title-font-style) !important;
+    }
+
+    .progress-bar {
+        background: var(--progress-bar-bg) !important;
+    }
+
+    .progress-bar::before {
+        background: linear-gradient(90deg, var(--progress-bar-fill), var(--progress-bar-fill)) !important;
+    }
+
+    .progress-text {
+        color: var(--progress-text-color) !important;
+    }
+
+    .resume-btn {
+        background: linear-gradient(135deg, var(--resume-btn-bg) 0%, var(--resume-btn-hover) 100%) !important;
+        color: var(--resume-btn-text) !important;
+    }
+
+    .resume-btn:hover {
+        background: linear-gradient(135deg, var(--resume-btn-hover) 0%, var(--resume-btn-bg) 100%) !important;
+    }
+
+    .enrollment-badge {
+        background: linear-gradient(135deg, var(--premium-badge-bg) 0%, #3498db 100%) !important;
+        color: var(--badge-text-color) !important;
+    }
+
+    .type-badge {
+        color: var(--type-badge-bg) !important;
+        background: color-mix(in srgb, var(--type-badge-bg) 10%, transparent) !important;
+        border-color: color-mix(in srgb, var(--type-badge-bg) 30%, transparent) !important;
+    }
 
  
 

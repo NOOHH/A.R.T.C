@@ -3,9 +3,19 @@
     <div class="header-left">
         <!-- Brand Logo and Text -->
         <div class="brand-container d-flex align-items-center gap-3">
-            <img src="{{ asset('images/ARTC_logo.png') }}" alt="A.R.T.C" class="brand-logo">
+            @php
+                $brandingSettings = \App\Helpers\UiSettingsHelper::getSection('navbar');
+                $logoUrl = $brandingSettings['brand_logo'] ?? null;
+                $brandName = $brandingSettings['brand_name'] ?? 'Ascendo Review & Training Center';
+            @endphp
+            
+            @if($logoUrl)
+                <img src="{{ \Illuminate\Support\Facades\Storage::url($logoUrl) }}" alt="A.R.T.C" class="brand-logo">
+            @else
+                <img src="{{ asset('images/ARTC_logo.png') }}" alt="A.R.T.C" class="brand-logo">
+            @endif
             <div class="brand-text-area d-flex flex-column justify-content-center">
-                <span class="brand-text fw-bold">Ascendo Review &amp; Training Center</span>
+                <span class="brand-text fw-bold">{{ $brandName }}</span>
                 <span class="brand-subtext text-muted">Professor Portal</span>
             </div>
         </div>

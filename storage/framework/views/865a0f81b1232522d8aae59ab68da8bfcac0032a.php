@@ -1,9 +1,19 @@
 <header class="main-header">
   <div class="header-left">
     <a href="<?php echo e(route('home')); ?>" class="brand-link">
-      <img src="<?php echo e(asset('images/ARTC_logo.png')); ?>" alt="Logo">
+      <?php
+        $brandingSettings = \App\Helpers\UiSettingsHelper::getSection('navbar');
+        $logoUrl = $brandingSettings['brand_logo'] ?? null;
+        $brandName = $brandingSettings['brand_name'] ?? 'Ascendo Review and Training Center';
+      ?>
+      
+      <?php if($logoUrl): ?>
+        <img src="<?php echo e(\Illuminate\Support\Facades\Storage::url($logoUrl)); ?>" alt="Logo">
+      <?php else: ?>
+        <img src="<?php echo e(asset('images/ARTC_logo.png')); ?>" alt="Logo">
+      <?php endif; ?>
       <div class="brand-text">
-        <?php echo e($navbar['brand_name'] ?? 'Ascendo Review and Training Center'); ?>
+        <?php echo e(str_replace(' and ', '<br>and ', $brandName)); ?>
 
       </div>
     </a>

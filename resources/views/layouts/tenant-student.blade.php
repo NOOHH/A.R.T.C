@@ -107,9 +107,19 @@
     <header class="main-header">
         <div class="header-left">
             <a href="{{ route('home') }}" class="brand-link">
-                <img src="{{ asset('images/ARTC_logo.png') }}" alt="Logo">
+                @php
+                    $brandingSettings = \App\Helpers\UiSettingsHelper::getSection('navbar');
+                    $logoUrl = $brandingSettings['brand_logo'] ?? null;
+                    $brandName = $brandingSettings['brand_name'] ?? 'Ascendo Review and Training Center';
+                @endphp
+                
+                @if($logoUrl)
+                    <img src="{{ \Illuminate\Support\Facades\Storage::url($logoUrl) }}" alt="Logo">
+                @else
+                    <img src="{{ asset('images/ARTC_logo.png') }}" alt="Logo">
+                @endif
                 <div class="brand-text">
-                    Ascendo Review<br>and Training Center
+                    {{ str_replace(' and ', '<br>and ', $brandName) }}
                 </div>
             </a>
         </div>

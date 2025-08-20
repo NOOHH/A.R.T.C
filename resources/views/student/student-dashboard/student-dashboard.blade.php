@@ -7,19 +7,55 @@
 <meta name="page-id" content="student-dashboard">
 <link rel="stylesheet" href="{{ asset('css/student/student-dashboard.css') }}">
 <style>
+    @php
+        $courseSettings = \App\Helpers\UiSettingsHelper::getSection('student_portal');
+        $dashboardSettings = \App\Helpers\UiSettingsHelper::getSection('dashboard');
+    @endphp
+    
+    :root {
+        /* Course Card Variables */
+        --course-card-bg: {{ $courseSettings['course_card_bg_color'] ?? '#ffffff' }};
+        --progress-bar-bg: {{ $courseSettings['progress_bg_color'] ?? '#e9ecef' }};
+        --progress-bar-fill: {{ $courseSettings['progress_bar_color'] ?? '#667eea' }};
+        --progress-text-color: {{ $courseSettings['progress_text_color'] ?? '#6c757d' }};
+        --resume-btn-bg: {{ $courseSettings['resume_button_color'] ?? '#667eea' }};
+        --resume-btn-text: {{ $courseSettings['resume_button_text_color'] ?? '#ffffff' }};
+        --resume-btn-hover: {{ $courseSettings['resume_button_hover_color'] ?? '#5a67d8' }};
+        --premium-badge-bg: {{ $courseSettings['premium_badge_bg'] ?? '#8e44ad' }};
+        --type-badge-bg: {{ $courseSettings['type_badge_bg'] ?? '#e67e22' }};
+        --badge-text-color: {{ $courseSettings['badge_text_color'] ?? '#ffffff' }};
+        --placeholder-color: {{ $courseSettings['course_placeholder_color'] ?? '#ffffff' }};
+        --course-title-color: {{ $courseSettings['course_title_color'] ?? '#333333' }};
+        --course-card-border-color: {{ $courseSettings['course_card_border_color'] ?? '#dee2e6' }};
+        --course-title-font-size: {{ $courseSettings['course_title_font_size'] ?? '1.25rem' }};
+        --course-title-font-weight: {{ $courseSettings['course_title_font_weight'] ?? '600' }};
+        --course-card-border-radius: {{ $courseSettings['course_card_border_radius'] ?? '15px' }};
+        --course-title-font-style: {{ $courseSettings['course_title_font_style'] ?? 'normal' }};
+        
+        /* Dashboard Variables */
+        --dashboard-header-bg: {{ $dashboardSettings['header_bg'] ?? '#0d6efd' }};
+        --dashboard-header-text: {{ $dashboardSettings['header_text'] ?? '#ffffff' }};
+        --sidebar-bg: {{ $dashboardSettings['sidebar_bg'] ?? '#f8f9fa' }};
+        --active-menu-item: {{ $dashboardSettings['active_menu_item'] ?? '#0d6efd' }};
+        --course-interface-card-bg: {{ $dashboardSettings['course_card_bg'] ?? '#ffffff' }};
+        --course-interface-progress: {{ $dashboardSettings['course_progress_bar'] ?? '#28a745' }};
+        --course-interface-title: {{ $dashboardSettings['course_title_color'] ?? '#212529' }};
+        --assignment-due-date: {{ $dashboardSettings['assignment_due_date'] ?? '#dc3545' }};
+    }
+    
     /* Enhanced course cards with modern design */
     .courses-card {
-        background: white;
-        border-radius: 20px;
+        background: var(--course-card-bg);
+        border-radius: var(--course-card-border-radius);
         box-shadow: 0 15px 35px rgba(0,0,0,0.08);
         overflow: hidden;
-        border: 1px solid rgba(255,255,255,0.2);
+        border: 1px solid var(--course-card-border-color);
         backdrop-filter: blur(10px);
     }
     
     .card-header {
-        
-        color: white;
+        background: var(--dashboard-header-bg);
+        color: var(--dashboard-header-text);
         padding: 25px;
         display: flex;
         align-items: center;
@@ -62,13 +98,13 @@
     
     .course-item {
         display: flex;
-        background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
-        border-radius: 15px;
+        background: var(--course-card-bg);
+        border-radius: var(--course-card-border-radius);
         margin-bottom: 25px;
         overflow: hidden;
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         box-shadow: 0 8px 25px rgba(0,0,0,0.06);
-        border: 1px solid rgba(0,0,0,0.05);
+        border: 1px solid var(--course-card-border-color);
         position: relative;
     }
     
@@ -130,9 +166,10 @@
     
     .course-details h3 {
         margin: 0 0 12px 0;
-        font-size: 1.4rem;
-        font-weight: 700;
-        color: #2c3e50;
+        font-size: var(--course-title-font-size);
+        font-weight: var(--course-title-font-weight);
+        font-style: var(--course-title-font-style);
+        color: var(--course-title-color);
         line-height: 1.3;
     }
     
@@ -146,7 +183,7 @@
     
     .progress-bar {
         height: 12px;
-        background: #e9ecef;
+        background: var(--progress-bar-bg);
         border-radius: 8px;
         overflow: hidden;
         position: relative;
@@ -161,7 +198,7 @@
         left: 0;
         height: 100%;
         width: var(--progress, 0%);
-        background: linear-gradient(90deg, #667eea, #764ba2);
+        background: linear-gradient(90deg, var(--progress-bar-fill), var(--progress-bar-fill));
         border-radius: 8px;
         transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
@@ -171,14 +208,14 @@
         display: block;
         margin-top: 8px;
         font-size: 0.9rem;
-        color: #6c757d;
+        color: var(--progress-text-color);
         text-align: right;
         font-weight: 500;
     }
     
     .resume-btn {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        background: var(--resume-btn-bg);
+        color: var(--resume-btn-text);
         border: none;
         padding: 12px 24px;
         margin: 15px;
@@ -212,6 +249,7 @@
     }
     
     .resume-btn:hover {
+        background: var(--resume-btn-hover);
         transform: translateY(-3px) scale(1.05);
         box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
     }

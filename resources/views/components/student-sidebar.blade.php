@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadSidebarCustomization() {
-    fetch('/smartprep/api/sidebar-settings')
+    fetch('/smartprep/api/sidebar-settings?role=student')
         .then(response => response.json())
         .then(data => {
             if (data.success && data.colors) {
@@ -152,7 +152,7 @@ function loadSidebarCustomization() {
             }
         })
         .catch(error => {
-            console.log('No custom sidebar settings found, using defaults');
+            console.log('No custom student sidebar settings found, using defaults');
         });
 }
 
