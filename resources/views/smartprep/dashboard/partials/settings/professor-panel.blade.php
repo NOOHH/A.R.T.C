@@ -4,7 +4,7 @@
         <i class="fas fa-chalkboard-teacher me-2"></i>Professor Panel Settings
     </h3>
     
-    <form id="professorForm" action="{{ route('smartprep.dashboard.settings.update.professor', ['website' => $selectedWebsite->id]) }}" method="POST">
+    <form id="professorForm" action="{{ route('smartprep.dashboard.settings.update.professor', ['website' => $selectedWebsite->id]) }}" method="POST" onsubmit="updateProfessor(event)">
         @csrf
         <input type="hidden" name="website_id" value="{{ $currentWebsite->id ?? '' }}">
         
@@ -235,6 +235,10 @@
                 <div class="col-md-6">
                     <label class="form-label">Hover Color</label>
                     <input type="color" id="professor_sidebar_hover_color" class="form-control form-control-color" value="{{ $settings['professor_sidebar']['hover_color'] ?? '#0056b3' }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Background Color</label>
+                    <input type="text" class="form-control" name="sidebar_bg" value="{{ $settings['professor_sidebar']['background_color'] ?? '#f8f9fa' }}" placeholder="#f8f9fa">
                 </div>
             </div>
             <div class="mt-3 d-flex gap-2">

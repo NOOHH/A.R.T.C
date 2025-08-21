@@ -23,8 +23,15 @@ class HomeController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Pull homepage settings from main SmartPrep DB (shared template settings)
-        $homepageSettings = \App\Helpers\UiSettingsHelper::getSection('homepage')->toArray();
+        // Load homepage settings from tenant database (not main SmartPrep DB)
+        // Since we've already switched to tenant DB, use Setting model which will use the tenant connection
+        try {
+            $homepageSettings = \App\Models\Setting::getGroup('homepage')->toArray();
+        } catch (\Exception $e) {
+            // Fallback to default settings if tenant doesn't have settings table
+            $homepageSettings = [];
+        }
+        
         $homepageContent = array_merge([
             'hero_title' => 'Review Smarter. Learn Better. Succeed Faster.',
             'hero_subtitle' => 'Your premier destination for comprehensive review programs and professional training.',

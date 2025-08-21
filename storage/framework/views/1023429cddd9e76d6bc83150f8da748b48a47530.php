@@ -4,7 +4,7 @@
         <i class="fas fa-cog me-2"></i>Admin Panel Settings
     </h3>
     
-    <form id="adminForm" action="<?php echo e(route('smartprep.dashboard.settings.update.admin', ['website' => $selectedWebsite->id])); ?>" method="POST">
+    <form id="adminForm" action="<?php echo e(route('smartprep.dashboard.settings.update.admin', ['website' => $selectedWebsite->id])); ?>" method="POST" onsubmit="updateAdmin(event)">
         <?php echo csrf_field(); ?>
         <input type="hidden" name="website_id" value="<?php echo e($currentWebsite->id ?? ''); ?>">
         

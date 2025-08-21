@@ -243,15 +243,18 @@
         
         switch(section) {
             case 'student':
-                previewUrl = '{{ url("/student/dashboard") }}';
+                // Use tenant-specific student dashboard URL instead of hardcoded /student/dashboard
+                previewUrl = '{{ $previewUrl }}' + '/student/dashboard';
                 titleText = 'Student Portal Preview';
                 break;
             case 'professor':
-                previewUrl = '{{ url("/professor/dashboard") }}';
+                // Use tenant-specific professor dashboard URL instead of hardcoded /professor/dashboard
+                previewUrl = '{{ $previewUrl }}' + '/professor/dashboard';
                 titleText = 'Professor Panel Preview';
                 break;
             case 'admin':
-                previewUrl = '{{ url("/admin-dashboard") }}';
+                // Use tenant-specific admin dashboard URL instead of hardcoded /admin-dashboard
+                previewUrl = '{{ $previewUrl }}' + '/admin-dashboard';
                 titleText = 'Admin Panel Preview';
                 break;
             case 'homepage':
@@ -268,8 +271,10 @@
                 titleText = 'Live Preview';
         }
         
-        // Add preview parameter and timestamp to bypass cache
-    const finalUrl = previewUrl + (previewUrl.includes('?') ? '&' : '?') + 'preview=true&t=' + Date.now();
+    // Add preview parameter, website parameter, and timestamp to bypass cache
+    const websiteId = '{{ $selectedWebsite->id }}';
+    const urlSeparator = previewUrl.includes('?') ? '&' : '?';
+    const finalUrl = previewUrl + urlSeparator + 'website=' + websiteId + '&preview=true&t=' + Date.now();
         
         console.log('Updating preview for section:', section, 'URL:', finalUrl);
         
@@ -350,16 +355,24 @@
             iframe.style.opacity = '0.5';
             
             try {
-                // Fetch current UI settings from API
-                const response = await fetch('{{ route("smartprep.api.ui-settings") }}');
+                // Fetch current UI settings from API with website parameter
+                const websiteId = '{{ $selectedWebsite->id }}';
+                const apiUrl = '{{ route("smartprep.api.ui-settings") }}' + '?website=' + websiteId;
+                const response = await fetch(apiUrl);
                 if (response.ok) {
                     const settings = await response.json();
+                    console.log('Fetched tenant settings:', settings.data);
                     applySettingsToPreview(settings.data);
                     
-                    // Update iframe src with configurable preview URL
-                    const fallbackUrl = (document.querySelector('.preview-panel')?.getAttribute('data-preview-base')) || "{{ $previewUrl }}";
-                    const effectiveUrl = fallbackUrl; // Always trust selected website context
-                    iframe.src = effectiveUrl + (effectiveUrl.includes('?') ? '&' : '?') + 'preview=true&t=' + Date.now();
+                    // Update iframe src with configurable preview URL and website parameter
+                    const fallbackUrl = "{{ $previewUrl }}";
+                    const basePreviewUrl = (settings.data && settings.data.general && settings.data.general.preview_url)
+                        ? settings.data.general.preview_url
+                        : fallbackUrl;
+                    const urlSeparator = basePreviewUrl.includes('?') ? '&' : '?';
+                    const finalPreviewUrl = basePreviewUrl + urlSeparator + 'website=' + websiteId + '&preview=true&t=' + Date.now();
+                    console.log('Setting iframe to:', finalPreviewUrl);
+                    iframe.src = finalPreviewUrl;
                 }
             } catch (error) {
                 console.error('Failed to fetch UI settings:', error);
@@ -851,6 +864,39 @@
             updateAdminSidebarPreview();
             showNotification('Admin sidebar colors reset to default', 'info');
         }
+    }
+
+    // Function to save sidebar colors for a specific role
+    function saveSidebarColors(role) {
+        let colors = {};
+        
+        if (role === 'student') {
+            colors = {
+                primary_color: document.getElementById('studentSidebarPrimary').value,
+                secondary_color: document.getElementById('studentSidebarSecondary').value,
+                accent_color: document.getElementById('studentSidebarAccent').value,
+                text_color: document.getElementById('studentSidebarText').value,
+                hover_color: document.getElementById('studentSidebarHover').value
+            };
+        } else if (role === 'professor') {
+            colors = {
+                primary_color: document.getElementById('professorSidebarPrimary').value,
+                secondary_color: document.getElementById('professorSidebarSecondary').value,
+                accent_color: document.getElementById('professorSidebarAccent').value,
+                text_color: document.getElementById('professorSidebarText').value,
+                hover_color: document.getElementById('professorSidebarHover').value
+            };
+        } else if (role === 'admin') {
+            colors = {
+                primary_color: document.getElementById('adminSidebarPrimary').value,
+                secondary_color: document.getElementById('adminSidebarSecondary').value,
+                accent_color: document.getElementById('adminSidebarAccent').value,
+                text_color: document.getElementById('adminSidebarText').value,
+                hover_color: document.getElementById('adminSidebarHover').value
+            };
+        }
+        
+        saveSidebarColorsForRole(role, colors);
     }
 
     // Shared function for saving sidebar colors

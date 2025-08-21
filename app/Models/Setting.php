@@ -9,13 +9,14 @@ class Setting extends Model
 {
     use HasFactory;
 
-    // Use tenant connection by default
-    protected $connection = 'tenant';
+    // Use default connection (will be switched by TenantService)
+    // protected $connection = 'tenant'; // Removed hardcoded connection
     
     protected $fillable = [
         'group',
         'key', 
-        'value'
+        'value',
+        'type'
     ];
 
     /**
@@ -33,11 +34,11 @@ class Setting extends Model
     /**
      * Set a setting value
      */
-    public static function set($group, $key, $value)
+    public static function set($group, $key, $value, $type = 'text')
     {
         return self::updateOrCreate(
             ['group' => $group, 'key' => $key],
-            ['value' => $value]
+            ['value' => $value, 'type' => $type]
         );
     }
 

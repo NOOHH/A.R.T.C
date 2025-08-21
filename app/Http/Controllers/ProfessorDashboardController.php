@@ -21,8 +21,68 @@ class ProfessorDashboardController extends Controller
         $this->middleware('professor.auth')->except(['showPreviewDashboard']);
     }
 
+    /**
+     * Detect tenant context and load appropriate settings
+     */
+    private function detectTenantContext()
+    {
+        $request = request();
+        $tenant = null;
+        $settings = [];
+        
+        // Check for tenant in path-based routing (/t/{slug})
+        if ($request->is('t/*')) {
+            $segments = $request->segments();
+            if (count($segments) >= 2 && $segments[0] === 't') {
+                $tenantSlug = $segments[1];
+                $tenant = \App\Models\Tenant::where('slug', $tenantSlug)->first();
+            }
+        }
+        
+        // Check for tenant in subdomain routing
+        if (!$tenant) {
+            $domain = $request->getHost();
+            if (!in_array($domain, ['localhost', '127.0.0.1', 'artc.test'])) {
+                $tenant = \App\Models\Tenant::where('domain', $domain)->first();
+            }
+        }
+        
+        // If tenant found, load tenant-specific settings
+        if ($tenant) {
+            try {
+                $tenantService = app(\App\Services\TenantService::class);
+                $tenantService->switchToTenant($tenant);
+                
+                $settings = [
+                    'navbar' => \App\Models\Setting::getGroup('navbar')->toArray(),
+                    'professor_sidebar' => \App\Models\Setting::getGroup('professor_sidebar')->toArray(),
+                ];
+                
+                $tenantService->switchToMain();
+                
+                // Share settings with the view
+                view()->share('settings', $settings);
+                view()->share('navbar', $settings['navbar'] ?? []);
+                
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning('Failed to load tenant settings', [
+                    'tenant' => $tenant->slug,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+        
+        return [
+            'tenant' => $tenant,
+            'settings' => $settings
+        ];
+    }
+
     public function index()
     {
+        // Detect tenant context and load appropriate settings
+        $tenantContext = \App\Helpers\TenantContextHelper::getCurrentTenantContext();
+        
         // Check if this is a preview request - handle before middleware
         if (request()->has('preview') && request('preview') === 'true') {
             return $this->showPreviewDashboard();
@@ -397,8 +457,112 @@ class ProfessorDashboardController extends Controller
     /**
      * Display a preview version of the professor dashboard for admin customization
      */
-    public function showPreviewDashboard()
+    public function showPreviewDashboard($tenantSlug = null)
     {
+        // Load tenant settings if website parameter is provided OR if tenant slug is in URL
+        $settings = [];
+        $tenant = null;
+        
+        // Check if tenant slug is provided in URL (from /t/{tenant}/professor/dashboard route)
+        if ($tenantSlug) {
+            $tenantService = app(\App\Services\TenantService::class);
+            $tenantService->switchToMain();
+            
+            $tenant = \App\Models\Tenant::where('slug', $tenantSlug)->first();
+            
+            if ($tenant) {
+                try {
+                    $tenantService->switchToTenant($tenant);
+                    
+                    // Load settings from tenant database
+                    $settings = [
+                        'navbar' => [
+                            'brand_name' => \App\Models\Setting::get('navbar', 'brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => \App\Models\Setting::get('navbar', 'brand_logo', null),
+                        ],
+                        'professor_panel' => [
+                            'brand_name' => \App\Models\Setting::get('professor_panel', 'brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => \App\Models\Setting::get('professor_panel', 'brand_logo', null),
+                        ],
+                        'professor_sidebar' => [
+                            'primary_color' => \App\Models\Setting::get('professor_sidebar', 'primary_color', '#1e293b'),
+                            'secondary_color' => \App\Models\Setting::get('professor_sidebar', 'secondary_color', '#334155'),
+                            'accent_color' => \App\Models\Setting::get('professor_sidebar', 'accent_color', '#10b981'),
+                            'text_color' => \App\Models\Setting::get('professor_sidebar', 'text_color', '#f1f5f9'),
+                            'hover_color' => \App\Models\Setting::get('professor_sidebar', 'hover_color', '#475569'),
+                        ],
+                    ];
+                    
+                    $tenantService->switchToMain();
+                    
+                    // Share settings with the view
+                    view()->share('settings', $settings);
+                    view()->share('navbar', $settings['navbar'] ?? []);
+                    
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Failed to load tenant settings for professor preview via slug', [
+                        'tenant' => $tenant->slug,
+                        'error' => $e->getMessage()
+                    ]);
+                    $tenantService->switchToMain();
+                }
+            }
+        }
+        // Fallback: Check for website parameter (existing functionality)
+        elseif (request()->has('website')) {
+            $websiteId = request('website');
+            
+            // Ensure we're using the main database to find the client
+            $tenantService = app(\App\Services\TenantService::class);
+            $tenantService->switchToMain();
+            
+            $client = \App\Models\Client::find($websiteId);
+            
+            if ($client) {
+                $tenant = \App\Models\Tenant::where('slug', $client->slug)->first();
+                
+                if ($tenant) {
+                    try {
+                        $tenantService = app(\App\Services\TenantService::class);
+                        $tenantService->switchToTenant($tenant);
+                        
+                        // Load settings from tenant database
+                        $settings = [
+                            'navbar' => [
+                                'brand_name' => \App\Models\Setting::get('navbar', 'brand_name', 'Ascendo Review & Training Center'),
+                                'brand_logo' => \App\Models\Setting::get('navbar', 'brand_logo', null),
+                            ],
+                            'professor_panel' => [
+                                'brand_name' => \App\Models\Setting::get('professor_panel', 'brand_name', 'Ascendo Review & Training Center'),
+                                'brand_logo' => \App\Models\Setting::get('professor_panel', 'brand_logo', null),
+                            ],
+                            'professor_sidebar' => [
+                                'primary_color' => \App\Models\Setting::get('professor_sidebar', 'primary_color', '#007bff'),
+                                'secondary_color' => \App\Models\Setting::get('professor_sidebar', 'secondary_color', '#6c757d'),
+                                'accent_color' => \App\Models\Setting::get('professor_sidebar', 'accent_color', '#28a745'),
+                                'text_color' => \App\Models\Setting::get('professor_sidebar', 'text_color', '#ffffff'),
+                                'hover_color' => \App\Models\Setting::get('professor_sidebar', 'hover_color', '#0056b3'),
+                                'background_color' => \App\Models\Setting::get('professor_sidebar', 'background_color', '#f8f9fa'),
+                            ],
+                        ];
+                        
+                        $tenantService->switchToMain();
+                        
+                        // Share settings with the view
+                        view()->share('settings', $settings);
+                        view()->share('navbar', $settings['navbar'] ?? []);
+                        
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::warning('Failed to load tenant settings for preview', [
+                            'tenant' => $tenant->slug,
+                            'error' => $e->getMessage()
+                        ]);
+                        $tenantService->switchToMain();
+                    }
+                }
+            }
+        }
+        
         // Set up session data for preview mode to prevent layout errors
         session([
             'user_id' => 'preview-professor',

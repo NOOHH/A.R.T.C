@@ -1,5 +1,14 @@
 <?php
 
+// Set UTF-8 encoding for the entire application
+if (function_exists('mb_internal_encoding')) {
+    mb_internal_encoding('UTF-8');
+}
+if (function_exists('mb_http_output')) {
+    mb_http_output('UTF-8');
+}
+ini_set('default_charset', 'UTF-8');
+
 /*
 |--------------------------------------------------------------------------
 | Create The Application

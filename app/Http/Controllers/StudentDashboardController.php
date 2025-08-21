@@ -150,6 +150,63 @@ class StudentDashboardController extends Controller
     }
 
     /**
+     * Detect tenant context and load appropriate settings
+     */
+    private function detectTenantContext()
+    {
+        $request = request();
+        $tenant = null;
+        $settings = [];
+        
+        // Check for tenant in path-based routing (/t/{slug})
+        if ($request->is('t/*')) {
+            $segments = $request->segments();
+            if (count($segments) >= 2 && $segments[0] === 't') {
+                $tenantSlug = $segments[1];
+                $tenant = \App\Models\Tenant::where('slug', $tenantSlug)->first();
+            }
+        }
+        
+        // Check for tenant in subdomain routing
+        if (!$tenant) {
+            $domain = $request->getHost();
+            if (!in_array($domain, ['localhost', '127.0.0.1', 'artc.test'])) {
+                $tenant = \App\Models\Tenant::where('domain', $domain)->first();
+            }
+        }
+        
+        // If tenant found, load tenant-specific settings
+        if ($tenant) {
+            try {
+                $tenantService = app(\App\Services\TenantService::class);
+                $tenantService->switchToTenant($tenant);
+                
+                $settings = [
+                    'navbar' => \App\Models\Setting::getGroup('navbar')->toArray(),
+                    'student_sidebar' => \App\Models\Setting::getGroup('student_sidebar')->toArray(),
+                ];
+                
+                $tenantService->switchToMain();
+                
+                // Share settings with the view
+                view()->share('settings', $settings);
+                view()->share('navbar', $settings['navbar'] ?? []);
+                
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning('Failed to load tenant settings', [
+                    'tenant' => $tenant->slug,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+        
+        return [
+            'tenant' => $tenant,
+            'settings' => $settings
+        ];
+    }
+
+    /**
      * Display the student dashboard
      */
     public function index()
@@ -164,6 +221,19 @@ class StudentDashboardController extends Controller
 
     public function dashboard()
     {
+        // Check if this is a preview request that somehow got here
+        if (request()->has('preview') || request()->has('website') || session('preview_mode')) {
+            return $this->showPreviewDashboard();
+        }
+        
+        // Detect tenant context and load appropriate settings
+        try {
+            $tenantContext = \App\Helpers\TenantContextHelper::getCurrentTenantContext();
+        } catch (\Exception $e) {
+            // If tenant context detection fails, use empty context
+            $tenantContext = ['settings' => []];
+        }
+        
         // Get user data from session
         $user = (object) [
             'user_id' => session('user_id'),
@@ -173,7 +243,12 @@ class StudentDashboardController extends Controller
         ];
         
         // Get the student data
-        $student = Student::where('user_id', session('user_id'))->first();
+        try {
+            $student = Student::where('user_id', session('user_id'))->first();
+        } catch (\Exception $e) {
+            // If student query fails, set to null
+            $student = null;
+        }
         
         $courses = [];
         
@@ -574,8 +649,113 @@ class StudentDashboardController extends Controller
     /**
      * Display a preview version of the student dashboard for admin customization
      */
-    public function showPreviewDashboard()
+    public function showPreviewDashboard($tenantSlug = null)
     {
+        // Load tenant settings if website parameter is provided OR if tenant slug is in URL
+        $settings = [];
+        $tenant = null;
+        
+        // Check if tenant slug is provided in URL (from /t/{tenant}/student/dashboard route)
+        if ($tenantSlug) {
+            $tenantService = app(\App\Services\TenantService::class);
+            $tenantService->switchToMain();
+            
+            $tenant = \App\Models\Tenant::where('slug', $tenantSlug)->first();
+            
+            if ($tenant) {
+                try {
+                    $tenantService->switchToTenant($tenant);
+                    
+                    // Load settings from tenant database
+                    $settings = [
+                        'navbar' => [
+                            'brand_name' => \App\Models\Setting::get('navbar', 'brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => \App\Models\Setting::get('navbar', 'brand_logo', null),
+                        ],
+                        'student_portal' => [
+                            'brand_name' => \App\Models\Setting::get('student_portal', 'brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => \App\Models\Setting::get('student_portal', 'brand_logo', null),
+                        ],
+                        'student_sidebar' => [
+                            'primary_color' => \App\Models\Setting::get('student_sidebar', 'primary_color', '#3f4d69'),
+                            'secondary_color' => \App\Models\Setting::get('student_sidebar', 'secondary_color', '#2d2d2d'),
+                            'accent_color' => \App\Models\Setting::get('student_sidebar', 'accent_color', '#4f757d'),
+                            'text_color' => \App\Models\Setting::get('student_sidebar', 'text_color', '#e0e0e0'),
+                            'hover_color' => \App\Models\Setting::get('student_sidebar', 'hover_color', '#374151'),
+                            'background_color' => \App\Models\Setting::get('student_sidebar', 'background_color', '#f8f9fa'),
+                        ],
+                    ];
+                    
+                    $tenantService->switchToMain();
+                    
+                    // Share settings with the view
+                    view()->share('settings', $settings);
+                    view()->share('navbar', $settings['navbar'] ?? []);
+                    
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Failed to load tenant settings for preview via slug', [
+                        'tenant' => $tenant->slug,
+                        'error' => $e->getMessage()
+                    ]);
+                    $tenantService->switchToMain();
+                }
+            }
+        }
+        // Fallback: Check for website parameter (existing functionality)
+        elseif (request()->has('website')) {
+            $websiteId = request('website');
+            
+            // Ensure we're using the main database to find the client
+            $tenantService = app(\App\Services\TenantService::class);
+            $tenantService->switchToMain();
+            
+            $client = \App\Models\Client::find($websiteId);
+            
+            if ($client) {
+                $tenant = \App\Models\Tenant::where('slug', $client->slug)->first();
+                
+                if ($tenant) {
+                    try {
+                        $tenantService = app(\App\Services\TenantService::class);
+                        $tenantService->switchToTenant($tenant);
+                        
+                        // Load settings from tenant database
+                        $settings = [
+                            'navbar' => [
+                                'brand_name' => \App\Models\Setting::get('navbar', 'brand_name', 'Ascendo Review & Training Center'),
+                                'brand_logo' => \App\Models\Setting::get('navbar', 'brand_logo', null),
+                            ],
+                            'student_portal' => [
+                                'brand_name' => \App\Models\Setting::get('student_portal', 'brand_name', 'Ascendo Review & Training Center'),
+                                'brand_logo' => \App\Models\Setting::get('student_portal', 'brand_logo', null),
+                            ],
+                            'student_sidebar' => [
+                                'primary_color' => \App\Models\Setting::get('student_sidebar', 'primary_color', '#3f4d69'),
+                                'secondary_color' => \App\Models\Setting::get('student_sidebar', 'secondary_color', '#2d2d2d'),
+                                'accent_color' => \App\Models\Setting::get('student_sidebar', 'accent_color', '#4f757d'),
+                                'text_color' => \App\Models\Setting::get('student_sidebar', 'text_color', '#e0e0e0'),
+                                'hover_color' => \App\Models\Setting::get('student_sidebar', 'hover_color', '#374151'),
+                                'background_color' => \App\Models\Setting::get('student_sidebar', 'background_color', '#f8f9fa'),
+                            ],
+                        ];
+                        
+                        $tenantService->switchToMain();
+                        
+                        // Share settings with the view
+                        view()->share('settings', $settings);
+                        view()->share('navbar', $settings['navbar'] ?? []);
+                        
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::warning('Failed to load tenant settings for preview', [
+                            'tenant' => $tenant->slug,
+                            'error' => $e->getMessage()
+                        ]);
+                        $tenantService->switchToMain();
+                    }
+                }
+            }
+        }
+        
         // Set session data for layout compatibility
         session([
             'preview_mode' => true,
@@ -695,7 +875,7 @@ class StudentDashboardController extends Controller
         // Sample student programs
         $studentPrograms = collect($courses);
 
-        return view('student.student-dashboard.student-dashboard', compact('user', 'courses', 'deadlines', 'announcements', 'studentPrograms'));
+        return view('student.student-dashboard.student-dashboard', compact('user', 'courses', 'deadlines', 'announcements', 'studentPrograms', 'settings'));
     }
 
     public function calendar()

@@ -185,11 +185,17 @@
       </div>
       
       
+      <?php
+          $brandName = $settings['navbar']['brand_name'] ?? $navbarBrandName ?? 'ARTC';
+          // Use abbreviation for compact display
+          $compactBrandName = strlen($brandName) > 10 ? strtoupper(substr($brandName, 0, 4)) : $brandName;
+      ?>
+      
       <div class="compact-course-sidebar" id="compactCourseSidebar">
         <div class="compact-sidebar-header">
           <div class="compact-brand">
             <i class="bi bi-mortarboard-fill"></i>
-            <span>ARTC</span>
+            <span><?php echo e($compactBrandName); ?></span>
           </div>
           <button class="compact-close-btn" id="compactCloseBtn">
             <i class="bi bi-x"></i>

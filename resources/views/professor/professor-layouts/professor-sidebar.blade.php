@@ -6,9 +6,25 @@
         
         <!-- Profile Information in Header -->
         @php
-            $professor = \App\Models\Professor::where('professor_id', session('professor_id'))->first();
-            $profilePhoto = $professor && $professor->profile_photo ? $professor->profile_photo : null;
-            $professorName = $professor ? $professor->professor_name : session('professor_name', 'Professor');
+            // Check if this is preview mode
+            $isPreview = request()->has('preview') || request()->query('preview') === 'true';
+            
+            if ($isPreview) {
+                // Use mock data for preview mode
+                $profilePhoto = null;
+                $professorName = session('professor_name', 'John Professor');
+            } else {
+                // Only query database if not in preview mode
+                try {
+                    $professor = \App\Models\Professor::where('professor_id', session('professor_id'))->first();
+                    $profilePhoto = $professor && $professor->profile_photo ? $professor->profile_photo : null;
+                    $professorName = $professor ? $professor->professor_name : session('professor_name', 'Professor');
+                } catch (\Exception $e) {
+                    // If there's an error (e.g., table doesn't exist), use defaults
+                    $profilePhoto = null;
+                    $professorName = session('professor_name', 'Professor');
+                }
+            }
         @endphp
         
         <div class="header-profile">

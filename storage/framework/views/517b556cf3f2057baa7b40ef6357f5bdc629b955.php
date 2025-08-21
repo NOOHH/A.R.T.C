@@ -4,7 +4,7 @@
         <h5><i class="fas fa-palette me-2"></i>Branding & Design</h5>
     </div>
     
-    <form id="brandingForm" method="POST" action="<?php echo e(route('smartprep.dashboard.settings.update.branding', ['website' => $selectedWebsite->id])); ?>">
+    <form id="brandingForm" method="POST" action="<?php echo e(route('smartprep.dashboard.settings.update.branding', ['website' => $selectedWebsite->id])); ?>" onsubmit="updateBranding(event)">
         <?php echo csrf_field(); ?>
         
         <?php if(session('success')): ?>

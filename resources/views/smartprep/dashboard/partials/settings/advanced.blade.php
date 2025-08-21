@@ -4,7 +4,7 @@
         <i class="fas fa-code me-2"></i>Advanced Settings
     </h3>
 
-    <form id="advancedForm" action="{{ route('smartprep.dashboard.settings.update.advanced', ['website' => $selectedWebsite->id]) }}" method="POST">
+    <form id="advancedForm" action="{{ route('smartprep.dashboard.settings.update.advanced', ['website' => $selectedWebsite->id]) }}" method="POST" onsubmit="updateAdvanced(event)">
         @csrf
         <div class="mb-3">
             <label class="form-label">Custom CSS</label>

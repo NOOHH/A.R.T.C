@@ -32,6 +32,12 @@ class TenantMiddleware
             return $next($request);
         }
 
+        // Skip tenant switching for student and professor routes - they should use main DB
+        if ($request->is('student/*') || $request->is('professor/*')) {
+            $this->tenantService->switchToMain();
+            return $next($request);
+        }
+
         // For path-based tenant routes (/t/{slug}), defer DB switching to the controller
         // and keep the default connection on the main database so models like Client/Tenant
         // query the correct schema.

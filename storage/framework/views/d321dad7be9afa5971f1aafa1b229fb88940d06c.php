@@ -425,16 +425,40 @@
 <body class="body-background d-flex flex-column min-vh-100 <?php if(request()->routeIs('enrollment.*')): ?> enrollment-page <?php endif; ?>">
     <?php
         $settings = \App\Helpers\SettingsHelper::getSettings();
-        // Pull fresh settings from DB (collection of key => value)
-        $navbarSettings = \App\Models\UiSetting::getSection('navbar');
-        $footerSettings = \App\Models\UiSetting::getSection('footer');
-        $homepageSettings = \App\Models\UiSetting::getSection('homepage');
-
-        // Preserve composer-injected $navbar if present, don't clobber it
-        $composerNavbar = (isset($navbar) && is_array($navbar)) ? $navbar : null;
-
-        // Prefer DB values when available, otherwise keep composer data
-        $navbar = $navbarSettings ? $navbarSettings->toArray() : ($composerNavbar ?? []);
+        
+        // Check if we're in a tenant context first
+        $request = request();
+        $isTenantContext = false;
+        
+        if ($request->is('t/*')) {
+            $segments = $request->segments();
+            if (count($segments) >= 2 && $segments[0] === 't') {
+                $isTenantContext = true;
+            }
+        }
+        
+        // For tenant context, don't override NavbarComposer data
+        if ($isTenantContext) {
+            // Preserve composer-injected $navbar (from NavbarComposer)
+            $composerNavbar = (isset($navbar) && is_array($navbar)) ? $navbar : null;
+            
+            // Don't query UiSetting for tenant context - use composer data
+            $navbar = $composerNavbar ?? [];
+            $footerSettings = null; // Don't override footer for tenants
+            $homepageSettings = null; // Don't override homepage for tenants
+        } else {
+            // For main context, pull fresh settings from DB (collection of key => value)
+            $navbarSettings = \App\Models\UiSetting::getSection('navbar');
+            $footerSettings = \App\Models\UiSetting::getSection('footer');
+            $homepageSettings = \App\Models\UiSetting::getSection('homepage');
+            
+            // Preserve composer-injected $navbar if present, don't clobber it
+            $composerNavbar = (isset($navbar) && is_array($navbar)) ? $navbar : null;
+            
+            // Prefer DB values when available, otherwise keep composer data
+            $navbar = $navbarSettings ? $navbarSettings->toArray() : ($composerNavbar ?? []);
+        }
+        
         $footer = $footerSettings ? $footerSettings->toArray() : [];
         $homepageContent = $homepageSettings ? $homepageSettings->toArray() : [];
 

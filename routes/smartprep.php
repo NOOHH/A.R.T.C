@@ -25,10 +25,59 @@ Route::middleware(['web'])->group(function () {
 
 // API endpoint for UI settings (for live preview)
 Route::get('/api/ui-settings', function () {
-    return response()->json([
-        'success' => true,
-        'data' => \App\Helpers\UiSettingsHelper::getAll()
-    ]);
+    $request = request();
+    $websiteId = $request->query('website');
+    
+    try {
+        // If website parameter is provided, load tenant-specific settings
+        if ($websiteId) {
+            $client = \App\Models\Client::find($websiteId);
+            if ($client) {
+                // Find tenant by matching the client's slug (client name in lowercase)
+                $tenant = \App\Models\Tenant::where('slug', strtolower($client->name))->first();
+                if ($tenant) {
+                    // Switch to tenant database
+                    $tenantService = app(\App\Services\TenantService::class);
+                    $tenantService->switchToTenant($tenant);
+                    
+                    // Get settings from tenant database
+                    $general = \App\Models\Setting::getGroup('general');
+                    $navbar = \App\Models\Setting::getGroup('navbar');
+                    $homepage = \App\Models\Setting::getGroup('homepage');
+                    $branding = \App\Models\Setting::getGroup('branding');
+                    
+                    // Switch back to main database
+                    $tenantService->switchToMain();
+                    
+                    // Force preview URL to ARTC preview route to avoid SmartPrep root redirect
+                    $general['preview_url'] = url('/artc');
+                    
+                    return response()->json([
+                        'success' => true,
+                        'data' => [
+                            'general' => $general,
+                            'navbar' => $navbar,
+                            'branding' => $branding,
+                            'homepage' => $homepage,
+                        ]
+                    ]);
+                }
+            }
+        }
+        
+        // Fallback to main database settings
+        return response()->json([
+            'success' => true,
+            'data' => \App\Helpers\UiSettingsHelper::getAll()
+        ]);
+        
+    } catch (\Exception $e) {
+        // Error fallback - return main database settings
+        return response()->json([
+            'success' => true,
+            'data' => \App\Helpers\UiSettingsHelper::getAll()
+        ]);
+    }
 })->name('api.ui-settings');
 
 // API endpoint for programs (needed by frontend JavaScript)
@@ -137,15 +186,15 @@ Route::middleware(['smartprep.auth', 'debug.smartprep'])->group(function () {
     Route::get('/dashboard/customize-website', [CustomizeWebsiteController::class, 'current'])->name('dashboard.customize');
     
     // Client-side settings management (similar to admin but for tenant databases)
-    Route::post('/dashboard/settings/general', [CustomizeWebsiteController::class, 'updateGeneral'])->name('dashboard.settings.update.general');
-    Route::post('/dashboard/settings/navbar', [CustomizeWebsiteController::class, 'updateNavbar'])->name('dashboard.settings.update.navbar');
-    Route::post('/dashboard/settings/homepage', [CustomizeWebsiteController::class, 'updateHomepage'])->name('dashboard.settings.update.homepage');
-    Route::post('/dashboard/settings/branding', [CustomizeWebsiteController::class, 'updateBranding'])->name('dashboard.settings.update.branding');
-    Route::post('/dashboard/settings/student', [CustomizeWebsiteController::class, 'updateStudent'])->name('dashboard.settings.update.student');
-    Route::post('/dashboard/settings/professor', [CustomizeWebsiteController::class, 'updateProfessor'])->name('dashboard.settings.update.professor');
-    Route::post('/dashboard/settings/admin', [CustomizeWebsiteController::class, 'updateAdmin'])->name('dashboard.settings.update.admin');
-    Route::post('/dashboard/settings/advanced', [CustomizeWebsiteController::class, 'updateAdvanced'])->name('dashboard.settings.update.advanced');
-    Route::post('/dashboard/settings/sidebar', [CustomizeWebsiteController::class, 'updateSidebar'])->name('dashboard.settings.update.sidebar');
+    Route::post('/dashboard/settings/general/{website}', [CustomizeWebsiteController::class, 'updateGeneral'])->name('dashboard.settings.update.general');
+    Route::post('/dashboard/settings/navbar/{website}', [CustomizeWebsiteController::class, 'updateNavbar'])->name('dashboard.settings.update.navbar');
+    Route::post('/dashboard/settings/homepage/{website}', [CustomizeWebsiteController::class, 'updateHomepage'])->name('dashboard.settings.update.homepage');
+    Route::post('/dashboard/settings/branding/{website}', [CustomizeWebsiteController::class, 'updateBranding'])->name('dashboard.settings.update.branding');
+    Route::post('/dashboard/settings/student/{website}', [CustomizeWebsiteController::class, 'updateStudent'])->name('dashboard.settings.update.student');
+    Route::post('/dashboard/settings/professor/{website}', [CustomizeWebsiteController::class, 'updateProfessor'])->name('dashboard.settings.update.professor');
+    Route::post('/dashboard/settings/admin/{website}', [CustomizeWebsiteController::class, 'updateAdmin'])->name('dashboard.settings.update.admin');
+    Route::post('/dashboard/settings/advanced/{website}', [CustomizeWebsiteController::class, 'updateAdvanced'])->name('dashboard.settings.update.advanced');
+    Route::post('/dashboard/settings/sidebar/{website}', [CustomizeWebsiteController::class, 'updateSidebar'])->name('dashboard.settings.update.sidebar');
     
     // User-managed website deletion (non-admin) – allows a client to delete their own draft/ inactive site
     Route::delete('/dashboard/websites/{id}', [CustomizeWebsiteController::class, 'destroy'])

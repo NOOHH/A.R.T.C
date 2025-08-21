@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class SettingsHelper
 {
@@ -83,25 +84,50 @@ class SettingsHelper
 
     public static function getLogoUrl()
     {
-        $settings = self::getSettings();
-        
-        // Check for global logo first
-        if (isset($settings['global_logo']) && $settings['global_logo']) {
-            return asset('storage/' . $settings['global_logo']);
+        try {
+            // Check if we're in a tenant context
+            $tenant = self::getCurrentTenant();
+            
+            if ($tenant) {
+                // We're in a tenant context, load settings from tenant database
+                $tenantService = app(\App\Services\TenantService::class);
+                $tenantService->switchToTenant($tenant);
+                
+                $navbarSettings = \App\Models\Setting::getGroup('navbar');
+                if ($navbarSettings && $navbarSettings->has('brand_logo') && $navbarSettings->get('brand_logo')) {
+                    $tenantService->switchToMain();
+                    return asset($navbarSettings->get('brand_logo'));
+                }
+                
+                // Switch back to main database
+                $tenantService->switchToMain();
+            }
+            
+            // Fallback to main database settings
+            $settings = self::getSettings();
+            
+            // Check for global logo first
+            if (isset($settings['global_logo']) && $settings['global_logo']) {
+                return asset('storage/' . $settings['global_logo']);
+            }
+            
+            // Check for navbar brand logo (new setting)
+            if (isset($settings['navbar']['brand_logo']) && $settings['navbar']['brand_logo']) {
+                return asset($settings['navbar']['brand_logo']);
+            }
+            
+            // Check for navbar specific logo (legacy)
+            if (isset($settings['navbar']['logo']) && $settings['navbar']['logo']) {
+                return asset('storage/' . $settings['navbar']['logo']);
+            }
+            
+            // Default logo
+            return asset('images/ARTC_Logo.png');
+            
+        } catch (\Exception $e) {
+            // Fallback to default logo on error
+            return asset('images/ARTC_Logo.png');
         }
-        
-        // Check for navbar brand logo (new setting)
-        if (isset($settings['navbar']['brand_logo']) && $settings['navbar']['brand_logo']) {
-            return asset($settings['navbar']['brand_logo']);
-        }
-        
-        // Check for navbar specific logo (legacy)
-        if (isset($settings['navbar']['logo']) && $settings['navbar']['logo']) {
-            return asset('storage/' . $settings['navbar']['logo']);
-        }
-        
-        // Default logo
-        return asset('images/ARTC_Logo.png');
     }
 
     public static function getBrandName()
@@ -851,5 +877,30 @@ class SettingsHelper
         return '#' . implode('', array_map(function($color) {
             return str_pad(dechex((int)$color), 2, '0', STR_PAD_LEFT);
         }, $rgb));
+    }
+    
+    /**
+     * Get current tenant from request context
+     */
+    private static function getCurrentTenant()
+    {
+        $request = request();
+        
+        // Check for tenant in path-based routing (/t/{slug})
+        if ($request->is('t/*')) {
+            $segments = $request->segments();
+            if (count($segments) >= 2 && $segments[0] === 't') {
+                $tenantSlug = $segments[1];
+                return \App\Models\Tenant::where('slug', $tenantSlug)->first();
+            }
+        }
+        
+        // Check for tenant in subdomain routing
+        $domain = $request->getHost();
+        if (!in_array($domain, ['localhost', '127.0.0.1', 'artc.test'])) {
+            return \App\Models\Tenant::where('domain', $domain)->first();
+        }
+        
+        return null;
     }
 }

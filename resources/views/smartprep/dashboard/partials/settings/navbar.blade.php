@@ -4,7 +4,7 @@
         <h5><i class="fas fa-bars me-2"></i>Navigation Bar</h5>
     </div>
     
-    <form id="navbarForm" method="POST" action="{{ route('smartprep.dashboard.settings.update.navbar', ['website' => $selectedWebsite->id]) }}" enctype="multipart/form-data">
+    <form id="navbarForm" method="POST" action="{{ route('smartprep.dashboard.settings.update.navbar', ['website' => $selectedWebsite->id]) }}" enctype="multipart/form-data" onsubmit="updateNavbar(event)">
         @csrf
         
         @if(session('success'))
@@ -16,7 +16,7 @@
         
         <div class="form-group mb-3">
             <label class="form-label">Brand Name</label>
-            <input type="text" class="form-control" name="navbar_brand_name" value="{{ $settings['navbar']['brand_name'] ?? 'SmartPrep Admin' }}" placeholder="Brand name">
+            <input type="text" class="form-control" name="brand_name" value="{{ $settings['navbar']['brand_name'] ?? 'Your Company Name' }}" placeholder="Brand name">
         </div>
         
         <div class="form-group mb-3">
