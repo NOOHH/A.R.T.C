@@ -86,6 +86,25 @@
         const originalText = submitBtn.innerHTML;
         const formData = new FormData(event.target);
         
+        // Process social media links for general settings
+        if (settingType === 'general') {
+            const socialLinks = [];
+            const platformInputs = document.querySelectorAll('select[name^="social_links"][name$="[platform]"]');
+            const urlInputs = document.querySelectorAll('input[name^="social_links"][name$="[url]"]');
+            
+            for (let i = 0; i < platformInputs.length; i++) {
+                const platform = platformInputs[i].value;
+                const url = urlInputs[i].value;
+                if (platform && url) {
+                    socialLinks.push({ platform, url });
+                }
+            }
+            
+            // Remove existing social_links from formData and add processed version
+            formData.delete('social_links');
+            formData.append('social_links', JSON.stringify(socialLinks));
+        }
+        
         // Debug: Log form data
         console.log('Form submission debug:', {
             settingType: settingType,
@@ -217,7 +236,9 @@
             return;
         }
         
-        let previewUrl = '{{ $previewUrl }}';
+    // Determine base preview URL from DOM (selected website) or fallback
+    const previewPanelEl = document.querySelector('.preview-panel');
+    let previewUrl = (previewPanelEl && previewPanelEl.getAttribute('data-preview-base')) || '{{ $previewUrl }}';
         let titleText = 'Live Preview';
         
         switch(section) {
@@ -248,7 +269,7 @@
         }
         
         // Add preview parameter and timestamp to bypass cache
-        const finalUrl = previewUrl + '?preview=true&t=' + Date.now();
+    const finalUrl = previewUrl + (previewUrl.includes('?') ? '&' : '?') + 'preview=true&t=' + Date.now();
         
         console.log('Updating preview for section:', section, 'URL:', finalUrl);
         
@@ -336,11 +357,9 @@
                     applySettingsToPreview(settings.data);
                     
                     // Update iframe src with configurable preview URL
-                    const fallbackUrl = "{{ $previewUrl }}";
-                    const previewUrl = (settings.data && settings.data.general && settings.data.general.preview_url)
-                        ? settings.data.general.preview_url
-                        : fallbackUrl;
-                    iframe.src = previewUrl;
+                    const fallbackUrl = (document.querySelector('.preview-panel')?.getAttribute('data-preview-base')) || "{{ $previewUrl }}";
+                    const effectiveUrl = fallbackUrl; // Always trust selected website context
+                    iframe.src = effectiveUrl + (effectiveUrl.includes('?') ? '&' : '?') + 'preview=true&t=' + Date.now();
                 }
             } catch (error) {
                 console.error('Failed to fetch UI settings:', error);
@@ -409,8 +428,20 @@
             
             // Update "Open in New Tab" link with configurable preview URL
             const openInNewTabLink = document.getElementById('openInNewTabLink');
-            if (openInNewTabLink && settings.general?.preview_url) {
-                openInNewTabLink.href = settings.general.preview_url;
+            // Blade-evaluated flag indicating tenant customization context (avoid Blade braces in JS)
+            var isTenantContext = ('<?php echo $selectedWebsite ? 1 : 0; ?>' === '1');
+            if (openInNewTabLink) {
+                if (!isTenantContext && settings.general?.preview_url) {
+                    // Global context: use platform preview_url
+                    let href = settings.general.preview_url;
+                    href += (href.includes('?') ? '&' : '?') + 'preview=true';
+                    openInNewTabLink.href = href;
+                } else if (isTenantContext) {
+                    // Tenant context: preserve current iframe src base (without cache buster)
+                    let base = iframe ? iframe.src.split('?')[0] : '{{ $previewUrl }}';
+                    let href = base + (base.includes('?') ? '&' : '?') + 'preview=true';
+                    openInNewTabLink.href = href;
+                }
             }
         } catch (e) {
             console.log('Cross-origin iframe access restricted - normal behavior');
@@ -449,15 +480,13 @@
             const response = await fetch('{{ route("smartprep.api.ui-settings") }}');
             if (response.ok) {
                 const settings = await response.json();
-                const fallbackUrlInit = "{{ $previewUrl }}";
-                const previewUrl = (settings.data && settings.data.general && settings.data.general.preview_url)
-                    ? settings.data.general.preview_url
-                    : fallbackUrlInit;
+                const fallbackUrlInit = (document.querySelector('.preview-panel')?.getAttribute('data-preview-base')) || "{{ $previewUrl }}";
+                const previewUrl = fallbackUrlInit; // Keep tenant base, ignore global helper value
                 
                 // Update iframe src
                 const iframe = document.getElementById('previewFrame');
                 if (iframe) {
-                    iframe.src = previewUrl;
+                    iframe.src = previewUrl + (previewUrl.includes('?') ? '&' : '?') + 'preview=true&t=' + Date.now();
                 }
                 
                 // Update "Open in New Tab" link

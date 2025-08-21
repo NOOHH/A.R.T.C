@@ -72,7 +72,7 @@
     </div>
 
     <!-- Live Preview Panel -->
-    <div class="preview-panel">
+    <div class="preview-panel" data-preview-base="<?php echo e($previewUrl); ?>">
         <div class="preview-header">
             <div class="d-flex align-items-center justify-content-between">
                 <h5 class="preview-title">
@@ -82,7 +82,8 @@
                     <button class="preview-btn" onclick="refreshPreview()">
                         <i class="fas fa-sync-alt me-1"></i>Refresh
                     </button>
-                    <a href="<?php echo e($settings['general']['preview_url'] ?? $previewUrl); ?>" class="preview-btn" target="_blank" id="openInNewTabLink">
+                    <?php $initialPreview = ($settings['general']['preview_url'] ?? $previewUrl); if(!str_contains($initialPreview,'preview=')) { $initialPreview .= (str_contains($initialPreview,'?')?'&':'?').'preview=true'; } ?>
+                    <a href="<?php echo e($initialPreview); ?>" class="preview-btn" target="_blank" id="openInNewTabLink">
                         <i class="fas fa-external-link-alt me-1"></i>Open in New Tab
                     </a>
                 </div>
@@ -96,7 +97,7 @@
             </div>
             <iframe 
                 class="preview-iframe" 
-                src="<?php echo e($settings['general']['preview_url'] ?? $previewUrl); ?>" 
+                src="<?php echo e($settings['general']['preview_url'] ?? $previewUrl); ?>?preview=true" 
                 title="Site Preview"
                 id="previewFrame"
                 onload="hideLoading()"

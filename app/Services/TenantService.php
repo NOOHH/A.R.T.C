@@ -12,11 +12,11 @@ class TenantService
     /**
      * Create a new tenant with a copy of the template database
      */
-    public function createTenant($name, $domain)
+    public function createTenant($name, $domain, $explicitDatabaseName = null)
     {
         try {
-            // Generate database name based on domain
-            $databaseName = 'smartprep_' . Str::slug(str_replace('.', '_', $domain));
+            // Generate database name based on domain unless explicit name provided
+            $databaseName = $explicitDatabaseName ?: ('smartprep_' . Str::slug(str_replace('.', '_', $domain)));
             
             // Create the tenant record first
             $tenant = Tenant::create([

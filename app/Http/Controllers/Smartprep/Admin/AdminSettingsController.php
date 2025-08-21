@@ -243,24 +243,49 @@ class AdminSettingsController extends Controller
     public function updateGeneral(Request $request)
     {
         $request->validate([
-            'site_name' => 'nullable|string|max:255',
-            'site_tagline' => 'nullable|string|max:255',
+            'admin_email' => 'nullable|email|max:255',
+            'admin_password' => 'nullable|string|min:8|max:255',
+            'brand_name' => 'nullable|string|max:255',
             'contact_email' => 'nullable|email|max:255',
             'contact_phone' => 'nullable|string|max:20',
             'contact_address' => 'nullable|string|max:500',
-            'preview_url' => 'nullable|url|max:500',
+            'terms_conditions' => 'nullable|string|max:2000',
+            'social_links' => 'nullable|array',
+            'social_links.*.platform' => 'nullable|string|max:50',
+            'social_links.*.url' => 'nullable|url|max:500',
             'website_mode' => 'nullable|in:customize_current,create_new',
             'selected_website' => 'nullable|string|max:255',
         ]);
 
-        // Save to database using UiSetting model
-        UiSetting::set('general', 'site_name', $request->input('site_name', 'SmartPrep Admin'), 'text');
-        UiSetting::set('general', 'site_tagline', $request->input('site_tagline', 'Admin Management System'), 'text');
-        UiSetting::set('general', 'contact_email', $request->input('contact_email', 'admin@smartprep.com'), 'text');
-        UiSetting::set('general', 'contact_phone', $request->input('contact_phone', '+1 (555) 123-4567'), 'text');
-        UiSetting::set('general', 'contact_address', $request->input('contact_address', '123 Admin Street, Admin City, AC 12345'), 'text');
-        // Default preview should point to the ARTC preview route
-        UiSetting::set('general', 'preview_url', $request->input('preview_url', url('/artc')), 'text');
+        // Save admin account settings
+        if ($request->filled('admin_email')) {
+            UiSetting::set('general', 'admin_email', $request->input('admin_email'), 'text');
+        }
+        if ($request->filled('admin_password')) {
+            UiSetting::set('general', 'admin_password_hash', bcrypt($request->input('admin_password')), 'secret');
+            UiSetting::set('general', 'admin_password_set_at', now()->toDateTimeString(), 'text');
+        }
+
+        // Save brand name (connected to navbar)
+        if ($request->filled('brand_name')) {
+            UiSetting::set('general', 'brand_name', $request->input('brand_name'), 'text');
+            UiSetting::set('navbar', 'brand_name', $request->input('brand_name'), 'text');
+        }
+
+        // Save contact information
+        UiSetting::set('general', 'contact_email', $request->input('contact_email'), 'text');
+        UiSetting::set('general', 'contact_phone', $request->input('contact_phone'), 'text');
+        UiSetting::set('general', 'contact_address', $request->input('contact_address'), 'text');
+        UiSetting::set('general', 'terms_conditions', $request->input('terms_conditions'), 'text');
+
+        // Save social media links
+        if ($request->has('social_links')) {
+            $socialLinks = array_filter($request->input('social_links', []), function($link) {
+                return !empty($link['platform']) && !empty($link['url']);
+            });
+            UiSetting::set('general', 'social_links', json_encode($socialLinks), 'json');
+        }
+
         // Persist tenant mode selection and target website
         if ($request->filled('website_mode')) {
             UiSetting::set('general', 'website_mode', $request->input('website_mode'), 'text');
@@ -269,15 +294,16 @@ class AdminSettingsController extends Controller
             UiSetting::set('general', 'selected_website', $request->input('selected_website'), 'text');
         }
 
-        // Also save to JSON file for backward compatibility (but enforce ARTC preview for UI)
+        // Also save to JSON file for backward compatibility
         $settings = $this->getCurrentSettings();
         $settings['general'] = array_merge($settings['general'] ?? [], [
-            'site_name' => $request->input('site_name', $settings['general']['site_name'] ?? 'SmartPrep Admin'),
-            'site_tagline' => $request->input('site_tagline', $settings['general']['site_tagline'] ?? 'Admin Management System'),
-            'contact_email' => $request->input('contact_email', $settings['general']['contact_email'] ?? 'admin@smartprep.com'),
-            'contact_phone' => $request->input('contact_phone', $settings['general']['contact_phone'] ?? '+1 (555) 123-4567'),
-            'contact_address' => $request->input('contact_address', $settings['general']['contact_address'] ?? '123 Admin Street, Admin City, AC 12345'),
-            'preview_url' => url('/artc'),
+            'admin_email' => $request->input('admin_email', $settings['general']['admin_email'] ?? ''),
+            'brand_name' => $request->input('brand_name', $settings['general']['brand_name'] ?? ''),
+            'contact_email' => $request->input('contact_email', $settings['general']['contact_email'] ?? ''),
+            'contact_phone' => $request->input('contact_phone', $settings['general']['contact_phone'] ?? ''),
+            'contact_address' => $request->input('contact_address', $settings['general']['contact_address'] ?? ''),
+            'terms_conditions' => $request->input('terms_conditions', $settings['general']['terms_conditions'] ?? ''),
+            'social_links' => $request->input('social_links', $settings['general']['social_links'] ?? []),
             'website_mode' => $request->input('website_mode', $settings['general']['website_mode'] ?? 'customize_current'),
             'selected_website' => $request->input('selected_website', $settings['general']['selected_website'] ?? 'current'),
             'updated_at' => now()->toISOString()
