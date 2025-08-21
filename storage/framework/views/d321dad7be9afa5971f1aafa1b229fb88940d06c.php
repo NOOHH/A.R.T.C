@@ -476,9 +476,19 @@
     <nav class="navbar navbar-expand-lg navbar-light fixed-top bg-white shadow-sm">
         <div class="container-fluid">
             <a class="navbar-brand d-flex align-items-center" href="<?php echo e(url('/')); ?>">
-                <img src="<?php echo e(\App\Helpers\SettingsHelper::getLogoUrl()); ?>" 
-                     alt="Logo" class="logo me-2" style="height: 40px;"
-                     onerror="this.src='<?php echo e(asset('images/ARTC_Logo.png')); ?>'">
+                <?php
+                    // Get brand logo from NavbarComposer data (tenant-specific) or fallback
+                    $brandLogo = $navbar['brand_logo'] ?? $settings['navbar']['brand_logo'] ?? null;
+                    $defaultLogo = asset('images/ARTC_Logo.png');
+                ?>
+                
+                <?php if($brandLogo): ?>
+                    <img src="<?php echo e(\Illuminate\Support\Facades\Storage::url($brandLogo)); ?>" 
+                         alt="Logo" class="logo me-2" style="height: 40px;"
+                         onerror="this.src='<?php echo e($defaultLogo); ?>'">
+                <?php else: ?>
+                    <img src="<?php echo e($defaultLogo); ?>" alt="Logo" class="logo me-2" style="height: 40px;">
+                <?php endif; ?>
                 <strong><?php echo e($brandName); ?></strong>
             </a>
             
@@ -593,9 +603,19 @@
         <div class="container">
             <div class="footer-top d-flex justify-content-between align-items-center flex-wrap py-4">
                 <div class="footer-logo mb-3 mb-md-0">
-                    <img src="<?php echo e(\App\Helpers\SettingsHelper::getLogoUrl()); ?>" 
-                         alt="Logo" style="height: 40px;"
-                         onerror="this.src='<?php echo e(asset('images/ARTC_Logo.png')); ?>'">
+                    <?php
+                        // Get brand logo from NavbarComposer data (tenant-specific) or fallback
+                        $footerBrandLogo = $navbar['brand_logo'] ?? $settings['navbar']['brand_logo'] ?? null;
+                        $footerDefaultLogo = asset('images/ARTC_Logo.png');
+                    ?>
+                    
+                    <?php if($footerBrandLogo): ?>
+                        <img src="<?php echo e(\Illuminate\Support\Facades\Storage::url($footerBrandLogo)); ?>" 
+                             alt="Logo" style="height: 40px;"
+                             onerror="this.src='<?php echo e($footerDefaultLogo); ?>'">
+                    <?php else: ?>
+                        <img src="<?php echo e($footerDefaultLogo); ?>" alt="Logo" style="height: 40px;">
+                    <?php endif; ?>
                     <span class="footer-title ms-2"><?php echo e($brandName); ?></span>
                 </div>
                 <div class="footer-social">

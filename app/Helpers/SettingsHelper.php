@@ -113,7 +113,7 @@ class SettingsHelper
             
             // Check for navbar brand logo (new setting)
             if (isset($settings['navbar']['brand_logo']) && $settings['navbar']['brand_logo']) {
-                return asset($settings['navbar']['brand_logo']);
+                return asset('storage/' . $settings['navbar']['brand_logo']);
             }
             
             // Check for navbar specific logo (legacy)
@@ -731,15 +731,28 @@ class SettingsHelper
     {
         $section = $role . '_sidebar';
         
-        // Try to get from database first
-        if (class_exists('\App\Models\UiSetting')) {
+        // Try to get from UiSetting (main DB) first
+        if (class_exists('\\App\\Models\\UiSetting')) {
             try {
                 $settings = \App\Models\UiSetting::getSection($section);
                 if (!empty($settings)) {
-                    return $settings;
+                    return is_array($settings) ? $settings : $settings->toArray();
                 }
             } catch (\Exception $e) {
-                // Fall back to defaults if database error
+                // Fall through to next source
+            }
+        }
+
+        // Try to get from Setting (tenant DB) next
+        if (class_exists('\\App\\Models\\Setting')) {
+            try {
+                $group = \App\Models\Setting::getGroup($section);
+                if ($group && $group->count() > 0) {
+                    // Plucked collection of key => value
+                    return $group->toArray();
+                }
+            } catch (\Exception $e) {
+                // Fall through to defaults
             }
         }
 

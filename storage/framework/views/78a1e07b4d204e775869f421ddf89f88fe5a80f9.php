@@ -1,0 +1,1 @@
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views\admin\admin-analytics\admin-analytics-fixed.blade.php ENDPATH**/ ?>

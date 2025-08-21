@@ -1,0 +1,1 @@
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\vendor\filament\filament\resources\views\components\global-search\start.blade.php ENDPATH**/ ?>

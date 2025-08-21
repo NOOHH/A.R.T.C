@@ -46,6 +46,12 @@ class AppServiceProvider extends ServiceProvider
         // Register view composer for student layouts to ensure navbar data is available
         view()->composer('student.*', \App\Http\View\Composers\NavbarComposer::class);
         
+        // Register view composer for professor layouts to ensure navbar data is available
+        view()->composer('professor.*', \App\Http\View\Composers\NavbarComposer::class);
+        
+        // Register view composer for components to ensure navbar data is available
+        view()->composer('components.*', \App\Http\View\Composers\NavbarComposer::class);
+        
         // Register view composer for components to ensure navbar data is available
         view()->composer('components.*', \App\Http\View\Composers\NavbarComposer::class);
     }

@@ -164,40 +164,59 @@ class StudentDashboardController extends Controller
 
     public function dashboard()
     {
-        // Get user data from session
-        $user = (object) [
-            'user_id' => session('user_id'),
-            'user_firstname' => explode(' ', session('user_name'))[0] ?? '',
-            'user_lastname' => explode(' ', session('user_name'))[1] ?? '',
-            'role' => session('user_role')
-        ];
-        
-        // Get the student data
-        $student = Student::where('user_id', session('user_id'))->first();
-        
-        $courses = [];
-        
-        // First, check for enrollments linked to this user_id (for pending registrations)
-        $enrollments = collect();
-        
-        if (session('user_id')) {
-            // Get enrollments by user_id (including pending ones)
-            $userEnrollments = \App\Models\Enrollment::where('user_id', session('user_id'))
-                ->with(['program', 'package', 'batch'])
-                ->get();
-            $enrollments = $enrollments->merge($userEnrollments);
+        try {
+            // Get user data from session
+            $user = (object) [
+                'user_id' => session('user_id'),
+                'user_firstname' => explode(' ', session('user_name'))[0] ?? '',
+                'user_lastname' => explode(' ', session('user_name'))[1] ?? '',
+                'role' => session('user_role')
+            ];
+            
+            // Get the student data
+            $student = Student::where('user_id', session('user_id'))->first();
+            
+            $courses = [];
+            
+            // First, check for enrollments linked to this user_id (for pending registrations)
+            $enrollments = collect();
+            
+            if (session('user_id')) {
+                // Get enrollments by user_id (including pending ones)
+                $userEnrollments = \App\Models\Enrollment::where('user_id', session('user_id'))
+                    ->with(['program', 'package', 'batch'])
+                    ->get();
+                $enrollments = $enrollments->merge($userEnrollments);
+            }
+            
+            if ($student) {
+                // Also get enrollments by student_id (for approved ones)
+                $studentEnrollments = \App\Models\Enrollment::where('student_id', $student->student_id)
+                    ->with(['program', 'package', 'batch'])
+                    ->get();
+                $enrollments = $enrollments->merge($studentEnrollments);
+            }
+            
+            // Remove duplicates based on enrollment_id
+            $enrollments = $enrollments->unique('enrollment_id');
+        } catch (\Exception $e) {
+            // If there's a database error (like missing tables), provide fallback data
+            Log::warning('StudentDashboardController: Database error, using fallback data', [
+                'user_id' => session('user_id'),
+                'error' => $e->getMessage()
+            ]);
+            
+            $user = (object) [
+                'user_id' => session('user_id'),
+                'user_firstname' => explode(' ', session('user_name'))[0] ?? 'Student',
+                'user_lastname' => explode(' ', session('user_name'))[1] ?? '',
+                'role' => session('user_role')
+            ];
+            
+            $student = null;
+            $courses = [];
+            $enrollments = collect();
         }
-        
-        if ($student) {
-            // Also get enrollments by student_id (for approved ones)
-            $studentEnrollments = \App\Models\Enrollment::where('student_id', $student->student_id)
-                ->with(['program', 'package', 'batch'])
-                ->get();
-            $enrollments = $enrollments->merge($studentEnrollments);
-        }
-        
-        // Remove duplicates based on enrollment_id
-        $enrollments = $enrollments->unique('enrollment_id');
                 
         foreach ($enrollments as $enrollment) {
             // Show all enrollments, not just those with active programs

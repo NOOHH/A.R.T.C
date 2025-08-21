@@ -1,0 +1,1 @@
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views\student\student-courses\student-module.blade.php ENDPATH**/ ?>

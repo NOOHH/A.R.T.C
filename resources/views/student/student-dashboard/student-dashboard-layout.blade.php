@@ -185,7 +185,7 @@
       
       {{-- Compact Course Sidebar (Hidden by default) --}}
       @php
-          $brandName = $settings['navbar']['brand_name'] ?? $navbarBrandName ?? 'ARTC';
+          $brandName = $navbar['brand_name'] ?? $settings['navbar']['brand_name'] ?? $navbarBrandName ?? 'ARTC';
           // Use abbreviation for compact display
           $compactBrandName = strlen($brandName) > 10 ? strtoupper(substr($brandName, 0, 4)) : $brandName;
       @endphp

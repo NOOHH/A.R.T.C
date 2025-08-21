@@ -1,0 +1,1 @@
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views\Quiz Generator\admin\quiz-generator-overhauled.blade.php ENDPATH**/ ?>

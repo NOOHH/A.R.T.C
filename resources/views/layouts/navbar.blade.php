@@ -472,9 +472,19 @@
     <nav class="navbar navbar-expand-lg navbar-light fixed-top bg-white shadow-sm">
         <div class="container-fluid">
             <a class="navbar-brand d-flex align-items-center" href="{{ url('/') }}">
-                <img src="{{ \App\Helpers\SettingsHelper::getLogoUrl() }}" 
-                     alt="Logo" class="logo me-2" style="height: 40px;"
-                     onerror="this.src='{{ asset('images/ARTC_Logo.png') }}'">
+                @php
+                    // Get brand logo from NavbarComposer data (tenant-specific) or fallback
+                    $brandLogo = $navbar['brand_logo'] ?? $settings['navbar']['brand_logo'] ?? null;
+                    $defaultLogo = asset('images/ARTC_Logo.png');
+                @endphp
+                
+                @if($brandLogo)
+                    <img src="{{ \Illuminate\Support\Facades\Storage::url($brandLogo) }}" 
+                         alt="Logo" class="logo me-2" style="height: 40px;"
+                         onerror="this.src='{{ $defaultLogo }}'">
+                @else
+                    <img src="{{ $defaultLogo }}" alt="Logo" class="logo me-2" style="height: 40px;">
+                @endif
                 <strong>{{ $brandName }}</strong>
             </a>
             
@@ -588,9 +598,19 @@
         <div class="container">
             <div class="footer-top d-flex justify-content-between align-items-center flex-wrap py-4">
                 <div class="footer-logo mb-3 mb-md-0">
-                    <img src="{{ \App\Helpers\SettingsHelper::getLogoUrl() }}" 
-                         alt="Logo" style="height: 40px;"
-                         onerror="this.src='{{ asset('images/ARTC_Logo.png') }}'">
+                    @php
+                        // Get brand logo from NavbarComposer data (tenant-specific) or fallback
+                        $footerBrandLogo = $navbar['brand_logo'] ?? $settings['navbar']['brand_logo'] ?? null;
+                        $footerDefaultLogo = asset('images/ARTC_Logo.png');
+                    @endphp
+                    
+                    @if($footerBrandLogo)
+                        <img src="{{ \Illuminate\Support\Facades\Storage::url($footerBrandLogo) }}" 
+                             alt="Logo" style="height: 40px;"
+                             onerror="this.src='{{ $footerDefaultLogo }}'">
+                    @else
+                        <img src="{{ $footerDefaultLogo }}" alt="Logo" style="height: 40px;">
+                    @endif
                     <span class="footer-title ms-2">{{ $brandName }}</span>
                 </div>
                 <div class="footer-social">

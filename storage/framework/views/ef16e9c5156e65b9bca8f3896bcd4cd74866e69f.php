@@ -1,0 +1,1 @@
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views\components\notifications.blade.php ENDPATH**/ ?>

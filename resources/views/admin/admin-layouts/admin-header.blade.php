@@ -233,7 +233,21 @@
     <div class="header-left">
         <!-- Brand Logo and Text -->
         <div class="brand-container d-flex align-items-center gap-3">
-            <img src="{{ asset('images/ARTC_logo.png') }}" alt="A.R.T.C" class="brand-logo">
+            @php
+                // Get brand logo from NavbarComposer data
+                $brandLogo = $navbar['brand_logo'] ?? null;
+                $defaultLogo = asset('images/ARTC_logo.png');
+            @endphp
+            
+            @if($brandLogo)
+                <img src="{{ \Illuminate\Support\Facades\Storage::url($brandLogo) }}" 
+                     alt="Brand Logo" 
+                     class="brand-logo"
+                     onerror="this.src='{{ $defaultLogo }}'">
+            @else
+                <img src="{{ $defaultLogo }}" alt="A.R.T.C" class="brand-logo">
+            @endif
+            
             <div class="brand-text-area d-flex flex-column justify-content-center">
                 <span class="brand-text fw-bold">{{ $navbar['brand_name'] ?? 'Ascendo Review & Training Center' }}</span>
                 <span class="brand-subtext text-muted">Admin Portal</span>

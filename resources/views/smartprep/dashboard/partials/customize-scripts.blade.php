@@ -19,9 +19,9 @@
                 });
                 document.getElementById(section + '-settings').style.display = 'block';
                 document.getElementById(section + '-settings').classList.add('active');
-                
-                // Update preview URL based on section
-                updatePreviewForSection(section);
+
+                // Ensure preview reflects current section (switch to student portal when needed)
+                try { updatePreviewForSection(section); } catch (e) {}
             });
         });
         
@@ -155,7 +155,7 @@
                 
                 // Success state
                 submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Settings Updated Successfully!';
-                showNotification(`${settingType.charAt(0).toUpperCase() + settingType.slice(1)} settings have been updated successfully!`, 'success');
+                showNotification(result.message || `${settingType.charAt(0).toUpperCase() + settingType.slice(1)} settings have been updated successfully!`, 'success');
                 
                 // Show additional notification for homepage updates
                 if (settingType === 'homepage') {
@@ -189,7 +189,9 @@
                     submitBtn.disabled = false;
                 }, 2000);
             } else {
-                throw new Error('Server error: ' + response.status);
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.message || `Server error: ${response.status}`;
+                throw new Error(errorMessage);
             }
             
         } catch (error) {
@@ -217,6 +219,12 @@
             return;
         }
         
+        // Don't change preview for navbar and branding sections
+        if (section === 'navbar' || section === 'branding' || section === 'general') {
+            console.log('Keeping current preview for section:', section);
+            return;
+        }
+        
         let previewUrl = '{{ $previewUrl }}';
         let titleText = 'Live Preview';
         
@@ -236,11 +244,6 @@
             case 'homepage':
                 previewUrl = '{{ $previewUrl }}';
                 titleText = 'Homepage Preview';
-                break;
-            case 'navbar':
-            case 'branding':
-                previewUrl = '{{ $previewUrl }}';
-                titleText = 'Live Preview';
                 break;
             default:
                 previewUrl = '{{ $previewUrl }}';
@@ -840,11 +843,11 @@
         
         if (role === 'student') {
             colors = {
-                primary_color: document.getElementById('studentSidebarPrimary').value,
-                secondary_color: document.getElementById('studentSidebarSecondary').value,
-                accent_color: document.getElementById('studentSidebarAccent').value,
-                text_color: document.getElementById('studentSidebarText').value,
-                hover_color: document.getElementById('studentSidebarHover').value
+                primary_color: document.getElementById('student_sidebar_primary_color').value,
+                secondary_color: document.getElementById('student_sidebar_secondary_color').value,
+                accent_color: document.getElementById('student_sidebar_accent_color').value,
+                text_color: document.getElementById('student_sidebar_text_color').value,
+                hover_color: document.getElementById('student_sidebar_hover_color').value
             };
         } else if (role === 'professor') {
             colors = {

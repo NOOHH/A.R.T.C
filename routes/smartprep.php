@@ -31,37 +31,33 @@ Route::get('/api/ui-settings', function () {
     try {
         // If website parameter is provided, load tenant-specific settings
         if ($websiteId) {
-            $client = \App\Models\Client::find($websiteId);
-            if ($client) {
-                // Find tenant by matching the client's slug (client name in lowercase)
-                $tenant = \App\Models\Tenant::where('slug', strtolower($client->name))->first();
-                if ($tenant) {
-                    // Switch to tenant database
-                    $tenantService = app(\App\Services\TenantService::class);
-                    $tenantService->switchToTenant($tenant);
-                    
-                    // Get settings from tenant database
-                    $general = \App\Models\Setting::getGroup('general');
-                    $navbar = \App\Models\Setting::getGroup('navbar');
-                    $homepage = \App\Models\Setting::getGroup('homepage');
-                    $branding = \App\Models\Setting::getGroup('branding');
-                    
-                    // Switch back to main database
-                    $tenantService->switchToMain();
-                    
-                    // Force preview URL to ARTC preview route to avoid SmartPrep root redirect
-                    $general['preview_url'] = url('/artc');
-                    
-                    return response()->json([
-                        'success' => true,
-                        'data' => [
-                            'general' => $general,
-                            'navbar' => $navbar,
-                            'branding' => $branding,
-                            'homepage' => $homepage,
-                        ]
-                    ]);
-                }
+            $tenant = \App\Models\Tenant::find($websiteId);
+            if ($tenant) {
+                // Switch to tenant database
+                $tenantService = app(\App\Services\TenantService::class);
+                $tenantService->switchToTenant($tenant);
+                
+                // Get settings from tenant database
+                $general = \App\Models\Setting::getGroup('general');
+                $navbar = \App\Models\Setting::getGroup('navbar');
+                $homepage = \App\Models\Setting::getGroup('homepage');
+                $branding = \App\Models\Setting::getGroup('branding');
+                
+                // Switch back to main database
+                $tenantService->switchToMain();
+                
+                // Force preview URL to ARTC preview route to avoid SmartPrep root redirect
+                $general['preview_url'] = url('/artc');
+                
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'general' => $general,
+                        'navbar' => $navbar,
+                        'branding' => $branding,
+                        'homepage' => $homepage,
+                    ]
+                ]);
             }
         }
         
@@ -157,26 +153,16 @@ Route::middleware(['smartprep.auth', 'debug.smartprep'])->group(function () {
     })->name('admin.tenants.debug-list');
 
     Route::match(['get','post'],'/admin/tenants/ensure/{slug}', function($slug) {
-        $client = \App\Models\Client::where('slug',$slug)->first();
-        if(!$client) {
-            return response()->json(['error' => 'Client not found for slug '.$slug], 404);
+        $tenant = \App\Models\Tenant::where('slug',$slug)->first();
+        if(!$tenant) {
+            return response()->json(['error' => 'Tenant not found for slug '.$slug], 404);
         }
-        $dbName = $client->db_name;
-        if(!$dbName) {
-            $keyword = preg_replace('/^smartprep-/', '', $client->slug);
-            $dbName = 'smartprep_' . \Illuminate\Support\Str::slug($keyword, '_');
-        }
-        $tenant = \App\Models\Tenant::updateOrCreate(
-            ['slug' => $client->slug],
-            [
-                'name' => $client->name,
-                'database_name' => $dbName,
-                'domain' => $client->domain,
-                'status' => $client->status ?? 'draft',
-                'settings' => ['client_id' => $client->id]
-            ]
-        );
-        return response()->json(['created' => true, 'tenant' => $tenant]);
+        
+        return response()->json([
+            'success' => true,
+            'tenant' => $tenant,
+            'message' => 'Tenant found successfully'
+        ]);
     })->name('admin.tenants.ensure');
     // --- End debug utilities ---
 

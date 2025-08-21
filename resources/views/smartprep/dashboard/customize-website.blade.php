@@ -190,6 +190,7 @@
         .settings-main-layout {
             display: flex;
             flex: 1;
+            height: calc(100vh - 160px);
         }
         
         /* Settings Sidebar */
@@ -297,6 +298,7 @@
             flex-direction: column;
             background: var(--gray-50);
             position: relative;
+            height: calc(100vh - 160px);
         }
         
         .preview-header {
@@ -345,6 +347,7 @@
             justify-content: center;
             padding: 1rem;
             position: relative;
+            height: calc(100vh - 240px);
         }
         
         .preview-iframe {
@@ -702,7 +705,7 @@
                         <h5><i class="fas fa-bars me-2"></i>Navigation Bar</h5>
                     </div>
                     
-                    <form id="navbarForm" onsubmit="updateNavbar(event)">
+                    <form id="navbarForm" onsubmit="updateNavbar(event)" enctype="multipart/form-data">
                         @csrf
                         <div class="form-group mb-3">
                             <label class="form-label">Brand Name</label>
@@ -711,7 +714,7 @@
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Brand Image</label>
-                            <input type="file" class="form-control" name="brand_image" accept="image/*">
+                            <input type="file" class="form-control" name="navbar_brand_logo" accept="image/*">
                             <small class="form-text text-muted">Logo for navigation bar</small>
                         </div>
                         
@@ -872,7 +875,7 @@
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Copyright Text</label>
-                            <input type="text" class="form-control" name="copyright" value="© Copyright Ascendo Review and Training Center. All Rights Reserved." placeholder="Footer copyright">
+                            <input type="text" class="form-control" name="copyright" value="{{ $settings['homepage']['copyright'] ?? '© Copyright Your Company Name. All Rights Reserved.' }}" placeholder="Footer copyright">
                         </div>
                         
                         <button type="submit" class="btn btn-primary">
@@ -941,7 +944,94 @@
                             <label class="form-check-label">Certificates</label>
                         </div>
                         
-                        <button type="submit" class="btn btn-primary">
+                        <!-- Sidebar Customization Section -->
+                        <h6 class="mt-4 mb-3">
+                            <i class="fas fa-palette me-2"></i>Sidebar Customization
+                        </h6>
+                        
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">Primary Background</label>
+                                <div class="color-picker-group">
+                                    <input type="color" class="color-input" id="studentSidebarPrimary" value="{{ $settings['student_sidebar']['primary_color'] ?? '#1a1a1a' }}" onchange="updateStudentSidebarColor('primary', this.value)">
+                                    <input type="text" class="form-control" id="studentSidebarPrimaryText" name="student_sidebar[primary_color]" value="{{ $settings['student_sidebar']['primary_color'] ?? '#1a1a1a' }}">
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label">Secondary Background</label>
+                                <div class="color-picker-group">
+                                    <input type="color" class="color-input" id="studentSidebarSecondary" value="{{ $settings['student_sidebar']['secondary_color'] ?? '#2d2d2d' }}" onchange="updateStudentSidebarColor('secondary', this.value)">
+                                    <input type="text" class="form-control" id="studentSidebarSecondaryText" name="student_sidebar[secondary_color]" value="{{ $settings['student_sidebar']['secondary_color'] ?? '#2d2d2d' }}">
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label">Accent Color</label>
+                                <div class="color-picker-group">
+                                    <input type="color" class="color-input" id="studentSidebarAccent" value="{{ $settings['student_sidebar']['accent_color'] ?? '#3b82f6' }}" onchange="updateStudentSidebarColor('accent', this.value)">
+                                    <input type="text" class="form-control" id="studentSidebarAccentText" name="student_sidebar[accent_color]" value="{{ $settings['student_sidebar']['accent_color'] ?? '#3b82f6' }}">
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label">Text Color</label>
+                                <div class="color-picker-group">
+                                    <input type="color" class="color-input" id="studentSidebarText" value="{{ $settings['student_sidebar']['text_color'] ?? '#e0e0e0' }}" onchange="updateStudentSidebarColor('text', this.value)">
+                                    <input type="text" class="form-control" id="studentSidebarTextText" name="student_sidebar[text_color]" value="{{ $settings['student_sidebar']['text_color'] ?? '#e0e0e0' }}">
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label">Hover Color</label>
+                                <div class="color-picker-group">
+                                    <input type="color" class="color-input" id="studentSidebarHover" value="{{ $settings['student_sidebar']['hover_color'] ?? '#374151' }}" onchange="updateStudentSidebarColor('hover', this.value)">
+                                    <input type="text" class="form-control" id="studentSidebarHoverText" name="student_sidebar[hover_color]" value="{{ $settings['student_sidebar']['hover_color'] ?? '#374151' }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3 d-flex gap-2">
+                            <button type="button" class="btn btn-outline-primary" onclick="saveSidebarColors('student')">
+                                <i class="fas fa-save me-2"></i>Save Sidebar Colors
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="resetStudentSidebarColors()">
+                                <i class="fas fa-undo me-2"></i>Reset to Default
+                            </button>
+                        </div>
+                        
+                        <!-- Sidebar Preview -->
+                        <div class="mt-4">
+                            <h6>Preview</h6>
+                            <div id="studentSidebarPreview" class="sidebar-preview" style="
+                                --preview-primary: {{ $settings['student_sidebar']['primary_color'] ?? '#1a1a1a' }};
+                                --preview-secondary: {{ $settings['student_sidebar']['secondary_color'] ?? '#2d2d2d' }};
+                                --preview-accent: {{ $settings['student_sidebar']['accent_color'] ?? '#3b82f6' }};
+                                --preview-text: {{ $settings['student_sidebar']['text_color'] ?? '#e0e0e0' }};
+                                --preview-hover: {{ $settings['student_sidebar']['hover_color'] ?? '#374151' }};
+                                background: var(--preview-primary);
+                                border-radius: 8px;
+                                padding: 1rem;
+                                color: var(--preview-text);
+                                font-size: 14px;
+                                max-width: 200px;
+                            ">
+                                <div style="background: var(--preview-secondary); padding: 0.5rem; border-radius: 4px; margin-bottom: 0.5rem;">
+                                    <strong>Student Dashboard</strong>
+                                </div>
+                                <div style="padding: 0.25rem 0.5rem; margin: 0.25rem 0; border-radius: 4px; background: var(--preview-hover);">
+                                    📚 My Courses
+                                </div>
+                                <div style="padding: 0.25rem 0.5rem; margin: 0.25rem 0; border-radius: 4px; background: var(--preview-accent); color: white;">
+                                    📊 Progress
+                                </div>
+                                <div style="padding: 0.25rem 0.5rem; margin: 0.25rem 0; border-radius: 4px;">
+                                    ⚙️ Settings
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary mt-3">
                             <i class="fas fa-sync me-2"></i>Update Student Portal
                         </button>
                     </form>
@@ -1978,6 +2068,9 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         </div>
     </div>
+
+    <!-- Include additional customization scripts -->
+    @include('smartprep.dashboard.partials.customize-scripts')
 
     <!-- Load Bootstrap JS (needed for modal) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>

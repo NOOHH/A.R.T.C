@@ -505,7 +505,7 @@
                         @csrf
                         <div class="form-group mb-3">
                             <label class="form-label">Site Title</label>
-                            <input type="text" class="form-control" name="site_title" value="Ascendo Review and Training Center" placeholder="Enter site title">
+                            <input type="text" class="form-control" name="site_title" value="{{ $settings['general']['site_title'] ?? 'Your Company Name' }}" placeholder="Enter site title">
                             <small class="form-text text-muted">Appears in browser tab and search results</small>
                         </div>
                         
@@ -610,7 +610,7 @@
                         @csrf
                         <div class="form-group mb-3">
                             <label class="form-label">Brand Name</label>
-                            <input type="text" class="form-control" name="brand_name" value="Ascendo Review and Training Center" placeholder="Brand name">
+                            <input type="text" class="form-control" name="brand_name" value="{{ $settings['navbar']['brand_name'] ?? 'Your Company Name' }}" placeholder="Brand name">
                         </div>
                         
                         <div class="form-group mb-3">
@@ -728,7 +728,7 @@
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Copyright Text</label>
-                            <input type="text" class="form-control" name="copyright" value="© Copyright Ascendo Review and Training Center. All Rights Reserved." placeholder="Footer copyright">
+                            <input type="text" class="form-control" name="copyright" value="{{ $settings['homepage']['copyright'] ?? '© Copyright Your Company Name. All Rights Reserved.' }}" placeholder="Footer copyright">
                         </div>
                         
                         <button type="submit" class="btn btn-primary">

@@ -1,0 +1,1 @@
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views\registration\partials\field-type.blade.php ENDPATH**/ ?>

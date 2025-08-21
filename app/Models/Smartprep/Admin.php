@@ -12,15 +12,13 @@ class Admin extends Authenticatable
 
     protected $connection = 'mysql'; // SmartPrep main database
     protected $table = 'admins';
-    // SmartPrep DB uses `id` as PK
-    protected $primaryKey = 'id';
+    // SmartPrep DB uses `admin_id` as PK, not `id`
+    protected $primaryKey = 'admin_id';
 
     protected $fillable = [
-        'name',
+        'admin_name',  // Changed from 'name' to match DB column
         'email',
         'password',
-        'email_verified_at',
-        'remember_token',
         'created_at',
         'updated_at'
     ];

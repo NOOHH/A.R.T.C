@@ -502,7 +502,7 @@ class CustomizeWebsiteController extends Controller
             $request->validate([
                 'brand_name' => 'nullable|string|max:255',
                 'navbar_brand_name' => 'nullable|string|max:255',
-                'navbar_brand_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'navbar_brand_logo' => 'nullable|file|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 'navbar_brand_image' => 'nullable|string|max:500',
                 'navbar_style' => 'nullable|string|in:fixed-top,sticky-top,static',
                 'navbar_menu_items' => 'nullable|string',
@@ -548,7 +548,7 @@ class CustomizeWebsiteController extends Controller
                 $file = $request->file('navbar_brand_logo');
                 $filename = time() . '_' . $file->getClientOriginalName();
                 $path = $file->storeAs('brand-logos', $filename, 'public');
-                Setting::set('navbar', 'brand_logo', 'storage/' . $path, 'file');
+                Setting::set('navbar', 'brand_logo', $path, 'file');
             }
 
             // Save other navbar settings
@@ -574,6 +574,21 @@ class CustomizeWebsiteController extends Controller
 
             return redirect()->back()->with('success', 'Navbar settings updated successfully!');
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Ensure we switch back to main database
+            $this->tenantService->switchToMain();
+            
+            Log::error('Validation error updating navbar settings: ' . $e->getMessage());
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Validation error: ' . $e->getMessage(),
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             // Ensure we switch back to main database
             $this->tenantService->switchToMain();
@@ -581,10 +596,10 @@ class CustomizeWebsiteController extends Controller
             Log::error('Error updating navbar settings: ' . $e->getMessage());
             
             if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => 'Error updating navbar settings.'], 500);
+                return response()->json(['success' => false, 'message' => 'Error updating navbar settings: ' . $e->getMessage()], 500);
             }
             
-            return redirect()->back()->with('error', 'Error updating navbar settings.');
+            return redirect()->back()->with('error', 'Error updating navbar settings: ' . $e->getMessage());
         }
     }
 

@@ -669,13 +669,14 @@
 <div class="admin-container">
     <!-- Top Header -->
     @php
-        // Get brand name from tenant settings if available, otherwise use default
-        $brandName = $settings['navbar']['brand_name'] ?? 
+        // Get brand name from NavbarComposer data (tenant-specific) or fallback
+        $brandName = $navbar['brand_name'] ?? 
+                     $settings['navbar']['brand_name'] ?? 
                      $navbarBrandName ?? 
                      'Ascendo Review & Training Center';
         
-        // Get brand logo from tenant settings if available
-        $brandLogo = $settings['navbar']['brand_logo'] ?? null;
+        // Get brand logo from NavbarComposer data (tenant-specific) or fallback
+        $brandLogo = $navbar['brand_logo'] ?? $settings['navbar']['brand_logo'] ?? null;
         $defaultLogo = asset('images/ARTC_logo.png');
     @endphp
     

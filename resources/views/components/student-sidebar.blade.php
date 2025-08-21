@@ -12,8 +12,14 @@
   <!-- User Profile Section -->
   <div class="sidebar-profile">
     @php
-      $student = \App\Models\Student::where('user_id', session('user_id'))->first();
-      $profilePhoto = $student && $student->profile_photo ? $student->profile_photo : null;
+      try {
+        $student = \App\Models\Student::where('user_id', session('user_id'))->first();
+        $profilePhoto = $student && $student->profile_photo ? $student->profile_photo : null;
+      } catch (\Exception $e) {
+        // In preview mode or when students table doesn't exist, use session data
+        $student = null;
+        $profilePhoto = null;
+      }
     @endphp
     
     <div class="profile-avatar">
@@ -144,16 +150,34 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadSidebarCustomization() {
-    fetch('/smartprep/api/sidebar-settings')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && data.colors) {
-                applySidebarColors(data.colors);
-            }
-        })
-        .catch(error => {
-            console.log('No custom sidebar settings found, using defaults');
-        });
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const website = params.get('website');
+        const preview = params.get('preview');
+        let url = '/smartprep/api/sidebar-settings';
+        if (website && preview === 'true') {
+            const sep = url.includes('?') ? '&' : '?';
+            url = url + sep + 'website=' + encodeURIComponent(website) + '&preview=true';
+        }
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.colors) {
+                    applySidebarColors(data.colors);
+                }
+            })
+            .catch(() => {
+                // No custom sidebar settings found, using defaults
+            });
+    } catch (e) {
+        fetch('/smartprep/api/sidebar-settings')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.colors) {
+                    applySidebarColors(data.colors);
+                }
+            });
+    }
 }
 
 function applySidebarColors(settings) {

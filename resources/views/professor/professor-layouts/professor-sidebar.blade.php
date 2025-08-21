@@ -6,7 +6,17 @@
         
         <!-- Profile Information in Header -->
         @php
-            $professor = \App\Models\Professor::where('professor_id', session('professor_id'))->first();
+            try {
+                $connection = config('database.default');
+                $professor = \App\Models\Professor::on($connection)->where('professor_id', session('professor_id'))->first();
+            } catch (\Exception $e) {
+                // If table doesn't exist or error occurs, use fallback
+                $professor = null;
+                \Log::warning('Professor sidebar: Failed to fetch professor data', [
+                    'professor_id' => session('professor_id'),
+                    'error' => $e->getMessage()
+                ]);
+            }
             $profilePhoto = $professor && $professor->profile_photo ? $professor->profile_photo : null;
             $professorName = $professor ? $professor->professor_name : session('professor_name', 'Professor');
         @endphp

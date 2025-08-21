@@ -6,8 +6,10 @@ use Illuminate\View\View;
 use App\Models\UiSetting;
 use App\Models\Setting;
 use App\Models\Tenant;
+use App\Models\Client;
 use App\Helpers\SettingsHelper;
 use App\Services\TenantService;
+use Illuminate\Support\Facades\Log;
 
 class NavbarComposer
 {
@@ -100,19 +102,54 @@ class NavbarComposer
     {
         $request = request();
         
-        // Check for tenant in path-based routing (/t/{slug})
+        // First priority: Check for website parameter (used in preview mode)
+        if ($request->has('website')) {
+            $websiteId = $request->get('website');
+            
+            // IMPORTANT: Use main database connection explicitly for Client lookup
+            // because TenantMiddleware may have already switched the default connection
+            $client = \App\Models\Client::on('mysql')->find($websiteId);
+            if ($client) {
+                // For navbar composer, we want to use client's database, not tenant's
+                // Create a pseudo-tenant with the client's database name
+                $tenant = new \App\Models\Tenant();
+                $tenant->slug = $client->slug;
+                $tenant->database_name = $client->db_name;
+                return $tenant;
+            }
+        }
+        
+        // Second priority: Check for tenant in path-based routing (/t/{slug})
         if ($request->is('t/*')) {
             $segments = $request->segments();
             if (count($segments) >= 2 && $segments[0] === 't') {
                 $tenantSlug = $segments[1];
-                return Tenant::where('slug', $tenantSlug)->first();
+                $tenant = Tenant::where('slug', $tenantSlug)->first();
+                if ($tenant) {
+                    // Check if there's a matching client for this tenant
+                    $client = \App\Models\Client::on('mysql')->where('slug', $tenant->slug)->first();
+                    if ($client) {
+                        // Use client's database instead of tenant's
+                        $tenant->database_name = $client->db_name;
+                    }
+                }
+                return $tenant;
             }
         }
         
-        // Check for tenant in subdomain routing
+        // Third priority: Check for tenant in subdomain routing
         $domain = $request->getHost();
         if (!in_array($domain, ['localhost', '127.0.0.1', 'artc.test'])) {
-            return Tenant::where('domain', $domain)->first();
+            $tenant = Tenant::where('domain', $domain)->first();
+            if ($tenant) {
+                // Check if there's a matching client for this tenant
+                $client = \App\Models\Client::on('mysql')->where('slug', $tenant->slug)->first();
+                if ($client) {
+                    // Use client's database instead of tenant's
+                    $tenant->database_name = $client->db_name;
+                }
+            }
+            return $tenant;
         }
         
         return null;

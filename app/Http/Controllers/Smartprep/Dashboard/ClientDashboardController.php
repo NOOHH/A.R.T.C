@@ -9,6 +9,7 @@ use App\Models\WebsiteRequest;
 use App\Models\Client;
 use App\Helpers\SettingsHelper;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class ClientDashboardController extends Controller
 {
@@ -76,7 +77,29 @@ class ClientDashboardController extends Controller
                 $userRole = 'student';
             }
 
+            // Handle preview tenant switching when website param is present
+            $switched = false;
+            if (request()->boolean('preview') && request()->filled('website')) {
+                $websiteId = request()->get('website');
+                $client = \App\Models\Client::on('mysql')->find($websiteId);
+                if ($client && $client->db_name) {
+                    // Point the tenant connection to the client's DB and use it as default for this request
+                    config(['database.connections.tenant.database' => $client->db_name]);
+                    DB::purge('tenant');
+                    config(['database.default' => 'tenant']);
+                    DB::connection('tenant');
+                    $switched = true;
+                }
+            }
+
             $sidebarColors = SettingsHelper::getSidebarColors($userRole);
+            
+            // Switch back to main after reading
+            if ($switched) {
+                config(['database.default' => 'mysql']);
+                DB::purge('tenant');
+                DB::connection('mysql');
+            }
             
             return response()->json([
                 'success' => true,
@@ -86,11 +109,17 @@ class ClientDashboardController extends Controller
                     'auth_user_role' => auth()->check() ? (auth()->user()->role ?? 'none') : 'not_logged_in',
                     'session_user_role' => session('user_role'),
                     'session_professor_id' => session('professor_id'),
-                    'final_role' => $userRole
+                    'final_role' => $userRole,
+                    'preview' => request()->boolean('preview'),
+                    'website' => request()->get('website')
                 ]
             ]);
 
         } catch (\Exception $e) {
+            // Ensure we always revert default connection on error
+            config(['database.default' => 'mysql']);
+            DB::purge('tenant');
+            DB::connection('mysql');
             return response()->json([
                 'success' => false,
                 'message' => 'Error loading sidebar settings',

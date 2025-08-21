@@ -83,8 +83,14 @@ class LoginController extends Controller
                 Auth::guard('smartprep')->login($user, $request->boolean('remember'));
                 $request->session()->regenerate();
                 
-                Log::info('SmartPrep Login: User login successful, redirecting to dashboard', ['user_id' => $user->getKey()]);
-                return redirect()->route('smartprep.dashboard');
+                // Redirect based on user role
+                if ($user->role === 'admin') {
+                    Log::info('SmartPrep Login: Admin user redirecting to admin dashboard', ['user_id' => $user->getKey()]);
+                    return redirect()->route('smartprep.admin.dashboard');
+                } else {
+                    Log::info('SmartPrep Login: Client user redirecting to client dashboard', ['user_id' => $user->getKey(), 'role' => $user->role]);
+                    return redirect()->route('smartprep.dashboard');
+                }
             } else {
                 Log::warning('SmartPrep Login: User password invalid', ['email' => $login]);
                 return back()->withErrors([

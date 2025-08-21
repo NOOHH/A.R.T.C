@@ -51,7 +51,7 @@ class AdminSettingsController extends Controller
             $file = $request->file('navbar_brand_logo');
             $filename = time() . '_' . $file->getClientOriginalName();
             $path = $file->storeAs('brand-logos', $filename, 'public');
-            UiSetting::set('navbar', 'brand_logo', 'storage/' . $path, 'file');
+            UiSetting::set('navbar', 'brand_logo', $path, 'file');
         }
 
         // Save to database using UiSetting model

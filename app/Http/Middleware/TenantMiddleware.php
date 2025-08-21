@@ -40,6 +40,17 @@ class TenantMiddleware
             return $next($request);
         }
         
+        // Check for preview mode with website parameter - handle this before domain-based switching
+        if ($request->has('preview') && $request->get('preview') === 'true' && $request->has('website')) {
+            $websiteId = $request->get('website');
+            $tenant = \App\Models\Tenant::find($websiteId);
+            if ($tenant) {
+                $this->tenantService->switchToTenant($tenant);
+                $request->attributes->set('tenant', $tenant);
+                return $next($request);
+            }
+        }
+        
         $domain = $request->getHost();
         
         // For development, handle localhost/127.0.0.1

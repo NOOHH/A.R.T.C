@@ -13,19 +13,19 @@ class User extends Authenticatable
     // Always use main SmartPrep database
     protected $connection = 'mysql';
     protected $table = 'users';
-    // Current live database still uses `id` as primary key (migration file shows user_id but DB not migrated) -> use id
+    // Database uses 'id' as primary key (standard Laravel)
     protected $primaryKey = 'id';
     public $incrementing = true;
     protected $keyType = 'int';
 
     protected $fillable = [
-        'user_firstname',
-        'user_lastname',
+        'name',
         'email',
         'username',
         'password',
         'role',
-        'enrollment_id',
+        'email_verified_at',
+        'remember_token',
     ];
 
     protected $hidden = [

@@ -214,23 +214,48 @@
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">Primary Color</label>
-                    <input type="color" id="student_sidebar_primary_color" class="form-control form-control-color" value="<?php echo e($settings['student_sidebar']['primary_color'] ?? '#3f4d69'); ?>">
+                    <div class="color-input-group">
+                        <input type="color" id="student_sidebar_primary_color" class="form-control form-control-color" value="<?php echo e($settings['student_sidebar']['primary_color'] ?? '#3f4d69'); ?>" onchange="updateColorText('student_sidebar_primary_color', this.value)">
+                        <input type="text" class="form-control form-control-sm" value="<?php echo e($settings['student_sidebar']['primary_color'] ?? '#3f4d69'); ?>" onchange="updateColorPicker('student_sidebar_primary_color', this.value)">
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Secondary Color</label>
-                    <input type="color" id="student_sidebar_secondary_color" class="form-control form-control-color" value="<?php echo e($settings['student_sidebar']['secondary_color'] ?? '#2d2d2d'); ?>">
+                    <div class="color-input-group">
+                        <input type="color" id="student_sidebar_secondary_color" class="form-control form-control-color" value="<?php echo e($settings['student_sidebar']['secondary_color'] ?? '#2d2d2d'); ?>" onchange="updateColorText('student_sidebar_secondary_color', this.value)">
+                        <input type="text" class="form-control form-control-sm" value="<?php echo e($settings['student_sidebar']['secondary_color'] ?? '#2d2d2d'); ?>" onchange="updateColorPicker('student_sidebar_secondary_color', this.value)">
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Accent Color</label>
-                    <input type="color" id="student_sidebar_accent_color" class="form-control form-control-color" value="<?php echo e($settings['student_sidebar']['accent_color'] ?? '#4f757d'); ?>">
+                    <div class="color-input-group">
+                        <input type="color" id="student_sidebar_accent_color" class="form-control form-control-color" value="<?php echo e($settings['student_sidebar']['accent_color'] ?? '#4f757d'); ?>" onchange="updateColorText('student_sidebar_accent_color', this.value)">
+                        <input type="text" class="form-control form-control-sm" value="<?php echo e($settings['student_sidebar']['accent_color'] ?? '#4f757d'); ?>" onchange="updateColorPicker('student_sidebar_accent_color', this.value)">
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Text Color</label>
-                    <input type="color" id="student_sidebar_text_color" class="form-control form-control-color" value="<?php echo e($settings['student_sidebar']['text_color'] ?? '#e0e0e0'); ?>">
+                    <div class="color-input-group">
+                        <input type="color" id="student_sidebar_text_color" class="form-control form-control-color" value="<?php echo e($settings['student_sidebar']['text_color'] ?? '#e0e0e0'); ?>" onchange="updateColorText('student_sidebar_text_color', this.value)">
+                        <input type="text" class="form-control form-control-sm" value="<?php echo e($settings['student_sidebar']['text_color'] ?? '#e0e0e0'); ?>" onchange="updateColorPicker('student_sidebar_text_color', this.value)">
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Hover Color</label>
-                    <input type="color" id="student_sidebar_hover_color" class="form-control form-control-color" value="<?php echo e($settings['student_sidebar']['hover_color'] ?? '#374151'); ?>">
+                    <div class="color-input-group">
+                        <input type="color" id="student_sidebar_hover_color" class="form-control form-control-color" value="<?php echo e($settings['student_sidebar']['hover_color'] ?? '#374151'); ?>" onchange="updateColorText('student_sidebar_hover_color', this.value)">
+                        <input type="text" class="form-control form-control-sm" value="<?php echo e($settings['student_sidebar']['hover_color'] ?? '#374151'); ?>" onchange="updateColorPicker('student_sidebar_hover_color', this.value)">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Sidebar Width</label>
+                    <input type="number" id="student_sidebar_width" class="form-control" placeholder="280" min="200" max="400" value="<?php echo e($settings['student_sidebar']['width'] ?? '280'); ?>">
+                    <small class="form-text text-muted">Width in pixels (200-400px)</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Collapsed Width</label>
+                    <input type="number" id="student_sidebar_collapsed_width" class="form-control" placeholder="70" min="50" max="100" value="<?php echo e($settings['student_sidebar']['collapsed_width'] ?? '70'); ?>">
+                    <small class="form-text text-muted">Width when collapsed (50-100px)</small>
                 </div>
             </div>
             <div class="mt-3 d-flex gap-2">
@@ -239,5 +264,51 @@
             </div>
         </div>
     </div>
+
+    <style>
+    .color-input-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .color-input-group .form-control-color {
+        width: 50px;
+        height: 38px;
+        padding: 0;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        cursor: pointer;
+    }
+    
+    .color-input-group .form-control-sm {
+        flex: 1;
+        font-family: monospace;
+        font-size: 0.875rem;
+    }
+    </style>
+
+    <script>
+    // Color input synchronization functions
+    function updateColorText(colorId, value) {
+        const textInput = document.querySelector(`input[type="text"][onchange*="${colorId}"]`);
+        if (textInput) {
+            textInput.value = value;
+        }
+    }
+
+    function updateColorPicker(colorId, value) {
+        // Validate hex color format
+        if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+            const colorInput = document.getElementById(colorId);
+            if (colorInput) {
+                colorInput.value = value;
+            }
+        } else {
+            // Show error for invalid color format
+            alert('Please enter a valid hex color (e.g., #ff0000)');
+        }
+    }
+    </script>
 </div>
 <?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/smartprep/dashboard/partials/settings/student-portal.blade.php ENDPATH**/ ?>

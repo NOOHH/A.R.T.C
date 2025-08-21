@@ -1,0 +1,1 @@
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views\admin\modules\index.blade.php ENDPATH**/ ?>

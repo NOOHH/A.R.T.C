@@ -69,134 +69,7 @@
             </div>
         </div>
         
-        <!-- Navigation Options -->
-        <div class="setting-group">
-            <label class="form-label">
-                <i class="fas fa-bars me-2"></i>Navigation Options
-            </label>
-            <div class="form-check">
-                <input type="checkbox" id="professor_show_sidebar" name="professor_show_sidebar" class="form-check-input" 
-                       value="1" <?php echo e(($settings['professor_show_sidebar'] ?? true) ? 'checked' : ''); ?>>
-                <label for="professor_show_sidebar" class="form-check-label">Show sidebar navigation</label>
-            </div>
-            <div class="form-check">
-                <input type="checkbox" id="professor_collapsible_sidebar" name="professor_collapsible_sidebar" class="form-check-input" 
-                       value="1" <?php echo e(($settings['professor_collapsible_sidebar'] ?? true) ? 'checked' : ''); ?>>
-                <label for="professor_collapsible_sidebar" class="form-check-label">Collapsible sidebar</label>
-            </div>
-            <div class="form-check">
-                <input type="checkbox" id="professor_show_quick_actions" name="professor_show_quick_actions" class="form-check-input" 
-                       value="1" <?php echo e(($settings['professor_show_quick_actions'] ?? true) ? 'checked' : ''); ?>>
-                <label for="professor_show_quick_actions" class="form-check-label">Show quick actions toolbar</label>
-            </div>
-        </div>
-        
-        <!-- Course Management -->
-        <div class="setting-group">
-            <label class="form-label">
-                <i class="fas fa-book me-2"></i>Course Management Options
-            </label>
-            <div class="form-check">
-                <input type="checkbox" id="professor_bulk_actions" name="professor_bulk_actions" class="form-check-input" 
-                       value="1" <?php echo e(($settings['professor_bulk_actions'] ?? true) ? 'checked' : ''); ?>>
-                <label for="professor_bulk_actions" class="form-check-label">Enable bulk actions</label>
-            </div>
-            <div class="form-check">
-                <input type="checkbox" id="professor_advanced_filters" name="professor_advanced_filters" class="form-check-input" 
-                       value="1" <?php echo e(($settings['professor_advanced_filters'] ?? true) ? 'checked' : ''); ?>>
-                <label for="professor_advanced_filters" class="form-check-label">Show advanced filters</label>
-            </div>
-            <div class="form-check">
-                <input type="checkbox" id="professor_export_options" name="professor_export_options" class="form-check-input" 
-                       value="1" <?php echo e(($settings['professor_export_options'] ?? true) ? 'checked' : ''); ?>>
-                <label for="professor_export_options" class="form-check-label">Enable export options</label>
-            </div>
-        </div>
-        
-        <!-- Grading Options -->
-        <div class="setting-group">
-            <label class="form-label">
-                <i class="fas fa-clipboard-check me-2"></i>Grading Options
-            </label>
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label for="professor_grading_scale" class="form-label small">Default Grading Scale</label>
-                    <select id="professor_grading_scale" name="professor_grading_scale" class="form-select">
-                        <option value="percentage" <?php echo e(($settings['professor_grading_scale'] ?? 'percentage') == 'percentage' ? 'selected' : ''); ?>>Percentage (0-100)</option>
-                        <option value="letter" <?php echo e(($settings['professor_grading_scale'] ?? '') == 'letter' ? 'selected' : ''); ?>>Letter Grades (A-F)</option>
-                        <option value="points" <?php echo e(($settings['professor_grading_scale'] ?? '') == 'points' ? 'selected' : ''); ?>>Points Based</option>
-                        <option value="pass-fail" <?php echo e(($settings['professor_grading_scale'] ?? '') == 'pass-fail' ? 'selected' : ''); ?>>Pass/Fail</option>
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    <label for="professor_grade_display" class="form-label small">Grade Display Format</label>
-                    <select id="professor_grade_display" name="professor_grade_display" class="form-select">
-                        <option value="numeric" <?php echo e(($settings['professor_grade_display'] ?? 'numeric') == 'numeric' ? 'selected' : ''); ?>>Numeric Only</option>
-                        <option value="letter" <?php echo e(($settings['professor_grade_display'] ?? '') == 'letter' ? 'selected' : ''); ?>>Letter Only</option>
-                        <option value="both" <?php echo e(($settings['professor_grade_display'] ?? '') == 'both' ? 'selected' : ''); ?>>Both Numeric & Letter</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-check mt-2">
-                <input type="checkbox" id="professor_auto_calculate" name="professor_auto_calculate" class="form-check-input" 
-                       value="1" <?php echo e(($settings['professor_auto_calculate'] ?? true) ? 'checked' : ''); ?>>
-                <label for="professor_auto_calculate" class="form-check-label">Auto-calculate final grades</label>
-            </div>
-            <div class="form-check">
-                <input type="checkbox" id="professor_grade_comments" name="professor_grade_comments" class="form-check-input" 
-                       value="1" <?php echo e(($settings['professor_grade_comments'] ?? true) ? 'checked' : ''); ?>>
-                <label for="professor_grade_comments" class="form-check-label">Enable grade comments</label>
-            </div>
-        </div>
-        
-        <!-- Analytics & Reports -->
-        <div class="setting-group">
-            <label class="form-label">
-                <i class="fas fa-chart-bar me-2"></i>Analytics & Reports
-            </label>
-            <div class="form-check">
-                <input type="checkbox" id="professor_show_analytics" name="professor_show_analytics" class="form-check-input" 
-                       value="1" <?php echo e(($settings['professor_show_analytics'] ?? true) ? 'checked' : ''); ?>>
-                <label for="professor_show_analytics" class="form-check-label">Show analytics dashboard</label>
-            </div>
-            <div class="form-check">
-                <input type="checkbox" id="professor_student_progress" name="professor_student_progress" class="form-check-input" 
-                       value="1" <?php echo e(($settings['professor_student_progress'] ?? true) ? 'checked' : ''); ?>>
-                <label for="professor_student_progress" class="form-check-label">Student progress tracking</label>
-            </div>
-            <div class="form-check">
-                <input type="checkbox" id="professor_engagement_metrics" name="professor_engagement_metrics" class="form-check-input" 
-                       value="1" <?php echo e(($settings['professor_engagement_metrics'] ?? true) ? 'checked' : ''); ?>>
-                <label for="professor_engagement_metrics" class="form-check-label">Engagement metrics</label>
-            </div>
-            <div class="form-check">
-                <input type="checkbox" id="professor_automated_reports" name="professor_automated_reports" class="form-check-input" 
-                       value="1" <?php echo e(($settings['professor_automated_reports'] ?? false) ? 'checked' : ''); ?>>
-                <label for="professor_automated_reports" class="form-check-label">Automated weekly reports</label>
-            </div>
-        </div>
-        
-        <!-- Communication Settings -->
-        <div class="setting-group">
-            <label class="form-label">
-                <i class="fas fa-comments me-2"></i>Communication Settings
-            </label>
-            <div class="form-check">
-                <input type="checkbox" id="professor_messaging" name="professor_messaging" class="form-check-input" 
-                       value="1" <?php echo e(($settings['professor_messaging'] ?? true) ? 'checked' : ''); ?>>
-                <label for="professor_messaging" class="form-check-label">Enable messaging system</label>
-            </div>
-            <div class="form-check">
-                <input type="checkbox" id="professor_announcements" name="professor_announcements" class="form-check-input" 
-                       value="1" <?php echo e(($settings['professor_announcements'] ?? true) ? 'checked' : ''); ?>>
-                <label for="professor_announcements" class="form-check-label">Course announcements</label>
-            </div>
-            <div class="form-check">
-                <input type="checkbox" id="professor_office_hours" name="professor_office_hours" class="form-check-input" 
-                       value="1" <?php echo e(($settings['professor_office_hours'] ?? true) ? 'checked' : ''); ?>>
-                <label for="professor_office_hours" class="form-check-label">Office hours scheduling</label>
-            </div>
-        </div>
+        <!-- Note: Navigation Options, Course Management Options, Grading Options, Analytics & Reports, and Communication Settings have been removed as permissions will be handled in a different section -->
         
         <!-- Save Button -->
         <div class="settings-footer">
@@ -235,6 +108,16 @@
                 <div class="col-md-6">
                     <label class="form-label">Hover Color</label>
                     <input type="color" id="professor_sidebar_hover_color" class="form-control form-control-color" value="<?php echo e($settings['professor_sidebar']['hover_color'] ?? '#0056b3'); ?>">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Sidebar Width</label>
+                    <input type="number" id="professor_sidebar_width" class="form-control" placeholder="280" min="200" max="400" value="<?php echo e($settings['professor_sidebar']['width'] ?? '280'); ?>">
+                    <small class="form-text text-muted">Width in pixels (200-400px)</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Collapsed Width</label>
+                    <input type="number" id="professor_sidebar_collapsed_width" class="form-control" placeholder="70" min="50" max="100" value="<?php echo e($settings['professor_sidebar']['collapsed_width'] ?? '70'); ?>">
+                    <small class="form-text text-muted">Width when collapsed (50-100px)</small>
                 </div>
             </div>
             <div class="mt-3 d-flex gap-2">

@@ -1,0 +1,1 @@
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views\registration\dynamic-form.blade.php ENDPATH**/ ?>
