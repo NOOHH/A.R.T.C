@@ -232,6 +232,10 @@
                     <label class="form-label">Hover Color</label>
                     <input type="color" id="student_sidebar_hover_color" class="form-control form-control-color" value="<?php echo e($settings['student_sidebar']['hover_color'] ?? '#374151'); ?>">
                 </div>
+                <div class="col-md-6">
+                    <label class="form-label">Background Color</label>
+                    <input type="text" class="form-control" name="sidebar_bg" value="<?php echo e($settings['student_sidebar']['background_color'] ?? '#f8f9fa'); ?>" placeholder="#f8f9fa">
+                </div>
             </div>
             <div class="mt-3 d-flex gap-2">
                 <button type="button" class="btn btn-outline-primary btn-sm" onclick="saveSidebarColors('student')"><i class="fas fa-save me-2"></i>Save Sidebar Colors</button>

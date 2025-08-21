@@ -1,9 +1,26 @@
+<?php
+    // Get brand name from settings if available, otherwise use default
+    $brandName = $settings['navbar']['brand_name'] ?? 
+                 $navbarBrandName ?? 
+                 'Ascendo Review & Training Center';
+    
+    // Get brand logo from settings if available
+    $brandLogo = $settings['navbar']['brand_logo'] ?? null;
+    $defaultLogo = asset('images/ARTC_logo.png');
+?>
+
 <header class="main-header">
   <div class="header-left">
     <a href="<?php echo e(route('home')); ?>" class="brand-link">
-      <img src="<?php echo e(asset('images/ARTC_logo.png')); ?>" alt="Logo">
+      <?php if($brandLogo): ?>
+        <img src="<?php echo e(asset($brandLogo)); ?>" 
+             alt="<?php echo e($brandName); ?>" 
+             onerror="this.src='<?php echo e($defaultLogo); ?>'">
+      <?php else: ?>
+        <img src="<?php echo e($defaultLogo); ?>" alt="<?php echo e($brandName); ?>">
+      <?php endif; ?>
       <div class="brand-text">
-        <?php echo e($navbar['brand_name'] ?? 'Ascendo Review and Training Center'); ?>
+        <?php echo e($brandName); ?>
 
       </div>
     </a>
@@ -23,8 +40,22 @@
     </span>
     <span class="profile-icon">
       <?php
-        $student = \App\Models\Student::where('user_id', session('user_id'))->first();
-        $profilePhoto = $student && $student->profile_photo ? $student->profile_photo : null;
+        // Check if this is preview mode
+        $isPreview = request()->has('preview') || request()->query('preview') === 'true';
+        
+        if ($isPreview) {
+          // Use mock data for preview mode
+          $profilePhoto = null;
+        } else {
+          // Only query database if not in preview mode
+          try {
+            $student = \App\Models\Student::where('user_id', session('user_id'))->first();
+            $profilePhoto = $student && $student->profile_photo ? $student->profile_photo : null;
+          } catch (\Exception $e) {
+            // If there's an error (e.g., table doesn't exist), use null
+            $profilePhoto = null;
+          }
+        }
       ?>
       
       <?php if($profilePhoto): ?>

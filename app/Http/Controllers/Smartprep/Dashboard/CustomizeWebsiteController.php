@@ -863,6 +863,7 @@ class CustomizeWebsiteController extends Controller
                 'colors.accent_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
                 'colors.text_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
                 'colors.hover_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
+                'colors.background_color' => 'nullable|string|max:7',
             ]);
 
             $user = Auth::guard('smartprep')->user();
