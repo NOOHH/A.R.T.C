@@ -494,6 +494,39 @@ class CustomizeWebsiteController extends Controller
     }
 
     /**
+     * Ensure settings table exists in the current tenant database
+     */
+    private function ensureSettingsTableExists()
+    {
+        try {
+            // Check if settings table exists
+            $tables = DB::select("SHOW TABLES LIKE 'settings'");
+            
+            if (empty($tables)) {
+                // Create the settings table
+                DB::statement("CREATE TABLE IF NOT EXISTS settings (
+                    id bigint unsigned NOT NULL AUTO_INCREMENT,
+                    `group` varchar(100) NOT NULL,
+                    `key` varchar(100) NOT NULL,
+                    `value` text,
+                    `type` varchar(50) DEFAULT 'text',
+                    created_at timestamp NULL DEFAULT NULL,
+                    updated_at timestamp NULL DEFAULT NULL,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY settings_group_key_unique (`group`,`key`),
+                    KEY settings_group_index (`group`),
+                    KEY settings_key_index (`key`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+                
+                Log::info('Settings table created in tenant database');
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to ensure settings table exists: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
      * Update navbar settings in tenant database
      */
     public function updateNavbar(Request $request)
@@ -538,6 +571,9 @@ class CustomizeWebsiteController extends Controller
 
             // Switch to tenant database
             $this->tenantService->switchToTenant($tenant);
+
+            // Ensure settings table exists
+            $this->ensureSettingsTableExists();
 
             // Handle brand name (accept both field names for compatibility)
             $brandName = $request->input('brand_name') ?? $request->input('navbar_brand_name', 'Your Company Name');
@@ -854,6 +890,9 @@ class CustomizeWebsiteController extends Controller
             // Switch to tenant database
             $this->tenantService->switchToTenant($tenant);
 
+            // Ensure settings table exists
+            $this->ensureSettingsTableExists();
+
             // Save each color setting to the tenant database
             foreach ($colors as $key => $value) {
                 Setting::set($section, $key, $value);
@@ -920,6 +959,9 @@ class CustomizeWebsiteController extends Controller
 
             // Switch to tenant database
             $this->tenantService->switchToTenant($tenant);
+
+            // Ensure settings table exists
+            $this->ensureSettingsTableExists();
 
             // Save all submitted settings to tenant database
             foreach ($request->only(array_keys($validationRules)) as $key => $value) {

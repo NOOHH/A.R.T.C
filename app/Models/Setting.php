@@ -9,8 +9,8 @@ class Setting extends Model
 {
     use HasFactory;
 
-    // Use tenant connection by default
-    protected $connection = 'tenant';
+    // Use default connection (will be switched by TenantService)
+    // protected $connection = 'tenant'; // Removed hardcoded connection
     
     protected $fillable = [
         'group',
