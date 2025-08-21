@@ -457,13 +457,59 @@ class ProfessorDashboardController extends Controller
     /**
      * Display a preview version of the professor dashboard for admin customization
      */
-    public function showPreviewDashboard()
+    public function showPreviewDashboard($tenantSlug = null)
     {
-        // Load tenant settings if website parameter is provided
+        // Load tenant settings if website parameter is provided OR if tenant slug is in URL
         $settings = [];
         $tenant = null;
         
-        if (request()->has('website')) {
+        // Check if tenant slug is provided in URL (from /t/{tenant}/professor/dashboard route)
+        if ($tenantSlug) {
+            $tenantService = app(\App\Services\TenantService::class);
+            $tenantService->switchToMain();
+            
+            $tenant = \App\Models\Tenant::where('slug', $tenantSlug)->first();
+            
+            if ($tenant) {
+                try {
+                    $tenantService->switchToTenant($tenant);
+                    
+                    // Load settings from tenant database
+                    $settings = [
+                        'navbar' => [
+                            'brand_name' => \App\Models\Setting::get('navbar', 'brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => \App\Models\Setting::get('navbar', 'brand_logo', null),
+                        ],
+                        'professor_panel' => [
+                            'brand_name' => \App\Models\Setting::get('professor_panel', 'brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => \App\Models\Setting::get('professor_panel', 'brand_logo', null),
+                        ],
+                        'professor_sidebar' => [
+                            'primary_color' => \App\Models\Setting::get('professor_sidebar', 'primary_color', '#1e293b'),
+                            'secondary_color' => \App\Models\Setting::get('professor_sidebar', 'secondary_color', '#334155'),
+                            'accent_color' => \App\Models\Setting::get('professor_sidebar', 'accent_color', '#10b981'),
+                            'text_color' => \App\Models\Setting::get('professor_sidebar', 'text_color', '#f1f5f9'),
+                            'hover_color' => \App\Models\Setting::get('professor_sidebar', 'hover_color', '#475569'),
+                        ],
+                    ];
+                    
+                    $tenantService->switchToMain();
+                    
+                    // Share settings with the view
+                    view()->share('settings', $settings);
+                    view()->share('navbar', $settings['navbar'] ?? []);
+                    
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Failed to load tenant settings for professor preview via slug', [
+                        'tenant' => $tenant->slug,
+                        'error' => $e->getMessage()
+                    ]);
+                    $tenantService->switchToMain();
+                }
+            }
+        }
+        // Fallback: Check for website parameter (existing functionality)
+        elseif (request()->has('website')) {
             $websiteId = request('website');
             
             // Ensure we're using the main database to find the client

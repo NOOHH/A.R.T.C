@@ -2911,6 +2911,41 @@ Route::prefix('t')->group(function () {
     Route::get('/{tenant}', [\App\Http\Controllers\Tenant\HomeController::class, 'index'])->name('tenant.home');
     Route::get('/{tenant}/programs', [\App\Http\Controllers\Tenant\HomeController::class, 'programs'])->name('tenant.programs');
     Route::get('/{tenant}/programs/{id}', [\App\Http\Controllers\Tenant\HomeController::class, 'programDetails'])->name('tenant.program.details');
+    
+    // Tenant-specific dashboard routes for preview
+    Route::get('/{tenant}/student/dashboard', [StudentDashboardController::class, 'showPreviewDashboard'])->name('tenant.student.dashboard');
+    Route::get('/{tenant}/professor/dashboard', [ProfessorDashboardController::class, 'showPreviewDashboard'])->name('tenant.professor.dashboard');
+    Route::get('/{tenant}/admin-dashboard', function($tenant) {
+        // Simple admin dashboard preview - load tenant settings and show admin dashboard
+        try {
+            $tenantService = app(\App\Services\TenantService::class);
+            $tenantObj = \App\Models\Tenant::where('slug', $tenant)->first();
+            
+            if ($tenantObj) {
+                $tenantService->switchToTenant($tenantObj);
+                
+                $settings = [
+                    'navbar' => [
+                        'brand_name' => \App\Models\Setting::get('navbar', 'brand_name', 'Ascendo Review & Training Center'),
+                        'brand_logo' => \App\Models\Setting::get('navbar', 'brand_logo', null),
+                    ],
+                    'admin_panel' => [
+                        'brand_name' => \App\Models\Setting::get('admin_panel', 'brand_name', 'Ascendo Review & Training Center'),
+                        'brand_logo' => \App\Models\Setting::get('admin_panel', 'brand_logo', null),
+                    ],
+                ];
+                
+                $tenantService->switchToMain();
+                
+                view()->share('settings', $settings);
+                view()->share('navbar', $settings['navbar'] ?? []);
+            }
+            
+            return view('admin.dashboard.index', compact('tenant'));
+        } catch (\Exception $e) {
+            return response('Admin dashboard preview not available: ' . $e->getMessage(), 500);
+        }
+    })->name('tenant.admin.dashboard');
 });
 
 // Debug route to test admin table structure

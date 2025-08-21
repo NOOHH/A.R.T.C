@@ -222,15 +222,18 @@
         
         switch(section) {
             case 'student':
-                previewUrl = '{{ url("/student/dashboard") }}';
+                // Use tenant-specific student dashboard URL instead of hardcoded /student/dashboard
+                previewUrl = '{{ $previewUrl }}' + '/student/dashboard';
                 titleText = 'Student Portal Preview';
                 break;
             case 'professor':
-                previewUrl = '{{ url("/professor/dashboard") }}';
+                // Use tenant-specific professor dashboard URL instead of hardcoded /professor/dashboard
+                previewUrl = '{{ $previewUrl }}' + '/professor/dashboard';
                 titleText = 'Professor Panel Preview';
                 break;
             case 'admin':
-                previewUrl = '{{ url("/admin-dashboard") }}';
+                // Use tenant-specific admin dashboard URL instead of hardcoded /admin-dashboard
+                previewUrl = '{{ $previewUrl }}' + '/admin-dashboard';
                 titleText = 'Admin Panel Preview';
                 break;
             case 'homepage':

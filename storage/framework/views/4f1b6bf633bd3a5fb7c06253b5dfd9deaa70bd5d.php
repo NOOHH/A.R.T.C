@@ -222,15 +222,18 @@
         
         switch(section) {
             case 'student':
-                previewUrl = '<?php echo e(url("/student/dashboard")); ?>';
+                // Use tenant-specific student dashboard URL instead of hardcoded /student/dashboard
+                previewUrl = '<?php echo e($previewUrl); ?>' + '/student/dashboard';
                 titleText = 'Student Portal Preview';
                 break;
             case 'professor':
-                previewUrl = '<?php echo e(url("/professor/dashboard")); ?>';
+                // Use tenant-specific professor dashboard URL instead of hardcoded /professor/dashboard
+                previewUrl = '<?php echo e($previewUrl); ?>' + '/professor/dashboard';
                 titleText = 'Professor Panel Preview';
                 break;
             case 'admin':
-                previewUrl = '<?php echo e(url("/admin-dashboard")); ?>';
+                // Use tenant-specific admin dashboard URL instead of hardcoded /admin-dashboard
+                previewUrl = '<?php echo e($previewUrl); ?>' + '/admin-dashboard';
                 titleText = 'Admin Panel Preview';
                 break;
             case 'homepage':

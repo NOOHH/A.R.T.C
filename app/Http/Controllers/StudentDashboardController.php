@@ -649,13 +649,60 @@ class StudentDashboardController extends Controller
     /**
      * Display a preview version of the student dashboard for admin customization
      */
-    public function showPreviewDashboard()
+    public function showPreviewDashboard($tenantSlug = null)
     {
-        // Load tenant settings if website parameter is provided
+        // Load tenant settings if website parameter is provided OR if tenant slug is in URL
         $settings = [];
         $tenant = null;
         
-        if (request()->has('website')) {
+        // Check if tenant slug is provided in URL (from /t/{tenant}/student/dashboard route)
+        if ($tenantSlug) {
+            $tenantService = app(\App\Services\TenantService::class);
+            $tenantService->switchToMain();
+            
+            $tenant = \App\Models\Tenant::where('slug', $tenantSlug)->first();
+            
+            if ($tenant) {
+                try {
+                    $tenantService->switchToTenant($tenant);
+                    
+                    // Load settings from tenant database
+                    $settings = [
+                        'navbar' => [
+                            'brand_name' => \App\Models\Setting::get('navbar', 'brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => \App\Models\Setting::get('navbar', 'brand_logo', null),
+                        ],
+                        'student_portal' => [
+                            'brand_name' => \App\Models\Setting::get('student_portal', 'brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => \App\Models\Setting::get('student_portal', 'brand_logo', null),
+                        ],
+                        'student_sidebar' => [
+                            'primary_color' => \App\Models\Setting::get('student_sidebar', 'primary_color', '#3f4d69'),
+                            'secondary_color' => \App\Models\Setting::get('student_sidebar', 'secondary_color', '#2d2d2d'),
+                            'accent_color' => \App\Models\Setting::get('student_sidebar', 'accent_color', '#4f757d'),
+                            'text_color' => \App\Models\Setting::get('student_sidebar', 'text_color', '#e0e0e0'),
+                            'hover_color' => \App\Models\Setting::get('student_sidebar', 'hover_color', '#374151'),
+                            'background_color' => \App\Models\Setting::get('student_sidebar', 'background_color', '#f8f9fa'),
+                        ],
+                    ];
+                    
+                    $tenantService->switchToMain();
+                    
+                    // Share settings with the view
+                    view()->share('settings', $settings);
+                    view()->share('navbar', $settings['navbar'] ?? []);
+                    
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Failed to load tenant settings for preview via slug', [
+                        'tenant' => $tenant->slug,
+                        'error' => $e->getMessage()
+                    ]);
+                    $tenantService->switchToMain();
+                }
+            }
+        }
+        // Fallback: Check for website parameter (existing functionality)
+        elseif (request()->has('website')) {
             $websiteId = request('website');
             
             // Ensure we're using the main database to find the client
