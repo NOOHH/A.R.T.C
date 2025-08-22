@@ -232,7 +232,14 @@
             <?php if(isset($settings['homepage']['hero_background_image']) && $settings['homepage']['hero_background_image']): ?>
                 <div class="mt-2">
                     <small class="text-muted">Current image:</small><br>
-                    <img src="<?php echo e(\Illuminate\Support\Facades\Storage::url($settings['homepage']['hero_background_image'])); ?>" alt="Current hero background" style="max-width: 200px; max-height: 100px;" class="img-thumbnail">
+                    <?php
+                        $rawHero = $settings['homepage']['hero_background_image'] ?? null;
+                        if ($rawHero && str_starts_with($rawHero, 'storage/')) {
+                            $rawHero = substr($rawHero, 8);
+                        }
+                        $heroUrl = $rawHero ? \App\Helpers\StorageHelper::url($rawHero) : null;
+                    ?>
+                    <img src="<?php echo e($heroUrl); ?>" alt="Current hero background" style="max-width: 200px; max-height: 100px;" class="img-thumbnail">
                 </div>
             <?php endif; ?>
         </div>

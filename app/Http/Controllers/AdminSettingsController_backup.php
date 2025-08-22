@@ -559,7 +559,7 @@ class AdminSettingsController extends Controller
                 
                 // Save to database
                 UiSetting::set('global', 'favicon_path', $faviconPath, 'file');
-                UiSetting::set('global', 'favicon_url', Storage::url($faviconPath), 'text');
+                UiSetting::set('global', 'favicon_url', $faviconPath, 'text');
                 
                 // Copy favicon to public root for direct access
                 $publicPath = public_path('favicon.' . $file->getClientOriginalExtension());
@@ -1136,7 +1136,7 @@ class AdminSettingsController extends Controller
                 $logoPath = $file->storeAs('logos/student', $filename, 'public');
                 
                 UiSetting::set('student_portal', 'header_logo_path', $logoPath, 'file');
-                UiSetting::set('student_portal', 'header_logo_url', Storage::url($logoPath), 'text');
+                UiSetting::set('student_portal', 'header_logo_url', $logoPath, 'text');
             }
             
             return response()->json(['success' => true]);

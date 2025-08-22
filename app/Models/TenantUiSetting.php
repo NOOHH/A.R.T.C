@@ -55,3 +55,4 @@ class TenantUiSetting extends Model
         return self::where('section', $section)->pluck('setting_value', 'setting_key');
     }
 }
+

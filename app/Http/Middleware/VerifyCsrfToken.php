@@ -25,5 +25,6 @@ class VerifyCsrfToken extends Middleware
         '/registration/validate-file',
         '/modular/registration/validate-file',
         '/modular/registration/user-prefill',
+        'smartprep/logout', // Temporarily exclude for testing
     ];
 }

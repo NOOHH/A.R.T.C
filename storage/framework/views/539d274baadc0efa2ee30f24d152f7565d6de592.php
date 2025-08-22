@@ -28,6 +28,7 @@
     <meta name="x-my-name" content="<?php echo e($isLoggedIn && isset($user) ? ($user->name ?? 'User') : 'Guest'); ?>">
     <meta name="x-is-authenticated" content="<?php echo e($isLoggedIn && isset($user) ? '1' : '0'); ?>">
     <meta name="x-user-role" content="<?php echo e($userRole ?? 'guest'); ?>">
+    <meta name="x-selected-website-id" content="<?php echo e($selectedWebsite->id ?? ''); ?>">
     
     <!-- Include the exact same styles as admin settings -->
     <?php echo $__env->make('smartprep.dashboard.partials.customize-styles', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
@@ -98,9 +99,18 @@
                                 <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="<?php echo e(route('smartprep.logout')); ?>">
-                                <i class="fas fa-sign-out-alt me-2"></i>Logout
-                            </a></li>
+                            <li>
+                                <a class="dropdown-item" href="<?php echo e(route('smartprep.logout')); ?>"
+                                   onclick="event.preventDefault(); document.getElementById('smartprep-logout-form').submit();">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </a>
+                                <form id="smartprep-logout-form" action="<?php echo e(route('smartprep.logout')); ?>" method="POST" class="d-none">
+                                    <?php echo csrf_field(); ?>
+                                    <?php if($selectedWebsite): ?>
+                                        <input type="hidden" name="tenant" value="<?php echo e($selectedWebsite->slug); ?>">
+                                    <?php endif; ?>
+                                </form>
+                            </li>
                         </ul>
                     </li>
                 </ul>
@@ -126,11 +136,14 @@
                                             <div class="card border">
                                                 <div class="card-body">
                                                     <h5 class="card-title"><?php echo e($website->name); ?></h5>
-                                                    <p class="card-text text-muted"><?php echo e($website->domain); ?></p>
-                                                    <a href="<?php echo e(route('smartprep.dashboard.customize', ['website' => $website->id])); ?>" 
-                                                       class="btn btn-primary">
-                                                        <i class="fas fa-edit me-2"></i>Customize
-                                                    </a>
+                                                                    
+                                                                    <div class="mb-2">
+                                                                        <?php echo $__env->make('smartprep.dashboard.partials.website-status-badge', ['website' => $website, 'showDomain' => true], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+                                                                    </div>
+                                                                    <a href="<?php echo e(route('smartprep.dashboard.customize', ['website' => $website->id])); ?>" 
+                                                                       class="btn btn-primary">
+                                                                        <i class="fas fa-edit me-2"></i>Customize
+                                                                    </a>
                                                 </div>
                                             </div>
                                         </div>

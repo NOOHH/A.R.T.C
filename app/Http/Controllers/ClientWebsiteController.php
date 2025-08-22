@@ -36,7 +36,7 @@ class ClientWebsiteController extends Controller
                 $counter++;
             }
 
-            $dbName = 'smartprep_' . str_replace('-', '_', $slug);
+            $dbName = 'smartprep_' . $slug; // standardized naming (keep slug as-is)
 
             // Create the client website by replicating A.R.T.C structure
             $websitePath = $this->replicateARTCStructure($slug, $websiteRequest->business_name, $dbName);

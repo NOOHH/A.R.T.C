@@ -28,6 +28,7 @@
     <meta name="x-my-name" content="{{ $isLoggedIn && isset($user) ? ($user->name ?? 'User') : 'Guest' }}">
     <meta name="x-is-authenticated" content="{{ $isLoggedIn && isset($user) ? '1' : '0' }}">
     <meta name="x-user-role" content="{{ $userRole ?? 'guest' }}">
+    <meta name="x-selected-website-id" content="{{ $selectedWebsite->id ?? '' }}">
     
     <!-- Include the exact same styles as admin settings -->
     @include('smartprep.dashboard.partials.customize-styles')
@@ -95,9 +96,18 @@
                                 <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ route('smartprep.logout') }}">
-                                <i class="fas fa-sign-out-alt me-2"></i>Logout
-                            </a></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('smartprep.logout') }}"
+                                   onclick="event.preventDefault(); document.getElementById('smartprep-logout-form').submit();">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </a>
+                                <form id="smartprep-logout-form" action="{{ route('smartprep.logout') }}" method="POST" class="d-none">
+                                    @csrf
+                                    @if($selectedWebsite)
+                                        <input type="hidden" name="tenant" value="{{ $selectedWebsite->slug }}">
+                                    @endif
+                                </form>
+                            </li>
                         </ul>
                     </li>
                 </ul>
@@ -123,11 +133,14 @@
                                             <div class="card border">
                                                 <div class="card-body">
                                                     <h5 class="card-title">{{ $website->name }}</h5>
-                                                    <p class="card-text text-muted">{{ $website->domain }}</p>
-                                                    <a href="{{ route('smartprep.dashboard.customize', ['website' => $website->id]) }}" 
-                                                       class="btn btn-primary">
-                                                        <i class="fas fa-edit me-2"></i>Customize
-                                                    </a>
+                                                                    {{-- Website status badge and domain --}}
+                                                                    <div class="mb-2">
+                                                                        @include('smartprep.dashboard.partials.website-status-badge', ['website' => $website, 'showDomain' => true])
+                                                                    </div>
+                                                                    <a href="{{ route('smartprep.dashboard.customize', ['website' => $website->id]) }}" 
+                                                                       class="btn btn-primary">
+                                                                        <i class="fas fa-edit me-2"></i>Customize
+                                                                    </a>
                                                 </div>
                                             </div>
                                         </div>

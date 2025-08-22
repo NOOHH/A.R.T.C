@@ -29,20 +29,27 @@
         }
     @endphp
 
-    <!-- Global Variables for JavaScript - Must be loaded first -->
+    <!-- Global Variables for JavaScript - Provided via meta tags to avoid in-script Blade embedding -->
+    <meta name="professor-my-id" content="{{ optional($user)->id }}">
+    <meta name="professor-my-name" content="{{ e(optional($user)->name ?? 'Guest') }}">
+    <meta name="professor-is-authenticated" content="{{ $user ? '1' : '0' }}">
+    <meta name="professor-user-role" content="{{ e(optional($user)->role ?? 'guest') }}">
+
     <script>
-        // Global variables accessible throughout the page
-        window.myId = @json(optional($user)->id);
-        window.myName = @json(optional($user)->name ?? 'Guest');
-        window.isAuthenticated = @json((bool) $user);
-        window.userRole = @json(optional($user)->role ?? 'guest');
-        window.csrfToken = @json(csrf_token());
-        
+        // Read global values from meta tags to keep Blade out of inline scripts
+        function _meta(name){ const m = document.querySelector('meta[name="' + name + '"]'); return m ? m.getAttribute('content') : null; }
+
+        window.myId = _meta('professor-my-id') || null;
+        window.myName = _meta('professor-my-name') || 'Guest';
+        window.isAuthenticated = _meta('professor-is-authenticated') === '1';
+        window.userRole = _meta('professor-user-role') || 'guest';
+        window.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
         // Global chat state
         window.currentChatType = null;
         window.currentChatUser = null;
-        
-        // Make variables available without window prefix
+
+        // Local shorthand
         var myId = window.myId;
         var myName = window.myName;
         var isAuthenticated = window.isAuthenticated;
@@ -50,7 +57,7 @@
         var csrfToken = window.csrfToken;
         var currentChatType = window.currentChatType;
         var currentChatUser = window.currentChatUser;
-        
+
         console.log('Professor Global variables initialized:', { myId, myName, isAuthenticated, userRole });
     </script>
     
@@ -684,7 +691,14 @@
             <!-- Brand Logo and Text -->
             <div class="brand-container d-flex align-items-center gap-3" style="height:68px;">
                 @if($brandLogo)
-                    <img src="{{ \Illuminate\Support\Facades\Storage::url($brandLogo) }}" 
+                    @php
+                        $rawBrand = $brandLogo ?? null;
+                        if ($rawBrand && str_starts_with($rawBrand, 'storage/')) {
+                            $rawBrand = substr($rawBrand, 8);
+                        }
+                        $brandLogoUrl = $rawBrand ? \App\Helpers\StorageHelper::url($rawBrand) : asset('images/ARTC_logo.png');
+                    @endphp
+                    <img src="{{ $brandLogoUrl }}" 
                          alt="{{ $brandName }}" 
                          class="brand-logo" 
                          style="height:56px; width:auto; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.08); background:#fff;"

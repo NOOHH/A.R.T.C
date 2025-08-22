@@ -11,9 +11,7 @@ use Illuminate\Support\Str;
 use App\Models\UiSetting;
 use App\Models\Client;
 use App\Models\Setting;
-use App\Models\TenantUiSetting;
 use App\Models\Tenant;
-use App\Models\Admin;
 use App\Services\TenantService;
 
 class CustomizeWebsiteController extends Controller
@@ -27,76 +25,89 @@ class CustomizeWebsiteController extends Controller
     public function current()
     {
         $user = Auth::guard('smartprep')->user();
+        
+        // Default settings from main database
+        $settings = [
+            'general' => UiSetting::getSection('general')->toArray(),
+            'navbar' => UiSetting::getSection('navbar')->toArray(),
+            'branding' => UiSetting::getSection('branding')->toArray(),
+            'homepage' => UiSetting::getSection('homepage')->toArray(),
+            'student_portal' => UiSetting::getSection('student_portal')->toArray(),
+            'professor_panel' => UiSetting::getSection('professor_panel')->toArray(),
+            'admin_panel' => UiSetting::getSection('admin_panel')->toArray(),
+            'student_sidebar' => UiSetting::getSection('student_sidebar')->toArray(),
+            'professor_sidebar' => UiSetting::getSection('professor_sidebar')->toArray(),
+            'admin_sidebar' => UiSetting::getSection('admin_sidebar')->toArray(),
+            'advanced' => UiSetting::getSection('advanced')->toArray(),
+        ];
 
         // Check if a specific website is selected
         $selectedWebsiteId = request()->query('website');
         $selectedWebsite = null;
         
-        // Default settings - start with sample website settings (smartprep_artc)
-        $settings = [];
-        
         if ($selectedWebsiteId) {
-            // Load settings for specific selected website
-            $selectedWebsite = Client::where('id', $selectedWebsiteId)->where('user_id', $user->id)->first();
+            if (Auth::guard('smartprep_admin')->check()) {
+                $selectedWebsite = Client::find($selectedWebsiteId);
+            } else {
+                $selectedWebsite = Client::where('id', $selectedWebsiteId)->where('user_id', $user->id)->first();
+            }
             
             if ($selectedWebsite) {
-                // Load settings from tenant database for the selected website
+                // Load settings from tenant database if website is selected
                 $tenant = Tenant::where('slug', $selectedWebsite->slug)->first();
                 
-                                // Switch to the website's database
-                // Convert slug to database name format
-                $slug = $selectedWebsite->slug;
-                // Remove 'smartprep-' prefix if present and replace hyphens with underscores
-                if (strpos($slug, 'smartprep-') === 0) {
-                    $slug = substr($slug, 10); // Remove 'smartprep-' prefix
-                }
-                $databaseName = 'smartprep_' . str_replace('-', '_', $slug);
-                config(['database.connections.tenant.database' => $databaseName]);
-                DB::purge('tenant');
-                DB::connection('tenant');
-                
-                // Load tenant-specific settings from the website's database
+                if ($tenant) {
+                    try {
+                        // Switch to tenant database to get current settings
+                        $this->tenantService->switchToTenant($tenant);
+                        
+                        // Override with tenant-specific settings
                         $settings = [
-                    'general' => TenantUiSetting::getSection('general')->toArray(),
-                    'navbar' => TenantUiSetting::getSection('navbar')->toArray(),
-                    'branding' => TenantUiSetting::getSection('branding')->toArray(),
-                    'homepage' => TenantUiSetting::getSection('homepage')->toArray(),
-                    'student_portal' => TenantUiSetting::getSection('student_portal')->toArray(),
-                    'professor_panel' => TenantUiSetting::getSection('professor_panel')->toArray(),
-                    'admin_panel' => TenantUiSetting::getSection('admin_panel')->toArray(),
-                    'student_sidebar' => TenantUiSetting::getSection('student_sidebar')->toArray(),
-                    'professor_sidebar' => TenantUiSetting::getSection('professor_sidebar')->toArray(),
-                    'admin_sidebar' => TenantUiSetting::getSection('admin_sidebar')->toArray(),
-                    'advanced' => TenantUiSetting::getSection('advanced')->toArray(),
-                ];
-                
-                // Load admin credentials from this specific website's database
-                $adminCredentials = $this->getWebsiteAdminCredentials($selectedWebsite->slug);
-                if ($adminCredentials) {
-                    $settings['general']['admin_email'] = $adminCredentials['email'];
-                    $settings['general']['admin_name'] = $adminCredentials['admin_name'];
-                }
+                            'general' => Setting::getGroup('general')->toArray(),
+                            'navbar' => Setting::getGroup('navbar')->toArray(),
+                            'branding' => Setting::getGroup('branding')->toArray(),
+                            'homepage' => Setting::getGroup('homepage')->toArray(),
+                            'student_portal' => Setting::getGroup('student_portal')->toArray(),
+                            'professor_panel' => Setting::getGroup('professor_panel')->toArray(),
+                            'admin_panel' => Setting::getGroup('admin_panel')->toArray(),
+                            'student_sidebar' => Setting::getGroup('student_sidebar')->toArray(),
+                            'professor_sidebar' => Setting::getGroup('professor_sidebar')->toArray(),
+                            'admin_sidebar' => Setting::getGroup('admin_sidebar')->toArray(),
+                            'advanced' => Setting::getGroup('advanced')->toArray(),
+                        ];
                         
                         // Switch back to main database
-                config(['database.default' => 'mysql']);
-                DB::purge('tenant');
-                DB::connection('mysql');
+                        $this->tenantService->switchToMain();
+                        
+                    } catch (\Exception $e) {
+                        // Ensure we switch back to main database
+                        $this->tenantService->switchToMain();
+                        
+                        Log::warning('Failed to load tenant settings, using defaults', [
+                            'tenant' => $tenant->slug,
+                            'error' => $e->getMessage()
+                        ]);
                     }
-                } else {
-            // No specific website selected - load sample website settings (smartprep_artc)
-            $settings = $this->loadSampleWebsiteSettings();
-        }
-        
-        // Ensure we have all required settings sections
-        $requiredSections = ['general', 'navbar', 'branding', 'homepage', 'student_portal', 'professor_panel', 'admin_panel', 'student_sidebar', 'professor_sidebar', 'admin_sidebar', 'advanced'];
-        foreach ($requiredSections as $section) {
-            if (!isset($settings[$section])) {
-                $settings[$section] = [];
+
+                }
             }
         }
 
-        // Compute preview URL: prefer selected website's preview, else point to ARTC preview
-        $previewUrl = $selectedWebsite ? url('/t/' . $selectedWebsite->slug) : url('/artc');
+        // Compute preview URL based on website status
+        if ($selectedWebsite) {
+            $status = strtolower($selectedWebsite->status);
+            if ($status === \App\Models\Client::STATUS_DRAFT) {
+                $previewUrl = url('/t/draft/' . $selectedWebsite->slug);
+            } else {
+                $previewUrl = url('/t/' . $selectedWebsite->slug);
+            }
+            // If navbar brand still template default (ARTC) after provisioning, auto-adjust to website name (first-load convenience)
+            if (($settings['navbar']['brand_name'] ?? '') === 'Ascendo Review and Training Center' || ($settings['navbar']['brand_name'] ?? '') === 'ARTC') {
+                $settings['navbar']['brand_name'] = $selectedWebsite->name;
+            }
+        } else {
+            $previewUrl = url('/artc');
+        }
 
         // Fallback brand name for header
         $navbarBrandName = $settings['navbar']['brand_name'] ?? 'Ascendo Review and Training Center';
@@ -115,195 +126,6 @@ class CustomizeWebsiteController extends Controller
             'activeWebsites',
             'selectedWebsite'
         ));
-    }
-
-    /**
-     * Load settings from the sample website database (smartprep_artc)
-     */
-    private function loadSampleWebsiteSettings()
-    {
-        try {
-            // Switch to sample website database
-            config(['database.connections.tenant.database' => 'smartprep_artc']);
-            DB::purge('tenant');
-            DB::connection('tenant');
-            
-            // Load settings from sample website database
-            $settings = [
-                'general' => TenantUiSetting::getSection('general')->toArray(),
-                'navbar' => TenantUiSetting::getSection('navbar')->toArray(),
-                'branding' => TenantUiSetting::getSection('branding')->toArray(),
-                'homepage' => TenantUiSetting::getSection('homepage')->toArray(),
-                'student_portal' => TenantUiSetting::getSection('student_portal')->toArray(),
-                'professor_panel' => TenantUiSetting::getSection('professor_panel')->toArray(),
-                'admin_panel' => TenantUiSetting::getSection('admin_panel')->toArray(),
-                'student_sidebar' => TenantUiSetting::getSection('student_sidebar')->toArray(),
-                'professor_sidebar' => TenantUiSetting::getSection('professor_sidebar')->toArray(),
-                'admin_sidebar' => TenantUiSetting::getSection('admin_sidebar')->toArray(),
-                'advanced' => TenantUiSetting::getSection('advanced')->toArray(),
-            ];
-            
-            // Load admin credentials from the sample website database
-            $adminCredentials = $this->getSampleWebsiteAdminCredentials();
-            if ($adminCredentials) {
-                $settings['general']['admin_email'] = $adminCredentials['email'];
-                $settings['general']['admin_name'] = $adminCredentials['admin_name'];
-            }
-            
-            // Switch back to main database
-            config(['database.default' => 'mysql']);
-            DB::purge('tenant');
-            DB::connection('mysql');
-            
-            return $settings;
-            
-        } catch (\Exception $e) {
-            // Ensure we switch back to main database
-            config(['database.default' => 'mysql']);
-            DB::purge('tenant');
-            DB::connection('mysql');
-            
-            Log::warning('Failed to load sample website settings', [
-                'error' => $e->getMessage()
-            ]);
-            
-            // Return empty settings as fallback
-            return [
-                'general' => [],
-                'navbar' => [],
-                'branding' => [],
-                'homepage' => [],
-                'student_portal' => [],
-                'professor_panel' => [],
-                'admin_panel' => [],
-                'student_sidebar' => [],
-                'professor_sidebar' => [],
-                'admin_sidebar' => [],
-                'advanced' => [],
-            ];
-        }
-    }
-    
-    /**
-     * Get admin credentials from a specific website's database
-     */
-    private function getWebsiteAdminCredentials($websiteSlug)
-    {
-        try {
-            // Switch to the website's database
-            // Convert slug to database name format
-            $slug = $websiteSlug;
-            // Remove 'smartprep-' prefix if present and replace hyphens with underscores
-            if (strpos($slug, 'smartprep-') === 0) {
-                $slug = substr($slug, 10); // Remove 'smartprep-' prefix
-            }
-            $databaseName = 'smartprep_' . str_replace('-', '_', $slug);
-            config(['database.connections.tenant.database' => $databaseName]);
-            DB::purge('tenant');
-            DB::connection('tenant');
-            
-            $admin = Admin::where('admin_id', 1)->first();
-            
-            // Switch back to main database
-            config(['database.default' => 'mysql']);
-            DB::purge('tenant');
-            DB::connection('mysql');
-            
-            if ($admin) {
-                return [
-                    'email' => $admin->email,
-                    'admin_name' => $admin->admin_name,
-                ];
-            }
-        } catch (\Exception $e) {
-            // Ensure we switch back to main database
-            config(['database.default' => 'mysql']);
-            DB::purge('tenant');
-            DB::connection('mysql');
-            
-            Log::warning('Failed to get admin credentials from website database', [
-                'website' => $websiteSlug,
-                'error' => $e->getMessage()
-            ]);
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Get admin credentials from the sample website database (smartprep_artc)
-     */
-    private function getSampleWebsiteAdminCredentials()
-    {
-        try {
-            // Switch to sample website database
-            config(['database.connections.tenant.database' => 'smartprep_artc']);
-            DB::purge('tenant');
-            DB::connection('tenant');
-            
-            $admin = Admin::where('admin_id', 1)->first();
-            
-            // Switch back to main database
-            config(['database.default' => 'mysql']);
-            DB::purge('tenant');
-            DB::connection('mysql');
-            
-            if ($admin) {
-                return [
-                    'email' => $admin->email,
-                    'admin_name' => $admin->admin_name,
-                ];
-            }
-        } catch (\Exception $e) {
-            // Ensure we switch back to main database
-            config(['database.default' => 'mysql']);
-            DB::purge('tenant');
-            DB::connection('mysql');
-            
-            Log::warning('Failed to get admin credentials from sample website database', [
-                'error' => $e->getMessage()
-            ]);
-        }
-        
-        return null;
-    }
-    
-
-    
-    /**
-     * Update admin password in the tenant database
-     */
-    private function updateAdminInTenantDatabase($password)
-    {
-        try {
-            $admin = Admin::where('admin_id', 1)->first();
-            if ($admin) {
-                $admin->password = $password; // This will be hashed by the model
-                $admin->save();
-            }
-        } catch (\Exception $e) {
-            Log::warning('Failed to update admin password in tenant database', [
-                'error' => $e->getMessage()
-            ]);
-        }
-    }
-    
-    /**
-     * Update admin email in the tenant database
-     */
-    private function updateAdminEmailInTenantDatabase($email)
-    {
-        try {
-            $admin = Admin::where('admin_id', 1)->first();
-            if ($admin) {
-                $admin->email = $email;
-                $admin->save();
-            }
-        } catch (\Exception $e) {
-            Log::warning('Failed to update admin email in tenant database', [
-                'error' => $e->getMessage()
-            ]);
-        }
     }
 
     public function old()
@@ -344,7 +166,7 @@ class CustomizeWebsiteController extends Controller
             $databaseName = 'smartprep_' . $slug;
             $domain = $slug . '.smartprep.local';
 
-            // Create a new client/website with database info
+            // Create a new client/website with database info (initially draft status)
             $client = Client::create([
                 'name' => $request->input('name'),
                 'slug' => $slug,
@@ -354,13 +176,31 @@ class CustomizeWebsiteController extends Controller
                 'db_port' => 3306,
                 'db_username' => 'root', // Default for development
                 'db_password' => '', // Default for development
-                'status' => 'active',
+                'status' => Client::STATUS_DRAFT, // start as draft until publication is requested
                 'user_id' => $user->id,
                 'archived' => false,
             ]);
 
             // Copy customization settings from admin to this client's tenant database
             $this->copyAdminCustomizationToClient($client);
+
+            // Override brand/site name in tenant to match newly created website name
+            try {
+                $tenant = Tenant::where('slug', $client->slug)->first();
+                if ($tenant) {
+                    $this->tenantService->switchToTenant($tenant);
+                    Setting::set('navbar', 'brand_name', $client->name, 'text');
+                    Setting::set('navbar', 'navbar_brand_name', $client->name, 'text');
+                    Setting::set('general', 'site_name', $client->name, 'text');
+                    $this->tenantService->switchToMain();
+                }
+            } catch (\Throwable $e) {
+                $this->tenantService->switchToMain();
+                Log::warning('Failed to set initial brand/site name for new tenant', [
+                    'client_id' => $client->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
 
             if ($request->expectsJson()) {
                 return response()->json([
@@ -370,7 +210,7 @@ class CustomizeWebsiteController extends Controller
                 ]);
             }
 
-            return redirect()->route('smartprep.dashboard.customize', ['website' => $client->id])
+            return redirect()->route('smartprep.dashboard.customize')
                 ->with('success', 'Website created successfully with admin customizations!');
                 
         } catch (\Exception $e) {
@@ -401,12 +241,9 @@ class CustomizeWebsiteController extends Controller
         try {
             // Get all admin settings from main database including panel settings
             $adminSettings = [
-                'general' => [
-                    ...UiSetting::getSection('general')->toArray(),
-                    'preview_url' => url('/t/' . $client->slug), // ensure preview_url tenant-specific
-                ],
+                'general' => UiSetting::getSection('general')->toArray(),
                 'navbar' => UiSetting::getSection('navbar')->toArray(),
-                'branding' => UiSetting::getSection('branding')->toArray(),
+                'branding' => UiSetting::getSection('branding')->toArray(), 
                 'homepage' => UiSetting::getSection('homepage')->toArray(),
                 'student_portal' => UiSetting::getSection('student_portal')->toArray(),
                 'professor_panel' => UiSetting::getSection('professor_panel')->toArray(),
@@ -423,38 +260,26 @@ class CustomizeWebsiteController extends Controller
             if (!$tenant) {
                 // Create a tenant for this client
                 $tenant = $this->tenantService->createTenant(
-                    $client->name,
-                    $client->domain,
-                    $client->db_name // pass explicit db name to avoid suffix mismatch
+                    $client->name, 
+                    $client->domain
                 );
             }
 
             // Switch to tenant database to save settings
             $this->tenantService->switchToTenant($tenant);
             
-            // Copy all admin settings (with adjusted preview_url) to tenant database
+            // Copy all customization settings to tenant database
             foreach ($adminSettings as $section => $settings) {
                 foreach ($settings as $key => $value) {
-                    // Determine the setting type based on the key
-                    $type = 'text';
-                    if (str_contains($key, 'color')) {
-                        $type = 'color';
-                    } elseif (str_contains($key, '_bg') || str_contains($key, '_image') || str_contains($key, '_logo')) {
-                        $type = 'file';
-                    } elseif (in_array($key, ['maintenance_mode', 'debug_mode', 'cache_enabled', 'show_login_button'])) {
-                        $type = 'boolean';
-                    } elseif (in_array($key, ['menu_items', 'meta_tags'])) {
-                        $type = 'json';
-                    }
-                    
-                    Setting::set($section, $key, $value, $type);
+                    // Copy all settings for these sections
+                    Setting::set($section, $key, $value);
                 }
             }
             
             // Switch back to main database
             $this->tenantService->switchToMain();
 
-            Log::info('Successfully copied admin customization settings to client', [
+            Log::info('Successfully copied complete admin customization settings to client', [
                 'client_id' => $client->id,
                 'client_name' => $client->name,
                 'tenant_database' => $tenant->database_name,
@@ -572,48 +397,13 @@ class CustomizeWebsiteController extends Controller
     public function updateGeneral(Request $request)
     {
         return $this->updateTenantSettings($request, 'general', [
-            'admin_email' => 'nullable|email|max:255',
-            'admin_password' => 'nullable|string|min:8|max:255',
-            'brand_name' => 'nullable|string|max:255',
+            'site_name' => 'nullable|string|max:255',
+            'site_tagline' => 'nullable|string|max:255',
             'contact_email' => 'nullable|email|max:255',
             'contact_phone' => 'nullable|string|max:20',
             'contact_address' => 'nullable|string|max:500',
-            'terms_conditions' => 'nullable|string|max:2000',
-            'social_links' => 'nullable|string',
+            'preview_url' => 'nullable|url|max:500',
         ]);
-    }
-
-    /**
-     * Ensure settings table exists in the current tenant database
-     */
-    private function ensureSettingsTableExists()
-    {
-        try {
-            // Check if settings table exists
-            $tables = DB::select("SHOW TABLES LIKE 'settings'");
-            
-            if (empty($tables)) {
-                // Create the settings table
-                DB::statement("CREATE TABLE IF NOT EXISTS settings (
-                    id bigint unsigned NOT NULL AUTO_INCREMENT,
-                    `group` varchar(100) NOT NULL,
-                    `key` varchar(100) NOT NULL,
-                    `value` text,
-                    `type` varchar(50) DEFAULT 'text',
-                    created_at timestamp NULL DEFAULT NULL,
-                    updated_at timestamp NULL DEFAULT NULL,
-                    PRIMARY KEY (id),
-                    UNIQUE KEY settings_group_key_unique (`group`,`key`),
-                    KEY settings_group_index (`group`),
-                    KEY settings_key_index (`key`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-                
-                Log::info('Settings table created in tenant database');
-            }
-        } catch (\Exception $e) {
-            Log::error('Failed to ensure settings table exists: ' . $e->getMessage());
-            throw $e;
-        }
     }
 
     /**
@@ -621,97 +411,15 @@ class CustomizeWebsiteController extends Controller
      */
     public function updateNavbar(Request $request)
     {
-        try {
-            $request->validate([
-                'brand_name' => 'nullable|string|max:255',
-                'navbar_brand_name' => 'nullable|string|max:255',
-                'navbar_brand_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-                'navbar_brand_image' => 'nullable|string|max:500',
-                'navbar_style' => 'nullable|string|in:fixed-top,sticky-top,static',
-                'navbar_menu_items' => 'nullable|string',
-                'show_login_button' => 'nullable|boolean',
-            ]);
-
-            $user = Auth::guard('smartprep')->user();
-            if (!$user) {
-                if ($request->expectsJson()) {
-                    return response()->json(['success' => false, 'message' => 'User not authenticated.'], 401);
-                }
-                return redirect()->back()->with('error', 'User not authenticated.');
-            }
-
-            // Get selected website/client from route parameters
-            $websiteId = $request->route('website');
-            $client = Client::where('id', $websiteId)->where('user_id', $user->id)->first();
-            
-            if (!$client) {
-                if ($request->expectsJson()) {
-                    return response()->json(['success' => false, 'message' => 'Website not found.'], 404);
-                }
-                return redirect()->back()->with('error', 'Website not found.');
-            }
-
-            $tenant = Tenant::where('slug', $client->slug)->first();
-            if (!$tenant) {
-                if ($request->expectsJson()) {
-                    return response()->json(['success' => false, 'message' => 'Tenant not found.'], 404);
-                }
-                return redirect()->back()->with('error', 'Tenant not found.');
-            }
-
-            // Switch to tenant database
-            $this->tenantService->switchToTenant($tenant);
-
-            // Ensure settings table exists
-            $this->ensureSettingsTableExists();
-
-            // Handle brand name (accept both field names for compatibility)
-            $brandName = $request->input('brand_name') ?? $request->input('navbar_brand_name', 'Your Company Name');
-            Setting::set('navbar', 'brand_name', $brandName, 'text');
-
-            // Handle brand logo upload
-            if ($request->hasFile('navbar_brand_logo')) {
-                $file = $request->file('navbar_brand_logo');
-                $filename = time() . '_' . $file->getClientOriginalName();
-                $path = $file->storeAs('brand-logos', $filename, 'public');
-                Setting::set('navbar', 'brand_logo', 'storage/' . $path, 'file');
-            }
-
-            // Save other navbar settings
-            Setting::set('navbar', 'brand_image', $request->input('navbar_brand_image', ''), 'file');
-            Setting::set('navbar', 'style', $request->input('navbar_style', 'fixed-top'), 'text');
-            Setting::set('navbar', 'menu_items', $request->input('navbar_menu_items', '[]'), 'json');
-            Setting::set('navbar', 'show_login_button', $request->has('show_login_button') ? '1' : '0', 'boolean');
-
-            // Switch back to main database
-            $this->tenantService->switchToMain();
-
-            Log::info("Navbar settings updated for tenant {$tenant->slug}", [
-                'brand_name' => $brandName,
-                'logo_uploaded' => $request->hasFile('navbar_brand_logo')
-            ]);
-
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Navbar settings updated successfully!'
-                ]);
-            }
-
-            return redirect()->back()->with('success', 'Navbar settings updated successfully!');
-
-        } catch (\Exception $e) {
-            // Ensure we switch back to main database
-            $this->tenantService->switchToMain();
-            
-            Log::error('Error updating navbar settings: ' . $e->getMessage());
-            
-            if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => 'Error updating navbar settings.'], 500);
-            }
-            
-            return redirect()->back()->with('error', 'Error updating navbar settings.');
-        }
+        return $this->updateTenantSettings($request, 'navbar', [
+            'brand_name' => 'nullable|string|max:255',
+            'navbar_brand_name' => 'nullable|string|max:255',
+            'navbar_brand_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'navbar_brand_image' => 'nullable|string|max:500',
+            'navbar_style' => 'nullable|string|in:fixed-top,sticky-top,static',
+            'navbar_menu_items' => 'nullable|string',
+            'show_login_button' => 'nullable|boolean',
+        ]);
     }
 
     /**
@@ -719,133 +427,35 @@ class CustomizeWebsiteController extends Controller
      */
     public function updateHomepage(Request $request)
     {
-        try {
-            $request->validate([
-                'hero_title' => 'nullable|string|max:255',
-                'hero_subtitle' => 'nullable|string|max:1000',
-                'hero_background' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-                'programs_title' => 'nullable|string|max:255',
-                'programs_subtitle' => 'nullable|string|max:500',
-                'modalities_title' => 'nullable|string|max:255',
-                'modalities_subtitle' => 'nullable|string|max:500',
-                'about_title' => 'nullable|string|max:255',
-                'about_subtitle' => 'nullable|string|max:500',
-                'homepage_background_color' => 'nullable|string|max:7',
-                'homepage_gradient_color' => 'nullable|string|max:7',
-                'homepage_text_color' => 'nullable|string|max:7',
-                'homepage_button_color' => 'nullable|string|max:7',
-                'homepage_primary_color' => 'nullable|string|max:7',
-                'homepage_secondary_color' => 'nullable|string|max:7',
-                'homepage_overlay_color' => 'nullable|string|max:7',
-                'homepage_hero_bg_color' => 'nullable|string|max:7',
-                'homepage_hero_title_color' => 'nullable|string|max:7',
-                'homepage_programs_title_color' => 'nullable|string|max:7',
-                'homepage_programs_subtitle_color' => 'nullable|string|max:7',
-                'homepage_programs_section_bg_color' => 'nullable|string|max:7',
-                'homepage_modalities_bg_color' => 'nullable|string|max:7',
-                'homepage_modalities_text_color' => 'nullable|string|max:7',
-                'homepage_about_bg_color' => 'nullable|string|max:7',
-                'homepage_about_title_color' => 'nullable|string|max:7',
-                'homepage_about_text_color' => 'nullable|string|max:7',
-                'copyright' => 'nullable|string|max:500',
-                'login_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            ]);
-
-            $user = Auth::guard('smartprep')->user();
-            if (!$user) {
-                if ($request->expectsJson()) {
-                    return response()->json(['success' => false, 'message' => 'User not authenticated.'], 401);
-                }
-                return redirect()->back()->with('error', 'User not authenticated.');
-            }
-
-            // Get selected website/client from route parameters
-            $websiteId = $request->route('website');
-            $client = Client::where('id', $websiteId)->where('user_id', $user->id)->first();
-            
-            if (!$client) {
-                if ($request->expectsJson()) {
-                    return response()->json(['success' => false, 'message' => 'Website not found.'], 404);
-                }
-                return redirect()->back()->with('error', 'Website not found.');
-            }
-
-            $tenant = Tenant::where('slug', $client->slug)->first();
-            if (!$tenant) {
-                if ($request->expectsJson()) {
-                    return response()->json(['success' => false, 'message' => 'Tenant not found.'], 404);
-                }
-                return redirect()->back()->with('error', 'Tenant not found.');
-            }
-
-            // Switch to tenant database
-            $this->tenantService->switchToTenant($tenant);
-
-            // Handle text fields
-            $textFields = [
-                'hero_title', 'hero_subtitle', 'programs_title', 'programs_subtitle',
-                'modalities_title', 'modalities_subtitle', 'about_title', 'about_subtitle',
-                'homepage_background_color', 'homepage_gradient_color', 'homepage_text_color',
-                'homepage_button_color', 'homepage_primary_color', 'homepage_secondary_color',
-                'homepage_overlay_color', 'homepage_hero_bg_color', 'homepage_hero_title_color',
-                'homepage_programs_title_color', 'homepage_programs_subtitle_color',
-                'homepage_programs_section_bg_color', 'homepage_modalities_bg_color',
-                'homepage_modalities_text_color', 'homepage_about_bg_color',
-                'homepage_about_title_color', 'homepage_about_text_color', 'copyright'
-            ];
-
-            foreach ($textFields as $field) {
-                if ($request->has($field) && $request->input($field) !== null) {
-                    Setting::set('homepage', $field, $request->input($field), 'text');
-                }
-            }
-
-            // Handle hero background image upload
-            if ($request->hasFile('hero_background')) {
-                $file = $request->file('hero_background');
-                $filename = time() . '_hero_' . $file->getClientOriginalName();
-                $path = $file->storeAs('homepage-images', $filename, 'public');
-                Setting::set('homepage', 'hero_background_image', 'storage/' . $path, 'file');
-            }
-
-            // Handle login image upload
-            if ($request->hasFile('login_image')) {
-                $file = $request->file('login_image');
-                $filename = time() . '_login_' . $file->getClientOriginalName();
-                $path = $file->storeAs('homepage-images', $filename, 'public');
-                Setting::set('homepage', 'login_image', 'storage/' . $path, 'file');
-            }
-
-            // Switch back to main database
-            $this->tenantService->switchToMain();
-
-            Log::info("Homepage settings updated for tenant {$tenant->slug}", [
-                'hero_title' => $request->input('hero_title'),
-                'hero_image_uploaded' => $request->hasFile('hero_background'),
-                'login_image_uploaded' => $request->hasFile('login_image')
-            ]);
-
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Homepage settings updated successfully!'
-                ]);
-            }
-
-            return redirect()->back()->with('success', 'Homepage settings updated successfully!');
-
-        } catch (\Exception $e) {
-            // Ensure we switch back to main database
-            $this->tenantService->switchToMain();
-            
-            Log::error('Error updating homepage settings: ' . $e->getMessage());
-            
-            if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => 'Error updating homepage settings.'], 500);
-            }
-            
-            return redirect()->back()->with('error', 'Error updating homepage settings.');
-        }
+        return $this->updateTenantSettings($request, 'homepage', [
+            'hero_title' => 'nullable|string|max:255',
+            'hero_subtitle' => 'nullable|string|max:1000',
+            'hero_background' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'programs_title' => 'nullable|string|max:255',
+            'programs_subtitle' => 'nullable|string|max:500',
+            'modalities_title' => 'nullable|string|max:255',
+            'modalities_subtitle' => 'nullable|string|max:500',
+            'about_title' => 'nullable|string|max:255',
+            'about_subtitle' => 'nullable|string|max:500',
+            'homepage_background_color' => 'nullable|string|max:7',
+            'homepage_gradient_color' => 'nullable|string|max:7',
+            'homepage_text_color' => 'nullable|string|max:7',
+            'homepage_button_color' => 'nullable|string|max:7',
+            'homepage_primary_color' => 'nullable|string|max:7',
+            'homepage_secondary_color' => 'nullable|string|max:7',
+            'homepage_overlay_color' => 'nullable|string|max:7',
+            'homepage_hero_bg_color' => 'nullable|string|max:7',
+            'homepage_hero_title_color' => 'nullable|string|max:7',
+            'homepage_programs_title_color' => 'nullable|string|max:7',
+            'homepage_programs_subtitle_color' => 'nullable|string|max:7',
+            'homepage_programs_section_bg_color' => 'nullable|string|max:7',
+            'homepage_modalities_bg_color' => 'nullable|string|max:7',
+            'homepage_modalities_text_color' => 'nullable|string|max:7',
+            'homepage_about_bg_color' => 'nullable|string|max:7',
+            'homepage_about_title_color' => 'nullable|string|max:7',
+            'homepage_about_text_color' => 'nullable|string|max:7',
+            'copyright' => 'nullable|string|max:500',
+        ]);
     }
 
     /**
@@ -953,7 +563,6 @@ class CustomizeWebsiteController extends Controller
                 'colors.accent_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
                 'colors.text_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
                 'colors.hover_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
-                'colors.background_color' => 'nullable|string|max:7',
             ]);
 
             $user = Auth::guard('smartprep')->user();
@@ -961,9 +570,14 @@ class CustomizeWebsiteController extends Controller
                 return response()->json(['success' => false, 'message' => 'User not authenticated.'], 401);
             }
 
-            // Get selected website/client from route parameters
-            $websiteId = $request->route('website');
-            $client = Client::where('id', $websiteId)->where('user_id', $user->id)->first();
+            // Get selected website/client - accept query param, route param, or body input
+            $websiteId = $request->query('website') ?: $request->route('website') ?: $request->input('website');
+            // Allow smartprep admins to act on any client; regular users only their own
+            if (Auth::guard('smartprep_admin')->check()) {
+                $client = Client::find($websiteId);
+            } else {
+                $client = Client::where('id', $websiteId)->where('user_id', $user->id)->first();
+            }
             
             if (!$client) {
                 return response()->json(['success' => false, 'message' => 'Website not found.'], 404);
@@ -980,9 +594,6 @@ class CustomizeWebsiteController extends Controller
 
             // Switch to tenant database
             $this->tenantService->switchToTenant($tenant);
-
-            // Ensure settings table exists
-            $this->ensureSettingsTableExists();
 
             // Save each color setting to the tenant database
             foreach ($colors as $key => $value) {
@@ -1002,6 +613,8 @@ class CustomizeWebsiteController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            // Ensure we switch back to main database
+            $this->tenantService->switchToMain();
             
             Log::error('Error updating client sidebar settings: ' . $e->getMessage());
             return response()->json([
@@ -1019,55 +632,84 @@ class CustomizeWebsiteController extends Controller
         try {
             $request->validate($validationRules);
 
-            $user = Auth::guard('smartprep')->user();
+
+            // Allow smartprep admins to act on any client; regular users only their own
+            $isAdmin = Auth::guard('smartprep_admin')->check();
+            $user = $isAdmin ? Auth::guard('smartprep_admin')->user() : Auth::guard('smartprep')->user();
             if (!$user) {
-                return $request->expectsJson()
-                    ? response()->json(['success' => false, 'message' => 'User not authenticated.'], 401)
-                    : redirect()->back()->with('error', 'User not authenticated.');
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => 'User not authenticated.'], 401);
+                }
+                return redirect()->back()->with('error', 'User not authenticated.');
             }
 
-            // Website id from query or route
-            $websiteId = $request->query('website') ?? $request->route('website');
-            $client = Client::where('id', $websiteId)->where('user_id', $user->id)->first();
+            // Get selected website/client - accept query param, route param, or body input
+            $websiteId = $request->query('website') ?: $request->route('website') ?: $request->input('website');
+            if ($isAdmin) {
+                $client = Client::find($websiteId);
+            } else {
+                $client = Client::where('id', $websiteId)->where('user_id', $user->id)->first();
+            }
+
             if (!$client) {
-                return $request->expectsJson()
-                    ? response()->json(['success' => false, 'message' => 'Website not found.'], 404)
-                    : redirect()->back()->with('error', 'Website not found.');
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => 'Website not found.'], 404);
+                }
+                return redirect()->back()->with('error', 'Website not found.');
             }
 
             $tenant = Tenant::where('slug', $client->slug)->first();
             if (!$tenant) {
-                // Auto-create tenant if missing (ensures DB name consistency)
-                $tenant = $this->tenantService->createTenant($client->name, $client->domain, $client->db_name);
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => 'Tenant not found.'], 404);
+                }
+                return redirect()->back()->with('error', 'Tenant not found.');
             }
 
+            // Switch to tenant database
             $this->tenantService->switchToTenant($tenant);
 
             // Save all submitted settings to tenant database
-            foreach ($request->only(array_keys($validationRules)) as $key => $value) {
-                if ($value === null) {
-                    continue;
-                }
-                if ($key === 'social_links' && is_string($value)) {
-                    $decoded = json_decode($value, true);
-                    if (is_array($decoded)) {
-                        TenantUiSetting::set($section, $key, $value, 'text');
+            // Handle file uploads: if a field has an uploaded file, store to 'public' disk and persist disk-relative path
+            foreach ($validationRules as $field => $rule) {
+                // File uploads
+                if ($request->hasFile($field)) {
+                    $file = $request->file($field);
+                    if ($file && $file->isValid()) {
+                        // Determine storage directory
+                        $dir = $section;
+                        // Normalize logo-related uploads into brand-logos for consistency
+                        if (in_array($field, ['navbar_brand_logo','brand_logo','logo_url'])) {
+                            $dir = 'brand-logos';
+                        }
+                        $dest = $file->store($dir, 'public');
+                        Setting::set($section, $field, $dest, 'file');
+                        // Backward compatibility: if navbar_brand_logo uploaded also set brand_logo
+                        if ($section === 'navbar' && $field === 'navbar_brand_logo') {
+                            Setting::set($section, 'brand_logo', $dest, 'file');
+                        }
+                        continue;
                     }
-                } elseif ($key === 'admin_password' && !empty($value)) {
-                    TenantUiSetting::set($section, 'admin_password_hash', bcrypt($value), 'text');
-                    TenantUiSetting::set($section, 'admin_password_set_at', now()->toDateTimeString(), 'text');
-                    $this->updateAdminInTenantDatabase($value);
-                } elseif ($key === 'admin_email' && !empty($value)) {
-                    TenantUiSetting::set($section, $key, $value, 'text');
-                    $this->updateAdminEmailInTenantDatabase($value);
-                } else {
-                    TenantUiSetting::set($section, $key, $value, 'text');
+                }
+                // Non-file fields
+                if ($request->has($field)) {
+                    $val = $request->input($field);
+                    // Coerce checkbox boolean to 1/0 strings if needed
+                    if (is_bool($val)) {
+                        $val = $val ? '1' : '0';
+                    }
+                    Setting::set($section, $field, $val, 'text');
+                    if ($section === 'navbar' && $field === 'brand_name') {
+                        // Also persist alternate key navbar_brand_name for compatibility if used elsewhere
+                        Setting::set($section, 'navbar_brand_name', $val, 'text');
+                    }
                 }
             }
 
+            // Switch back to main database
             $this->tenantService->switchToMain();
 
-            Log::info("Settings updated for section {$section} in client {$client->id}");
+            Log::info("Settings updated for section {$section} in tenant {$tenant->slug}");
 
             if ($request->expectsJson()) {
                 return response()->json([
@@ -1075,14 +717,19 @@ class CustomizeWebsiteController extends Controller
                     'message' => ucfirst(str_replace('_', ' ', $section)) . ' settings updated successfully!'
                 ]);
             }
+
             return redirect()->back()->with('success', ucfirst(str_replace('_', ' ', $section)) . ' settings updated successfully!');
 
         } catch (\Exception $e) {
+            // Ensure we switch back to main database
             $this->tenantService->switchToMain();
+            
             Log::error("Error updating {$section} settings: " . $e->getMessage());
+            
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => 'Error updating settings.'], 500);
             }
+            
             return redirect()->back()->with('error', 'Error updating settings.');
         }
     }

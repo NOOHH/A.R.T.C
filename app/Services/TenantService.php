@@ -15,8 +15,11 @@ class TenantService
     public function createTenant($name, $domain, $explicitDatabaseName = null)
     {
         try {
-            // Generate database name based on domain unless explicit name provided
-            $databaseName = $explicitDatabaseName ?: ('smartprep_' . Str::slug(str_replace('.', '_', $domain)));
+            // Generate database name based on tenant name (slug) unless an explicit database name was provided.
+            // We intentionally ignore the domain (which may contain .smartprep.local) to avoid suffixes like
+            // "-smartprep-local" ending up in the physical database name. Desired pattern: smartprep_<slug>
+            $slug = Str::slug($name);
+            $databaseName = $explicitDatabaseName ?: ('smartprep_' . $slug);
             
             // Create the tenant record first
             $tenant = Tenant::create([

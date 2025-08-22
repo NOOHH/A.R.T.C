@@ -84,6 +84,14 @@ class LoginController extends Controller
                 $request->session()->regenerate();
                 
                 Log::info('SmartPrep Login: User login successful, redirecting to dashboard', ['user_id' => $user->getKey()]);
+                // If coming from tenant preview, bounce back there instead of SmartPrep dashboard
+                $referer = $request->headers->get('referer');
+                if ($referer && preg_match('#/t/([a-z0-9\-]+)#i', $referer, $m)) {
+                    $slug = $m[1];
+                    if (\App\Models\Tenant::where('slug',$slug)->exists()) {
+                        return redirect(url('/t/' . $slug . (str_contains($referer,'/admin-dashboard')?'/admin-dashboard':'') . (str_contains($referer,'preview=true')?'?preview=true':'')));
+                    }
+                }
                 return redirect()->route('smartprep.dashboard');
             } else {
                 Log::warning('SmartPrep Login: User password invalid', ['email' => $login]);
@@ -131,6 +139,15 @@ class LoginController extends Controller
             // Best effort only; ignore
         }
 
+        // Detect tenant preview referer so logging out inside iframe returns to tenant public view (still logged out)
+        $referer = $request->headers->get('referer');
+        if ($referer && preg_match('#/t/([a-z0-9\-]+)/?#i', $referer, $m)) {
+            $slug = $m[1];
+            if (\App\Models\Tenant::where('slug', $slug)->exists()) {
+                return redirect(url('/t/' . $slug . '?preview=true'))
+                    ->with('success', 'Logged out successfully.');
+            }
+        }
         return redirect()->route('smartprep.login');
     }
 }

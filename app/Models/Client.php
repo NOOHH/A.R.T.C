@@ -27,6 +27,41 @@ class Client extends Model
         'archived' => 'boolean',
     ];
 
+    // Website status constants
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_OFFLINE = 'offline';
+    public const STATUS_MAINTENANCE = 'maintenance';
+    public const STATUS_ARCHIVE = 'archive';
+
+    /**
+     * Human readable status label (e.g. 'Active', 'Draft')
+     */
+    public function getStatusLabelAttribute()
+    {
+        return ucfirst($this->status ?? self::STATUS_ACTIVE);
+    }
+
+    /**
+     * Badge CSS classes for the current status
+     */
+    public function getStatusBadgeClassAttribute()
+    {
+        $status = strtolower($this->status ?? self::STATUS_ACTIVE);
+        switch ($status) {
+            case self::STATUS_DRAFT:
+                return 'badge bg-secondary';
+            case self::STATUS_OFFLINE:
+                return 'badge bg-warning text-dark';
+            case self::STATUS_MAINTENANCE:
+                return 'badge bg-info text-dark';
+            case self::STATUS_ARCHIVE:
+                return 'badge bg-dark';
+            default:
+                return 'badge bg-success';
+        }
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

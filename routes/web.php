@@ -477,7 +477,99 @@ Route::get('/csrf-token', function() {
 });
 
 // Unified login page and authentication for all user types
-Route::get('/login', [UnifiedLoginController::class, 'showLoginForm'])->name('login');
+// Tenant-aware login: /t/{tenant}/login (preferred)
+Route::prefix('t')->group(function() {
+    Route::get('/{tenant}/login', function($tenant, Request $request) {
+        // Pass tenant slug to view
+        return app(\App\Http\Controllers\UnifiedLoginController::class)->showLoginForm()->with('tenantSlug', $tenant);
+    })->name('tenant.login');
+    Route::post('/{tenant}/login', [UnifiedLoginController::class, 'login'])->name('tenant.login.submit');
+    // Draft preview login (for draft tenants): /t/draft/{tenant}/login
+    Route::get('/draft/{tenant}/login', function($tenant, Request $request) {
+        return app(\App\Http\Controllers\UnifiedLoginController::class)->showLoginForm()->with('tenantSlug', $tenant);
+    })->name('tenant.draft.login');
+    Route::post('/draft/{tenant}/login', [UnifiedLoginController::class, 'login'])->name('tenant.draft.login.submit');
+
+    // Tenant homepage (active)
+    Route::get('/{tenant}', [\App\Http\Controllers\Tenant\PreviewController::class, 'homepage'])->name('tenant.home');
+    // Draft homepage
+    Route::get('/draft/{tenant}', [\App\Http\Controllers\Tenant\PreviewController::class, 'homepage'])->name('tenant.draft.home');
+    // Dashboards (use original ARTC format preview methods)
+    Route::get('/{tenant}/student/dashboard', function($tenant) {
+        return app(\App\Http\Controllers\StudentDashboardController::class)->showPreviewDashboard($tenant);
+    })->name('tenant.student.dashboard');
+    Route::get('/draft/{tenant}/student/dashboard', function($tenant) {
+        return app(\App\Http\Controllers\StudentDashboardController::class)->showPreviewDashboard($tenant);
+    })->name('tenant.draft.student.dashboard');
+    Route::get('/{tenant}/professor/dashboard', function($tenant) {
+        return app(\App\Http\Controllers\ProfessorDashboardController::class)->showPreviewDashboard($tenant);
+    })->name('tenant.professor.dashboard');
+    Route::get('/draft/{tenant}/professor/dashboard', function($tenant) {
+        return app(\App\Http\Controllers\ProfessorDashboardController::class)->showPreviewDashboard($tenant);
+    })->name('tenant.draft.professor.dashboard');
+    Route::get('/{tenant}/admin-dashboard', function($tenant) {
+        $tenantModel = \App\Models\Tenant::where('slug',$tenant)->firstOrFail();
+        $tenantService = app(\App\Services\TenantService::class);
+        $tenantService->switchToTenant($tenantModel);
+        try {
+            $analytics = [
+                'total_students' => \Illuminate\Support\Facades\DB::table('students')->count(),
+                'total_programs' => \Illuminate\Support\Facades\DB::table('programs')->count(),
+                'total_modules' => \Illuminate\Support\Facades\DB::table('modules')->count(),
+                'total_enrollments' => \Illuminate\Support\Facades\DB::table('enrollments')->count(),
+                'pending_registrations' => \Illuminate\Support\Facades\DB::table('registrations')->where('status','pending')->count(),
+                'new_students_this_month' => 0,
+                'modules_this_week' => 0,
+                'archived_programs' => 0,
+            ];
+            $registrations = collect();
+            $dbError = null;
+        } catch (\Throwable $e) {
+            $analytics = [];$registrations=collect();$dbError='Tenant DB error: '.$e->getMessage();
+        }
+        $tenantService->switchToMain();
+        // Temporarily seed session for layout then immediately forget after rendering
+        session(['user_name'=>'Tenant Admin','user_role'=>'admin','logged_in'=>true]);
+        $html = view('admin.admin-dashboard.admin-dashboard', compact('analytics','registrations','dbError'))->render();
+        session()->forget(['user_name','user_role','logged_in']);
+        return response($html);
+    })->name('tenant.admin.dashboard');
+    Route::get('/draft/{tenant}/admin-dashboard', function($tenant) {
+        $tenantModel = \App\Models\Tenant::where('slug',$tenant)->firstOrFail();
+        $tenantService = app(\App\Services\TenantService::class);
+        $tenantService->switchToTenant($tenantModel);
+        try {
+            $analytics = [
+                'total_students' => \Illuminate\Support\Facades\DB::table('students')->count(),
+                'total_programs' => \Illuminate\Support\Facades\DB::table('programs')->count(),
+                'total_modules' => \Illuminate\Support\Facades\DB::table('modules')->count(),
+                'total_enrollments' => \Illuminate\Support\Facades\DB::table('enrollments')->count(),
+                'pending_registrations' => \Illuminate\Support\Facades\DB::table('registrations')->where('status','pending')->count(),
+                'new_students_this_month' => 0,
+                'modules_this_week' => 0,
+                'archived_programs' => 0,
+            ];
+            $registrations = collect();
+            $dbError = null;
+        } catch (\Throwable $e) {
+            $analytics = [];$registrations=collect();$dbError='Tenant DB error: '.$e->getMessage();
+        }
+        $tenantService->switchToMain();
+        session(['user_name'=>'Tenant Admin','user_role'=>'admin','logged_in'=>true,'preview_mode'=>true]);
+        $html = view('admin.admin-dashboard.admin-dashboard', compact('analytics','registrations','dbError'))->render();
+        session()->forget(['user_name','user_role','logged_in','preview_mode']);
+        return response($html);
+    })->name('tenant.draft.admin.dashboard');
+});
+
+// Legacy root login (fallback) – optionally redirect if tenant query provided
+Route::get('/login', function(Request $request) {
+    $tenant = $request->query('tenant');
+    if ($tenant && \App\Models\Tenant::where('slug',$tenant)->exists()) {
+        return redirect()->route('tenant.login', ['tenant' => $tenant]);
+    }
+    return app(\App\Http\Controllers\UnifiedLoginController::class)->showLoginForm();
+})->name('login');
 Route::post('/login', [UnifiedLoginController::class, 'login'])->name('login.submit');
 Route::post('/logout', [UnifiedLoginController::class, 'logout'])->name('logout');
 
@@ -2908,6 +3000,8 @@ Route::get('/quick-login-test', function () {
 // Tenant public site routes (basic marketing / catalog views)
 // ------------------------------------------------------------------
 Route::prefix('t')->group(function () {
+    // Draft preview routes must be declared BEFORE generic /{tenant}
+    Route::get('/draft/{tenant}', [\App\Http\Controllers\Tenant\HomeController::class, 'index'])->name('tenant.draft.home');
     Route::get('/{tenant}', [\App\Http\Controllers\Tenant\HomeController::class, 'index'])->name('tenant.home');
     Route::get('/{tenant}/programs', [\App\Http\Controllers\Tenant\HomeController::class, 'programs'])->name('tenant.programs');
     Route::get('/{tenant}/programs/{id}', [\App\Http\Controllers\Tenant\HomeController::class, 'programDetails'])->name('tenant.program.details');

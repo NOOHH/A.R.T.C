@@ -117,8 +117,20 @@
             </div>
         @endif
 
-        <form class="login-form" method="POST" action="{{ route('login.submit') }}">
+        @php $tenantSlug = $tenantSlug ?? (request()->attributes->get('tenant_slug') ?? null); @endphp
+        @php
+            $path = request()->path();
+            $isDraftTenant = false;
+            if(preg_match('#^t/draft/([a-z0-9\-]+)/login$#i',$path,$mm)){ $isDraftTenant = true; }
+        @endphp
+        <form class="login-form" method="POST" action="{{ $tenantSlug ? ($isDraftTenant ? route('tenant.draft.login.submit',['tenant'=>$tenantSlug]) : route('tenant.login.submit',['tenant'=>$tenantSlug])) : route('login.submit') }}">
             @csrf
+            @if($tenantSlug)
+                <input type="hidden" name="tenant_slug" value="{{ $tenantSlug }}">
+                @if($isDraftTenant)
+                    <input type="hidden" name="tenant_is_draft" value="1">
+                @endif
+            @endif
             <input type="hidden" name="from_enrollment" value="{{ request()->query('from_enrollment', 'false') }}">
             
             <label for="email">Enter your email address</label>

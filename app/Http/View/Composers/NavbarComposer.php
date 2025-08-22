@@ -58,10 +58,8 @@ class NavbarComposer
             // Ensure brand_name is always available with appropriate fallbacks
             if (empty($navbar['brand_name'])) {
                 if ($tenant) {
-                    // For tenants, use a generic fallback
-                    $navbar['brand_name'] = 'Your Company Name';
+                    $navbar['brand_name'] = $tenant->name ?? $tenant->slug ?? 'Your Company Name';
                 } else {
-                    // For main context, use the default
                     $fallbackSettings = SettingsHelper::getSettings();
                     $navbar['brand_name'] = $fallbackSettings['navbar']['brand_name'] ?? 'Ascendo Review and Training Center';
                 }
@@ -103,9 +101,20 @@ class NavbarComposer
         // Check for tenant in path-based routing (/t/{slug})
         if ($request->is('t/*')) {
             $segments = $request->segments();
-            if (count($segments) >= 2 && $segments[0] === 't') {
-                $tenantSlug = $segments[1];
-                return Tenant::where('slug', $tenantSlug)->first();
+            if ($segments[0] === 't') {
+                // Patterns:
+                //  /t/{slug}
+                //  /t/{slug}/... (additional paths)
+                //  /t/draft/{slug}
+                //  /t/draft/{slug}/... (additional paths)
+                if (isset($segments[1]) && $segments[1] === 'draft') {
+                    $tenantSlug = $segments[2] ?? null; // draft preview path
+                } else {
+                    $tenantSlug = $segments[1] ?? null;
+                }
+                if ($tenantSlug) {
+                    return Tenant::where('slug', $tenantSlug)->first();
+                }
             }
         }
         

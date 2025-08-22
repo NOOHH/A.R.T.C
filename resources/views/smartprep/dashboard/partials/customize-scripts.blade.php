@@ -121,42 +121,22 @@
             // Get CSRF token
             const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             
-            // Determine the correct endpoint based on setting type
-            let endpoint;
-            switch(settingType) {
-                case 'general':
-                    endpoint = '{{ route("smartprep.dashboard.settings.update.general", ["website" => $selectedWebsite->id]) }}';
-                    break;
-                case 'branding':
-                    endpoint = '{{ route("smartprep.dashboard.settings.update.branding", ["website" => $selectedWebsite->id]) }}';
-                    break;
-                case 'navbar':
-                    endpoint = '{{ route("smartprep.dashboard.settings.update.navbar", ["website" => $selectedWebsite->id]) }}';
-                    break;
-                case 'homepage':
-                    endpoint = '{{ route("smartprep.dashboard.settings.update.homepage", ["website" => $selectedWebsite->id]) }}';
-                    break;
-                case 'student':
-                    endpoint = '{{ route("smartprep.dashboard.settings.update.student", ["website" => $selectedWebsite->id]) }}';
-                    break;
-                case 'professor':
-                    endpoint = '{{ route("smartprep.dashboard.settings.update.professor", ["website" => $selectedWebsite->id]) }}';
-                    break;
-                case 'admin':
-                    endpoint = '{{ route("smartprep.dashboard.settings.update.admin", ["website" => $selectedWebsite->id]) }}';
-                    break;
-                case 'advanced':
-                    endpoint = '{{ route("smartprep.dashboard.settings.update.advanced", ["website" => $selectedWebsite->id]) }}';
-                    break;
-                default:
-                    endpoint = '{{ route("smartprep.dashboard.settings.update.general", ["website" => $selectedWebsite->id]) }}';
+            // Determine the correct endpoint based on setting type and selected website id
+            const websiteId = document.querySelector('meta[name="x-selected-website-id"]')?.getAttribute('content') || null;
+            if (!websiteId) {
+                throw new Error('No website selected for this customization session.');
             }
+
+            // Map settingType directly to route path segment (names match)
+            let endpoint = `/smartprep/dashboard/settings/${settingType}/${websiteId}`;
             
             // Make actual AJAX call
             const response = await fetch(endpoint, {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: {
                     'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json',
                 },
                 body: formData
@@ -901,11 +881,13 @@
 
     // Shared function for saving sidebar colors
     function saveSidebarColorsForRole(role, colors) {
-        fetch('{{ route("smartprep.dashboard.settings.update.sidebar", ["website" => $selectedWebsite->id]) }}', {
+        fetch(`/smartprep/dashboard/settings/sidebar/${websiteId}`, {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({
                 role: role,

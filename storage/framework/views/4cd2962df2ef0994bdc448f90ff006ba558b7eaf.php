@@ -35,7 +35,7 @@
                     <i class="fas fa-save me-2"></i>Save Changes
                 </button>
                 <button class="btn btn-primary" onclick="publishChanges()">
-                    <i class="fas fa-rocket me-2"></i>Publish
+                    <i class="fas fa-rocket me-2"></i>Request Website Publishment
                 </button>
             </div>
         </div>
@@ -82,7 +82,13 @@
                     <button class="preview-btn" onclick="refreshPreview()">
                         <i class="fas fa-sync-alt me-1"></i>Refresh
                     </button>
-                    <?php $initialPreview = ($settings['general']['preview_url'] ?? $previewUrl); if(!str_contains($initialPreview,'preview=')) { $initialPreview .= (str_contains($initialPreview,'?')?'&':'?').'preview=true'; } ?>
+                    <?php
+                        $initialPreview = ($settings['general']['preview_url'] ?? $previewUrl);
+                        // Only append preview flag for non-draft internal routes (no /t/draft/ segment and not already flagged)
+                        if (!str_contains($initialPreview, '/t/draft/') && !str_contains($initialPreview,'preview=')) {
+                            $initialPreview .= (str_contains($initialPreview,'?')?'&':'?').'preview=true';
+                        }
+                    ?>
                     <a href="<?php echo e($initialPreview); ?>" class="preview-btn" target="_blank" id="openInNewTabLink">
                         <i class="fas fa-external-link-alt me-1"></i>Open in New Tab
                     </a>
@@ -97,7 +103,14 @@
             </div>
             <iframe 
                 class="preview-iframe" 
-                src="<?php echo e($settings['general']['preview_url'] ?? $previewUrl); ?>?preview=true" 
+                <?php
+                    $frameBase = ($settings['general']['preview_url'] ?? $previewUrl);
+                    $frameSrc = $frameBase;
+                    if (!str_contains($frameBase, '/t/draft/') && !str_contains($frameBase, 'preview=')) {
+                        $frameSrc .= (str_contains($frameBase,'?')?'&':'?').'preview=true';
+                    }
+                ?>
+                src="<?php echo e($frameSrc); ?>" 
                 title="Site Preview"
                 id="previewFrame"
                 onload="hideLoading()"

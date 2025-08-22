@@ -120,8 +120,20 @@
             </div>
         <?php endif; ?>
 
-        <form class="login-form" method="POST" action="<?php echo e(route('login.submit')); ?>">
+        <?php $tenantSlug = $tenantSlug ?? (request()->attributes->get('tenant_slug') ?? null); ?>
+        <?php
+            $path = request()->path();
+            $isDraftTenant = false;
+            if(preg_match('#^t/draft/([a-z0-9\-]+)/login$#i',$path,$mm)){ $isDraftTenant = true; }
+        ?>
+        <form class="login-form" method="POST" action="<?php echo e($tenantSlug ? ($isDraftTenant ? route('tenant.draft.login.submit',['tenant'=>$tenantSlug]) : route('tenant.login.submit',['tenant'=>$tenantSlug])) : route('login.submit')); ?>">
             <?php echo csrf_field(); ?>
+            <?php if($tenantSlug): ?>
+                <input type="hidden" name="tenant_slug" value="<?php echo e($tenantSlug); ?>">
+                <?php if($isDraftTenant): ?>
+                    <input type="hidden" name="tenant_is_draft" value="1">
+                <?php endif; ?>
+            <?php endif; ?>
             <input type="hidden" name="from_enrollment" value="<?php echo e(request()->query('from_enrollment', 'false')); ?>">
             
             <label for="email">Enter your email address</label>

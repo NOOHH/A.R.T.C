@@ -38,11 +38,52 @@ use App\Mail\PasswordResetMail;
 class UnifiedLoginController extends Controller
 {
     /**
+     * If login came from a tenant preview (/t/{slug}) return that base path + role dashboard.
+     */
+    private function tenantRedirectIfApplicable(Request $request, string $rolePath = '')
+    {
+        // 1. Attributes set during login
+        $slug = $request->attributes->get('tenant_slug');
+        $isDraft = (bool)$request->attributes->get('tenant_is_draft');
+        // 2. Path of current request (POST to /t/.../login)
+        if (!$slug) {
+            $path = $request->path();
+            if (preg_match('#^t/draft/([a-z0-9\-]+)/login#i', $path, $m)) { $slug = $m[1]; $isDraft = true; }
+            elseif (preg_match('#^t/([a-z0-9\-]+)/login#i', $path, $m)) { $slug = $m[1]; }
+        }
+        // 3. Referer fallback
+        if (!$slug) {
+            $referer = $request->headers->get('referer');
+            if ($referer && preg_match('#/t/(draft/)?([a-z0-9\-]+)#i', $referer, $m)) {
+                $isDraft = !empty($m[1]);
+                $slug = $m[2];
+            }
+        }
+        if ($slug && \App\Models\Tenant::where('slug',$slug)->exists()) {
+            $base = $isDraft ? "/t/draft/{$slug}" : "/t/{$slug}";
+            $suffix = ltrim($rolePath,'/');
+            $url = $base . ($suffix?"/{$suffix}":'');
+            $preview = $request->query('preview') === 'true' || str_contains($request->headers->get('referer',''),'preview=true');
+            if ($preview) { $url .= (str_contains($url,'?')?'&':'?').'preview=true'; }
+            return redirect(url($url));
+        }
+        return null;
+    }
+    /**
      * Show the unified login form
      */
     public function showLoginForm()
     {
-        return view('Login.login');
+        $slug = null;
+        $path = request()->path(); // e.g. t/testwebsite/login or t/draft/testwebsite/login
+        if (preg_match('#^t/([a-z0-9\-]+)/login$#i', $path, $m)) {
+            $slug = $m[1];
+        } elseif (preg_match('#^t/draft/([a-z0-9\-]+)/login$#i', $path, $m)) {
+            $slug = $m[1];
+        } elseif ($q = request()->query('tenant')) {
+            if (\App\Models\Tenant::where('slug',$q)->exists()) $slug = $q;
+        }
+        return view('Login.login', ['tenantSlug' => $slug]);
     }
 
     /**
@@ -54,6 +95,24 @@ class UnifiedLoginController extends Controller
             'email' => 'required|email',
             'password' => 'required|string|min:6',
         ]);
+
+        $tenantSlug = null;
+        $path = $request->path();
+        if (preg_match('#^t/([a-z0-9\-]+)/login$#i', $path, $m)) {
+            $tenantSlug = $m[1];
+        } elseif (preg_match('#^t/draft/([a-z0-9\-]+)/login$#i', $path, $m)) {
+            $tenantSlug = $m[1];
+            $request->attributes->set('tenant_is_draft', true);
+        } elseif ($request->has('tenant_slug')) {
+            $candidate = $request->input('tenant_slug');
+            if (\App\Models\Tenant::where('slug',$candidate)->exists()) {
+                $tenantSlug = $candidate;
+            }
+        }
+        if ($tenantSlug) {
+            // Stash slug for later redirect helper usage
+            $request->attributes->set('tenant_slug', $tenantSlug);
+        }
 
         $email = $request->email;
         $password = $request->password;
@@ -67,16 +126,28 @@ class UnifiedLoginController extends Controller
             return $this->loginAdmin($admin, $password, $request);
         }
 
-        // 2. Check if user is a director
-        $director = Director::where('directors_email', $email)->first();
-        if ($director) {
-            return $this->loginDirector($director, $password, $request);
+        // 2. Check if user is a director (skip silently if table missing)
+        try {
+            $director = Director::where('directors_email', $email)->first();
+            if ($director) {
+                return $this->loginDirector($director, $password, $request);
+            }
+        } catch (\Throwable $e) {
+            if (str_contains(strtolower($e->getMessage()), 'base table or view not found')) {
+                // Ignore missing directors table in some DBs
+            } else { throw $e; }
         }
 
-        // 3. Check if user is a professor
-        $professor = Professor::where('professor_email', $email)->first();
-        if ($professor) {
-            return $this->loginProfessor($professor, $password, $request);
+        // 3. Check if user is a professor (skip silently if table missing)
+        try {
+            $professor = Professor::where('professor_email', $email)->first();
+            if ($professor) {
+                return $this->loginProfessor($professor, $password, $request);
+            }
+        } catch (\Throwable $e) {
+            if (str_contains(strtolower($e->getMessage()), 'base table or view not found')) {
+                // Ignore missing professor table
+            } else { throw $e; }
         }
 
         // 4. Check users table for any user (students, unverified, etc.) - preserving original behavior
@@ -142,6 +213,14 @@ class UnifiedLoginController extends Controller
         }
 
         // Default redirect to student dashboard
+        if ($tenantRedirect = $this->tenantRedirectIfApplicable($request, 'student/dashboard')) {
+            return $tenantRedirect->with('success', 'Welcome back!');
+        }
+        if ($tenantSlug = $request->attributes->get('tenant_slug')) {
+            $isDraft = $request->attributes->get('tenant_is_draft');
+            $base = $isDraft ? "/t/draft/{$tenantSlug}" : "/t/{$tenantSlug}";
+            return redirect(url("{$base}/student/dashboard"))->with('success','Welcome back!');
+        }
         return redirect()->route('student.dashboard')->with('success', 'Welcome back!');
     }
 
@@ -201,6 +280,14 @@ class UnifiedLoginController extends Controller
         Log::info('Professor logged in successfully', ['professor_id' => $professor->professor_id]);
 
         // Redirect to professor dashboard
+        if ($tenantRedirect = $this->tenantRedirectIfApplicable($request, 'professor/dashboard')) {
+            return $tenantRedirect->with('success', 'Welcome back, ' . $professor->full_name . '!');
+        }
+        if ($tenantSlug = $request->attributes->get('tenant_slug')) {
+            $isDraft = $request->attributes->get('tenant_is_draft');
+            $base = $isDraft ? "/t/draft/{$tenantSlug}" : "/t/{$tenantSlug}";
+            return redirect(url("{$base}/professor/dashboard"))->with('success','Welcome back, ' . $professor->full_name . '!');
+        }
         return redirect()->route('professor.dashboard')->with('success', 'Welcome back, ' . $professor->full_name . '!');
     }
 
@@ -249,6 +336,14 @@ class UnifiedLoginController extends Controller
         Log::info('Admin logged in successfully', ['admin_id' => $admin->admin_id]);
 
         // Redirect to admin dashboard (preserving original success message format)
+        if ($tenantRedirect = $this->tenantRedirectIfApplicable($request, 'admin-dashboard')) {
+            return $tenantRedirect->with('success', 'Admin logged in!');
+        }
+        if ($tenantSlug = $request->attributes->get('tenant_slug')) {
+            $isDraft = $request->attributes->get('tenant_is_draft');
+            $base = $isDraft ? "/t/draft/{$tenantSlug}" : "/t/{$tenantSlug}";
+            return redirect(url("{$base}/admin-dashboard"))->with('success','Admin logged in!');
+        }
         return redirect()->route('admin.dashboard')->with('success', 'Admin logged in!');
     }
 
@@ -318,6 +413,14 @@ class UnifiedLoginController extends Controller
         Log::info('Director logged in successfully', ['directors_id' => $director->directors_id]);
 
         // Redirect to director dashboard
+        if ($tenantRedirect = $this->tenantRedirectIfApplicable($request, 'admin-dashboard')) { // reuse admin preview for director
+            return $tenantRedirect->with('success', 'Welcome back, ' . $director->directors_name . '!');
+        }
+        if ($tenantSlug = $request->attributes->get('tenant_slug')) {
+            $isDraft = $request->attributes->get('tenant_is_draft');
+            $base = $isDraft ? "/t/draft/{$tenantSlug}" : "/t/{$tenantSlug}";
+            return redirect(url("{$base}/admin-dashboard"))->with('success','Welcome back, ' . $director->directors_name . '!');
+        }
         return redirect()->route('director.dashboard')->with('success', 'Welcome back, ' . $director->directors_name . '!');
     }
 
@@ -333,9 +436,29 @@ class UnifiedLoginController extends Controller
         // Also clear SessionManager variables
         \App\Helpers\SessionManager::init();
         \App\Helpers\SessionManager::destroy();
-        
-        // Redirect ARTC users to ARTC homepage to avoid SmartPrep root redirect in preview
-        return redirect()->route('artc.preview')->with('success', 'You have been logged out successfully.');
+        // Determine if request came from a tenant preview iframe
+        $referer = $request->headers->get('referer');
+        $tenantSlug = null;
+        if ($referer && preg_match('#/t/(draft/)?([a-z0-9\-]+)/?#i', $referer, $m)) {
+            $isDraft = !empty($m[1]);
+            $tenantSlug = $m[2];
+        }
+        // Allow explicit ?tenant=slug param override
+        if (!$tenantSlug && $request->has('tenant')) {
+            $tenantSlug = $request->query('tenant');
+        }
+        // If tenant slug resolved and tenant exists, send back to tenant public site with preview flag
+        if ($tenantSlug && \App\Models\Tenant::where('slug', $tenantSlug)->exists()) {
+            $base = (isset($isDraft) && $isDraft) ? '/t/draft/' . $tenantSlug : '/t/' . $tenantSlug;
+            return redirect(url($base . '?preview=true'))
+                ->with('success', 'You have been logged out successfully.');
+        }
+        // Fallback: ARTC preview/home (keep existing named route if available, else root)
+        try {
+            return redirect()->route('artc.preview')->with('success', 'You have been logged out successfully.');
+        } catch (\Throwable $e) {
+            return redirect('/artc')->with('success', 'You have been logged out successfully.');
+        }
     }
 
     /**

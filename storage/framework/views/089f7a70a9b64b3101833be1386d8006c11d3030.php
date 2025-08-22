@@ -915,7 +915,18 @@
                             <?php if(isset($settings['navbar']['brand_logo']) && $settings['navbar']['brand_logo']): ?>
                                 <div class="mt-2">
                                     <small class="text-muted">Current logo:</small><br>
-                                    <img src="<?php echo e(\Illuminate\Support\Facades\Storage::url($settings['navbar']['brand_logo'])); ?>" alt="Current brand logo" style="max-height: 40px;" class="img-thumbnail">
+                                    <?php
+                                        $rawLogo = $settings['navbar']['brand_logo'] ?? null;
+                                        if ($rawLogo && str_starts_with($rawLogo, 'storage/')) {
+                                            $rawLogo = substr($rawLogo, 8);
+                                        }
+                                        $rawLogo = $rawLogo ?? null;
+                                        if ($rawLogo && str_starts_with($rawLogo, 'storage/')) {
+                                            $rawLogo = substr($rawLogo, 8);
+                                        }
+                                        $logoUrl = $rawLogo ? \App\Helpers\StorageHelper::url($rawLogo) : null;
+                                    ?>
+                                    <img src="<?php echo e($logoUrl); ?>" alt="Current brand logo" style="max-height: 40px;" class="img-thumbnail">
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -1172,7 +1183,14 @@
                             <?php if(isset($settings['homepage']['hero_background_image']) && $settings['homepage']['hero_background_image']): ?>
                                 <div class="mt-2">
                                     <small class="text-muted">Current image:</small><br>
-                                    <img src="<?php echo e(\Illuminate\Support\Facades\Storage::url($settings['homepage']['hero_background_image'])); ?>" alt="Current hero background" style="max-width: 200px; max-height: 100px;" class="img-thumbnail">
+                                    <?php
+                                        $rawHero = $settings['homepage']['hero_background_image'] ?? null;
+                                        if ($rawHero && str_starts_with($rawHero, 'storage/')) {
+                                            $rawHero = substr($rawHero, 8);
+                                        }
+                                        $heroUrl = $rawHero ? \Illuminate\Support\Facades\Storage::url($rawHero) : null;
+                                    ?>
+                                    <img src="<?php echo e($heroUrl); ?>" alt="Current hero background" style="max-width: 200px; max-height: 100px;" class="img-thumbnail">
                                 </div>
                             <?php endif; ?>
                         </div>

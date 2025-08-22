@@ -442,6 +442,31 @@
             $navbar = $composerNavbar ?? [];
             $footerSettings = null; // Don't override footer for tenants
             $homepageSettings = null; // Don't override homepage for tenants
+            // Attempt direct tenant Setting model lookups for critical branding keys
+            try {
+                // Only hydrate if missing or empty in composer data
+                if (!isset($navbar['brand_name']) || trim((string)$navbar['brand_name']) === '') {
+                    $bn = \App\Models\Setting::get('navbar','brand_name', null);
+                    if (!$bn) {
+                        // Backward compatibility key
+                        $bn = \App\Models\Setting::get('navbar','navbar_brand_name', null);
+                    }
+                    if ($bn) {
+                        $navbar['brand_name'] = $bn;
+                    }
+                }
+                if (!isset($navbar['brand_logo']) || trim((string)$navbar['brand_logo']) === '') {
+                    $bl = \App\Models\Setting::get('navbar','brand_logo', null);
+                    if (!$bl) {
+                        $bl = \App\Models\Setting::get('navbar','navbar_brand_logo', null);
+                    }
+                    if ($bl) {
+                        $navbar['brand_logo'] = $bl;
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Silently ignore – fallbacks will handle
+            }
         } else {
             // For main context, pull fresh settings from DB (collection of key => value)
             $navbarSettings = \App\Models\UiSetting::getSection('navbar');
@@ -471,10 +496,29 @@
     @if (!View::hasSection('hide_navbar'))
     <nav class="navbar navbar-expand-lg navbar-light fixed-top bg-white shadow-sm">
         <div class="container-fluid">
-            <a class="navbar-brand d-flex align-items-center" href="{{ url('/') }}">
-                <img src="{{ \App\Helpers\SettingsHelper::getLogoUrl() }}" 
+            @php
+                $effectiveLogo = $navbar['brand_logo'] ?? null;
+                if ($effectiveLogo) {
+                    // Normalize any leading storage/ occurrences
+                    $effectiveLogo = ltrim(preg_replace('/^storage\//','', $effectiveLogo),'\/');
+                    $logoUrl = \App\Helpers\StorageHelper::url($effectiveLogo);
+                } else {
+                    $logoUrl = \App\Helpers\SettingsHelper::getLogoUrl();
+                }
+            @endphp
+            @php
+                $brandHref = url('/');
+                $reqPath = request()->path();
+                if (preg_match('#^t/draft/([a-z0-9\-]+)#i', $reqPath, $m)) {
+                    $brandHref = url('/t/draft/' . $m[1]);
+                } elseif (preg_match('#^t/([a-z0-9\-]+)#i', $reqPath, $m)) {
+                    $brandHref = url('/t/' . $m[1]);
+                }
+            @endphp
+            <a class="navbar-brand d-flex align-items-center" href="{{ $brandHref }}">
+                <img src="{{ $logoUrl }}" 
                      alt="Logo" class="logo me-2" style="height: 40px;"
-                     onerror="this.src='{{ asset('images/ARTC_Logo.png') }}'">
+                     data-fallback="{{ asset('images/ARTC_Logo.png') }}" onerror="this.src=this.getAttribute('data-fallback')">
                 <strong>{{ $brandName }}</strong>
             </a>
             
@@ -543,7 +587,18 @@
                                 <i class="bi bi-person-plus"></i> Account
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ url('/login') }}">
+                                @php
+                                    $tenantLoginUrl = url('/login');
+                                    $reqPath = request()->path();
+                                    if (preg_match('#^t/draft/([a-z0-9\-]+)(?:/.*)?$#i', $reqPath, $m)) {
+                                        $tenantLoginUrl = url('/t/draft/' . $m[1] . '/login');
+                                    } elseif (preg_match('#^t/([a-z0-9\-]+)(?:/.*)?$#i', $reqPath, $m)) {
+                                        $tenantLoginUrl = url('/t/' . $m[1] . '/login');
+                                    } elseif(!empty($tenantSlug ?? '')) {
+                                        $tenantLoginUrl = url('/t/' . $tenantSlug . '/login');
+                                    }
+                                @endphp
+                                <li><a class="dropdown-item" href="{{ $tenantLoginUrl }}">
                                     <i class="bi bi-box-arrow-in-right"></i> Login
                                 </a></li>
                                 <li><a class="dropdown-item" href="{{ url('/signup') }}">
@@ -590,7 +645,7 @@
                 <div class="footer-logo mb-3 mb-md-0">
                     <img src="{{ \App\Helpers\SettingsHelper::getLogoUrl() }}" 
                          alt="Logo" style="height: 40px;"
-                         onerror="this.src='{{ asset('images/ARTC_Logo.png') }}'">
+                         data-fallback="{{ asset('images/ARTC_Logo.png') }}" onerror="this.src=this.getAttribute('data-fallback')">
                     <span class="footer-title ms-2">{{ $brandName }}</span>
                 </div>
                 <div class="footer-social">

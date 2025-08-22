@@ -23,10 +23,22 @@
             <label class="form-label">Brand Logo</label>
             <input type="file" class="form-control" name="navbar_brand_logo" accept="image/*">
             <small class="form-text text-muted">Upload a logo for the navigation bar. Recommended: 40px height, PNG format with transparent background</small>
-            @if(isset($settings['navbar']['brand_logo']) && $settings['navbar']['brand_logo'])
+            @php
+                // Support both legacy 'brand_logo' and newer 'navbar_brand_logo'
+                $rawLogo = $settings['navbar']['brand_logo'] ?? ($settings['navbar']['navbar_brand_logo'] ?? null);
+            @endphp
+            @if($rawLogo)
+                @php
+                    // Stored path should be disk-relative (e.g. 'brand-logos/file.png'). If legacy contains leading 'storage/' strip it.
+                    $raw = $rawLogo;
+                    if (is_string($raw) && str_starts_with($raw, 'storage/')) {
+                        $raw = substr($raw, 8);
+                    }
+                    $logoUrl = \App\Helpers\StorageHelper::url($raw);
+                @endphp
                 <div class="mt-2">
                     <small class="text-muted">Current logo:</small><br>
-                    <img src="{{ \Illuminate\Support\Facades\Storage::url($settings['navbar']['brand_logo']) }}" alt="Current brand logo" style="max-height: 40px;" class="img-thumbnail">
+                    <img src="{{ $logoUrl }}" alt="Current brand logo" style="max-height: 40px;" class="img-thumbnail">
                 </div>
             @endif
         </div>
