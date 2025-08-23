@@ -3945,10 +3945,40 @@ document.addEventListener('DOMContentLoaded', function() {
             if (programSelect) {
                 programId = programSelect.value;
             }
-            let url = '/admin/modules/course-content-upload';
-            if (programId) {
-                url += `?program_id=${programId}`;
+            
+            // Check if we're in tenant preview mode
+            let url;
+            const currentPath = window.location.pathname;
+            const isPreviewMode = currentPath.includes('/t/draft/');
+            
+            if (isPreviewMode) {
+                // Extract tenant from current URL path
+                const pathParts = currentPath.split('/');
+                const tenantIndex = pathParts.indexOf('draft') + 1;
+                const tenant = pathParts[tenantIndex];
+                
+                // Use tenant-aware URL
+                url = `/t/draft/${tenant}/admin/courses/upload`;
+                
+                // Add website parameter if present
+                const urlParams = new URLSearchParams(window.location.search);
+                const websiteParam = urlParams.get('website');
+                if (websiteParam) {
+                    url += `?website=${websiteParam}`;
+                    if (programId) {
+                        url += `&program_id=${programId}`;
+                    }
+                } else if (programId) {
+                    url += `?program_id=${programId}`;
+                }
+            } else {
+                // Use regular admin URL
+                url = '/admin/modules/course-content-upload';
+                if (programId) {
+                    url += `?program_id=${programId}`;
+                }
             }
+            
             window.location.href = url;
         });
     }
