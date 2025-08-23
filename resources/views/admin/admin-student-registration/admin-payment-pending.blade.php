@@ -9,21 +9,50 @@
             <div class="page-header d-flex justify-content-between align-items-center mb-4">
                 <h1 class="h3 mb-0 text-gray-800">Payment Pending</h1>
                 <div class="d-flex gap-2">
-                    <a href="{{ route('admin.student.registration.pending') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-person-plus"></i> Registration Pending
-                    </a>
-                    <a href="{{ route('admin.student.registration.payment.rejected') }}" class="btn btn-outline-danger">
-                        <i class="bi bi-x-circle"></i> Payment Rejected
-                    </a>
-                    <a href="{{ route('admin.student.registration.payment.history') }}" class="btn btn-outline-info">
-                        <i class="bi bi-clock-history"></i> Payment History
-                    </a>
+                    @if(session('preview_mode'))
+                        <button type="button" onclick="alert('Preview mode - Navigation not available')"
+                                class="btn btn-outline-secondary" title="Registration Pending (Preview)">
+                            <i class="bi bi-person-plus"></i> Registration Pending
+                        </button>
+                        <button type="button" onclick="alert('Preview mode - Navigation not available')"
+                                class="btn btn-outline-danger" title="Payment Rejected (Preview)">
+                            <i class="bi bi-x-circle"></i> Payment Rejected
+                        </button>
+                        <button type="button" onclick="alert('Preview mode - Navigation not available')"
+                                class="btn btn-outline-info" title="Payment History (Preview)">
+                            <i class="bi bi-clock-history"></i> Payment History
+                        </button>
+                    @else
+                        <a href="{{ route('admin.student.registration.pending') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-person-plus"></i> Registration Pending
+                        </a>
+                        <a href="{{ route('admin.student.registration.payment.rejected') }}" class="btn btn-outline-danger">
+                            <i class="bi bi-x-circle"></i> Payment Rejected
+                        </a>
+                        <a href="{{ route('admin.student.registration.payment.history') }}" class="btn btn-outline-info">
+                            <i class="bi bi-clock-history"></i> Payment History
+                        </a>
+                    @endif
                 </div>
             </div>
 
             {{-- Payment Rejected Table --}}
             @php
-                $rejectedPayments = \App\Models\Payment::where('payment_status', 'rejected')->orderBy('rejected_at', 'desc')->get();
+                if (isset($isPreview) && $isPreview) {
+                    // Mock data for preview mode
+                    $rejectedPayments = collect([
+                        (object)[
+                            'id' => 1,
+                            'student_name' => 'John Smith',
+                            'payment_status' => 'rejected',
+                            'amount' => 12000.00,
+                            'rejection_reason' => 'Invalid payment proof',
+                            'rejected_at' => now()->subDays(1)
+                        ]
+                    ]);
+                } else {
+                    $rejectedPayments = \App\Models\Payment::where('payment_status', 'rejected')->orderBy('rejected_at', 'desc')->get();
+                }
             @endphp
             @if($rejectedPayments->count() > 0)
             <div class="card shadow mb-4">
@@ -57,7 +86,7 @@
                                     <td>{{ $payment->enrollment->student_email ?? 'N/A' }}</td>
                                     <td>{{ $payment->enrollment->program->program_name ?? 'N/A' }}</td>
                                     <td>₱{{ number_format($payment->amount, 2) }}</td>
-                                    <td>{{ ucfirst($payment->payment_method) }}</td>
+                                    <td>{{ ucfirst($payment->payment_method ?? 'N/A') }}</td>
                                     <td>{{ $payment->rejected_at ? \Carbon\Carbon::parse($payment->rejected_at)->format('M d, Y') : 'N/A' }}</td>
                                     <td>
                                         <div class="text-truncate" style="max-width: 200px;" title="{{ $payment->rejection_reason }}">
@@ -66,17 +95,37 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <button type="button" class="btn btn-sm btn-info" 
-                                                    onclick="viewRejectedPaymentDetails({{ $payment->payment_id }})">
-                                                <i class="bi bi-eye"></i> View
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-warning" 
-                                                    onclick="editRejectedPaymentFields({{ $payment->payment_id }})">
-                                                <i class="bi bi-pencil"></i> Edit Rejection
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-secondary" style="display:inline-block !important;" onclick="undoPaymentApproval({{ $payment->payment_id }})">
-                                                <i class="bi bi-arrow-counterclockwise"></i> Undo
-                                            </button>
+                                            @if(session('preview_mode'))
+                                                <button type="button" onclick="alert('Preview mode - View not available')"
+                                                        class="btn btn-sm btn-info" title="View (Preview)">
+                                                    <i class="bi bi-eye"></i> View
+                                                </button>
+                                                <button type="button" onclick="alert('Preview mode - Edit not available')"
+                                                        class="btn btn-sm btn-warning" title="Edit (Preview)">
+                                                    <i class="bi bi-pencil"></i> Edit Rejection
+                                                </button>
+                                            @else
+                                                <button type="button" class="btn btn-sm btn-info" 
+                                                        onclick="viewRejectedPaymentDetails({{ $payment->payment_id ?? $payment->id }})">
+                                                    <i class="bi bi-eye"></i> View
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-warning" 
+                                                        onclick="editRejectedPaymentFields({{ $payment->payment_id ?? $payment->id }})">
+                                                    <i class="bi bi-pencil"></i> Edit Rejection
+                                                </button>
+                                            @endif
+                                            @if(session('preview_mode'))
+                                                <button type="button" onclick="alert('Preview mode - Undo not available')"
+                                                        class="btn btn-sm btn-secondary" title="Undo (Preview)">
+                                                    <i class="bi bi-arrow-counterclockwise"></i> Undo
+                                                </button>
+                                            @else
+                                                <button type="button" class="btn btn-sm btn-secondary" 
+                                                        style="display:inline-block !important;" 
+                                                        onclick="undoPaymentApproval({{ $payment->payment_id ?? $payment->id }})">
+                                                    <i class="bi bi-arrow-counterclockwise"></i> Undo
+                                                </button>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -90,7 +139,20 @@
 
             {{-- Payment Resubmission Table --}}
             @php
-                $resubmittedPayments = \App\Models\Payment::where('payment_status', 'resubmitted')->orderBy('resubmitted_at', 'desc')->get();
+                if (isset($isPreview) && $isPreview) {
+                    // Mock data for preview mode
+                    $resubmittedPayments = collect([
+                        (object)[
+                            'id' => 1,
+                            'student_name' => 'Jane Doe',
+                            'payment_status' => 'resubmitted',
+                            'amount' => 15000.00,
+                            'resubmitted_at' => now()->subHours(3)
+                        ]
+                    ]);
+                } else {
+                    $resubmittedPayments = \App\Models\Payment::where('payment_status', 'resubmitted')->orderBy('resubmitted_at', 'desc')->get();
+                }
             @endphp
             @if($resubmittedPayments->count() > 0)
             <div class="card shadow mb-4">
@@ -124,7 +186,7 @@
                                     <td>{{ $payment->enrollment->student_email ?? 'N/A' }}</td>
                                     <td>{{ $payment->enrollment->program->program_name ?? 'N/A' }}</td>
                                     <td>₱{{ number_format($payment->amount, 2) }}</td>
-                                    <td>{{ ucfirst($payment->payment_method) }}</td>
+                                    <td>{{ ucfirst($payment->payment_method ?? 'N/A') }}</td>
                                     <td>{{ $payment->resubmitted_at ? \Carbon\Carbon::parse($payment->resubmitted_at)->format('M d, Y') : 'N/A' }}</td>
                                     <td>
                                         <span class="badge bg-warning text-dark">Previous Rejected</span>
@@ -132,18 +194,33 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <button type="button" class="btn btn-sm btn-info" 
-                                                    onclick="viewPaymentResubmissionComparison({{ $payment->payment_id }})">
-                                                <i class="bi bi-eye"></i> View
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-success" 
-                                                    onclick="approvePaymentResubmission({{ $payment->payment_id }})">
-                                                <i class="bi bi-check-circle"></i> Approve
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-danger" 
-                                                    onclick="rejectPaymentResubmission({{ $payment->payment_id }})">
-                                                <i class="bi bi-x-circle"></i> Reject
-                                            </button>
+                                            @if(session('preview_mode'))
+                                                <button type="button" onclick="alert('Preview mode - View not available')"
+                                                        class="btn btn-sm btn-info" title="View (Preview)">
+                                                    <i class="bi bi-eye"></i> View
+                                                </button>
+                                                <button type="button" onclick="alert('Preview mode - Approve not available')"
+                                                        class="btn btn-sm btn-success" title="Approve (Preview)">
+                                                    <i class="bi bi-check-circle"></i> Approve
+                                                </button>
+                                                <button type="button" onclick="alert('Preview mode - Reject not available')"
+                                                        class="btn btn-sm btn-danger" title="Reject (Preview)">
+                                                    <i class="bi bi-x-circle"></i> Reject
+                                                </button>
+                                            @else
+                                                <button type="button" class="btn btn-sm btn-info" 
+                                                        onclick="viewPaymentResubmissionComparison({{ $payment->payment_id ?? $payment->id }})">
+                                                    <i class="bi bi-eye"></i> View
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-success" 
+                                                        onclick="approvePaymentResubmission({{ $payment->payment_id ?? $payment->id }})">
+                                                    <i class="bi bi-check-circle"></i> Approve
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-danger" 
+                                                        onclick="rejectPaymentResubmission({{ $payment->payment_id ?? $payment->id }})">
+                                                    <i class="bi bi-x-circle"></i> Reject
+                                                </button>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -221,18 +298,33 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <button type="button" class="btn btn-sm btn-success" 
-                                                    onclick="approvePaymentSubmission({{ $payment->payment_id ?? 0 }})">
-                                                <i class="bi bi-check-circle"></i> Approve
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-info" 
-                                                    onclick="viewPaymentSubmissionDetails({{ $payment->payment_id ?? 0 }})">
-                                                <i class="bi bi-eye"></i> View Details
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-danger" 
-                                                    onclick="rejectPaymentSubmission({{ $payment->payment_id ?? 0 }})">
-                                                <i class="bi bi-x-circle"></i> Reject
-                                            </button>
+                                            @if(session('preview_mode'))
+                                                <button type="button" onclick="alert('Preview mode - Approve not available')"
+                                                        class="btn btn-sm btn-success" title="Approve (Preview)">
+                                                    <i class="bi bi-check-circle"></i> Approve
+                                                </button>
+                                                <button type="button" onclick="alert('Preview mode - View not available')"
+                                                        class="btn btn-sm btn-info" title="View (Preview)">
+                                                    <i class="bi bi-eye"></i> View Details
+                                                </button>
+                                                <button type="button" onclick="alert('Preview mode - Reject not available')"
+                                                        class="btn btn-sm btn-danger" title="Reject (Preview)">
+                                                    <i class="bi bi-x-circle"></i> Reject
+                                                </button>
+                                            @else
+                                                <button type="button" class="btn btn-sm btn-success" 
+                                                        onclick="approvePaymentSubmission({{ $payment->payment_id ?? 0 }})">
+                                                    <i class="bi bi-check-circle"></i> Approve
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-info" 
+                                                        onclick="viewPaymentSubmissionDetails({{ $payment->payment_id ?? 0 }})">
+                                                    <i class="bi bi-eye"></i> View Details
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-danger" 
+                                                        onclick="rejectPaymentSubmission({{ $payment->payment_id ?? 0 }})">
+                                                    <i class="bi bi-x-circle"></i> Reject
+                                                </button>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

@@ -1452,7 +1452,7 @@ function selectFAQ(type) {
         payment: "We accept credit/debit cards, PayPal, bank transfers, and installment plans for select courses. All payments are processed securely.",
         schedule: "Login to your dashboard, go to 'My Courses', and click the 'Schedule' tab. You can also export your schedule to your calendar.",
         certificate: "Complete all course modules, pass assessments, maintain 80% attendance, and complete the final project. Certificates are generated automatically within 5-7 business days.",
-        support: "Contact support via live chat, email (support@artc.edu), phone (+1-555-123-4567), or submit a ticket through the support portal."
+        support: "Contact support via live chat, email ({{ $navbar['contact_email'] ?? 'support@example.edu' }}), phone (+1-555-123-4567), or submit a ticket through the support portal."
     };
     const chatMessages = document.getElementById('chatMessages');
     const response = faqResponses[type];

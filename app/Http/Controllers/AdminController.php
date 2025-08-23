@@ -2802,6 +2802,7 @@ class AdminController extends Controller
                     'student_name' => 'Juan Dela Cruz',
                     'student_email' => 'juan.delacruz@example.com',
                     'payment_status' => 'pending',
+                    'payment_method' => 'GCash', // Add missing property
                     'total_amount' => 15000.00,
                     'created_at' => now()->subDays(2),
                     'program' => $this->createMockObject([
@@ -2816,6 +2817,7 @@ class AdminController extends Controller
                     'student_name' => 'Maria Santos',
                     'student_email' => 'maria.santos@example.com',
                     'payment_status' => 'pending',
+                    'payment_method' => 'Bank Transfer', // Add missing property
                     'total_amount' => 18000.00,
                     'created_at' => now()->subDays(1),
                     'program' => $this->createMockObject([
@@ -2828,10 +2830,41 @@ class AdminController extends Controller
             ]);
 
             $pendingApprovals = collect();
+            
+            // Generate mock rejected payments
+            $rejectedPayments = collect([
+                $this->createMockObject([
+                    'id' => 1,
+                    'payment_id' => 'PAY001',
+                    'payment_method' => 'GCash',
+                    'amount' => 15000.00,
+                    'status' => 'rejected',
+                    'rejected_at' => now()->subDays(1),
+                    'rejection_reason' => 'Invalid receipt number',
+                    'enrollment' => $this->createMockObject([
+                        'student_name' => 'Carlos Mendoza',
+                        'student_email' => 'carlos.mendoza@example.com'
+                    ])
+                ]),
+                $this->createMockObject([
+                    'id' => 2,
+                    'payment_id' => 'PAY002',
+                    'payment_method' => 'Bank Transfer',
+                    'amount' => 18000.00,
+                    'status' => 'rejected',
+                    'rejected_at' => now()->subHours(6),
+                    'rejection_reason' => 'Insufficient payment amount',
+                    'enrollment' => $this->createMockObject([
+                        'student_name' => 'Ana Reyes',
+                        'student_email' => 'ana.reyes@example.com'
+                    ])
+                ])
+            ]);
 
             return view('admin.admin-student-registration.admin-payment-pending', [
                 'enrollments' => $enrollments,
                 'pendingApprovals' => $pendingApprovals,
+                'rejectedPayments' => $rejectedPayments,
                 'isPreview' => true
             ]);
 

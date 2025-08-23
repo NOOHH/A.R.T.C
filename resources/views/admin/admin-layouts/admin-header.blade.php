@@ -233,7 +233,16 @@
     <div class="header-left">
         <!-- Brand Logo and Text -->
         <div class="brand-container d-flex align-items-center gap-3">
-            <img src="{{ asset('images/ARTC_logo.png') }}" alt="A.R.T.C" class="brand-logo">
+            @if(isset($navbar['brand_logo']) && $navbar['brand_logo'])
+                <img src="{{ asset('storage/' . $navbar['brand_logo']) }}" alt="{{ $navbar['brand_name'] ?? 'Admin' }}" class="brand-logo">
+            @elseif(isset($navbar['brand_name']) && $navbar['brand_name'])
+                <!-- Use first letter of brand name as logo when no logo available -->
+                <div class="brand-logo d-flex align-items-center justify-content-center bg-primary text-white fw-bold" style="width: 50px; height: 50px; border-radius: 8px; font-size: 1.2rem;">
+                    {{ strtoupper(substr($navbar['brand_name'], 0, 1)) }}
+                </div>
+            @else
+                <img src="{{ asset('images/ARTC_logo.png') }}" alt="A.R.T.C" class="brand-logo">
+            @endif
             <div class="brand-text-area d-flex flex-column justify-content-center">
                 <span class="brand-text fw-bold">{{ $navbar['brand_name'] ?? 'Ascendo Review & Training Center' }}</span>
                 <span class="brand-subtext text-muted">Admin Portal</span>

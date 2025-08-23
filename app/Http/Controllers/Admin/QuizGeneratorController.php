@@ -1783,30 +1783,46 @@ class QuizGeneratorController extends Controller
                     'quiz_id' => 1,
                     'quiz_title' => 'Nursing Fundamentals Quiz',
                     'quiz_description' => 'Basic nursing concepts and principles',
+                    'subject_name' => 'Nursing', // Add missing property
                     'quiz_instructions' => 'Answer all questions to the best of your ability',
                     'total_questions' => 10,
                     'time_limit' => 30,
                     'passing_score' => 70,
+                    'max_attempts' => 3, // Add missing property
                     'is_active' => true,
                     'created_at' => now()->subDays(7),
+                    'questions' => collect([]), // Add missing property
                     'module' => (object)[
                         'module_name' => 'Nursing Fundamentals',
                         'module_id' => 1
+                    ],
+                    'course' => (object)[
+                        'course_id' => 1,
+                        'course_name' => 'Basic Nursing Skills',
+                        'subject_name' => 'Nursing'
                     ]
                 ],
                 (object)[
                     'quiz_id' => 2,
                     'quiz_title' => 'Medical Terminology Assessment',
                     'quiz_description' => 'Test your knowledge of medical terms',
+                    'subject_name' => 'Medical Technology', // Add missing property
                     'quiz_instructions' => 'Select the best answer for each question',
                     'total_questions' => 15,
                     'time_limit' => 45,
                     'passing_score' => 80,
+                    'max_attempts' => 2, // Add missing property
                     'is_active' => true,
                     'created_at' => now()->subDays(3),
+                    'questions' => collect([]), // Add missing property
                     'module' => (object)[
                         'module_name' => 'Medical Terminology',
                         'module_id' => 2
+                    ],
+                    'course' => (object)[
+                        'course_id' => 2,
+                        'course_name' => 'Medical Language',
+                        'subject_name' => 'Medical Technology'
                     ]
                 ]
             ]);
@@ -1822,8 +1838,23 @@ class QuizGeneratorController extends Controller
                     'quiz_id' => 1,
                     'title' => 'Draft Quiz 1',
                     'quiz_title' => 'Draft Quiz 1',
+                    'quiz_description' => 'Draft quiz for testing purposes', // Add missing property
+                    'subject_name' => 'Nursing', // Add missing property
+                    'time_limit' => 30, // Add missing property
+                    'max_attempts' => 3, // Add missing property
+                    'due_date' => now()->addDays(7), // Add missing property
                     'status' => 'draft',
-                    'created_at' => now()
+                    'created_at' => now(),
+                    'questions' => collect([]), // Add missing property
+                    'module' => (object)[
+                        'module_id' => 1,
+                        'module_name' => 'Nursing Fundamentals'
+                    ], // Add missing property
+                    'course' => (object)[
+                        'course_id' => 1,
+                        'course_name' => 'Basic Nursing Skills',
+                        'subject_name' => 'Nursing' // Add missing property
+                    ] // Add missing property
                 ])
             ]);
             
@@ -1833,8 +1864,23 @@ class QuizGeneratorController extends Controller
                     'quiz_id' => 2,
                     'title' => 'Published Quiz 1',
                     'quiz_title' => 'Published Quiz 1',
+                    'quiz_description' => 'Published quiz available to students', // Add missing property
+                    'subject_name' => 'Medical Technology', // Add missing property
+                    'time_limit' => 45, // Add missing property
+                    'max_attempts' => 2, // Add missing property
+                    'due_date' => now()->addDays(14), // Add missing property
                     'status' => 'published',
-                    'created_at' => now()
+                    'created_at' => now(),
+                    'questions' => collect([]), // Add missing property
+                    'module' => (object)[
+                        'module_id' => 2,
+                        'module_name' => 'Medical Terminology'
+                    ], // Add missing property
+                    'course' => (object)[
+                        'course_id' => 2,
+                        'course_name' => 'Medical Language',
+                        'subject_name' => 'Medical Technology' // Add missing property
+                    ] // Add missing property
                 ])
             ]);
             
@@ -1844,19 +1890,40 @@ class QuizGeneratorController extends Controller
                     'quiz_id' => 3,
                     'title' => 'Archived Quiz 1',
                     'quiz_title' => 'Archived Quiz 1',
+                    'quiz_description' => 'Archived quiz no longer in use', // Add missing property
+                    'subject_name' => 'Pharmacology', // Add missing property
+                    'time_limit' => 60, // Add missing property
+                    'max_attempts' => 1, // Add missing property
+                    'due_date' => now()->subDays(30), // Add missing property
                     'status' => 'archived',
-                    'created_at' => now()
+                    'created_at' => now(),
+                    'questions' => collect([]), // Add missing property
+                    'module' => (object)[
+                        'module_id' => 3,
+                        'module_name' => 'Pharmacology'
+                    ], // Add missing property
+                    'course' => (object)[
+                        'course_id' => 3,
+                        'course_name' => 'Drug Studies',
+                        'subject_name' => 'Pharmacology' // Add missing property
+                    ] // Add missing property
                 ])
             ]);
+            
+            // Combine all quizzes for compatibility
+            $allQuizzes = $draftQuizzes->merge($publishedQuizzes)->merge($archivedQuizzes);
             
             view()->share('modules', $modules);
             view()->share('assignedPrograms', $assignedPrograms);
             view()->share('draftQuizzes', $draftQuizzes);
             view()->share('publishedQuizzes', $publishedQuizzes);
             view()->share('archivedQuizzes', $archivedQuizzes);
+            view()->share('allQuizzes', $allQuizzes);
             view()->share('isPreviewMode', true);
 
             $html = view('admin.quiz-generator.index', compact('assignedPrograms', 'draftQuizzes', 'publishedQuizzes', 'archivedQuizzes'))->render();
+
+            return response($html);
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Admin quiz generator preview error: ' . $e->getMessage());

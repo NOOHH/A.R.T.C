@@ -63,21 +63,37 @@
                                             <td>{{ $director->hire_date ? $director->hire_date->format('M d, Y') : 'N/A' }}</td>
                                             <td class="text-center">
                                                 <div class="btn-group" role="group">
-                                                    <a href="{{ route('admin.directors.show', $director) }}" 
-                                                       class="btn btn-sm btn-outline-info" title="View">
-                                                        <i class="bi bi-eye"></i>
-                                                    </a>
-                                                    <a href="{{ route('admin.directors.edit', $director) }}" 
-                                                       class="btn btn-sm btn-outline-warning" title="Edit">
-                                                        <i class="bi bi-pencil"></i>
-                                                    </a>
-                                                    <form method="POST" action="{{ route('admin.directors.archive', $director) }}" 
-                                                          class="d-inline" onsubmit="return confirm('Are you sure you want to archive this director?')">
-                                                        @csrf
-                                                        @method('PATCH')
-                                                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="Archive">
+                                                    @if(session('preview_mode'))
+                                                        <button type="button" onclick="alert('Preview mode - View not available')"
+                                                                class="btn btn-sm btn-outline-info" title="View (Preview)">
+                                                            <i class="bi bi-eye"></i>
+                                                        </button>
+                                                        <button type="button" onclick="alert('Preview mode - Edit not available')"
+                                                                class="btn btn-sm btn-outline-warning" title="Edit (Preview)">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </button>
+                                                        <button type="button" onclick="alert('Preview mode - Archive not available')"
+                                                                class="btn btn-sm btn-outline-secondary" title="Archive (Preview)">
                                                             <i class="bi bi-archive"></i>
                                                         </button>
+                                                    @else
+                                                        <a href="{{ route('admin.directors.show', $director) }}" 
+                                                           class="btn btn-sm btn-outline-info" title="View">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                        <a href="{{ route('admin.directors.edit', $director) }}" 
+                                                           class="btn btn-sm btn-outline-warning" title="Edit">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </a>
+                                                        <form method="POST" action="{{ route('admin.directors.archive', $director) }}" 
+                                                              class="d-inline" onsubmit="return confirm('Are you sure you want to archive this director?')">
+                                                            @csrf
+                                                            @method('PATCH')
+                                                            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Archive">
+                                                                <i class="bi bi-archive"></i>
+                                                            </button>
+                                                        </form>
+                                                    @endif
                                                     </form>
                                                 </div>
                                             </td>

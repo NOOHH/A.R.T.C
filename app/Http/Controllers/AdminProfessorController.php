@@ -499,6 +499,15 @@ class AdminProfessorController extends Controller
     }
 
     /**
+     * Show professor details
+     */
+    public function show($id)
+    {
+        $professor = Professor::with('programs')->findOrFail($id);
+        return view('admin.professors.show', compact('professor'));
+    }
+
+    /**
      * Show professor profile (for search modal)
      */
     public function showProfile($id)

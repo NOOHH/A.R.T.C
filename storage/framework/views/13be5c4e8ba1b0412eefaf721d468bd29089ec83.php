@@ -15,12 +15,12 @@
         
         // If Laravel Auth user is not available but session indicates logged in, fallback to session data
         if (!$user && $isLoggedIn) {
-            if (session_status() === PHP_SESSION_NONE) {
+            if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
                 session_start();
             }
             
             // Only use session data if logged_in is explicitly true
-            if (session('logged_in') === true || $_SESSION['logged_in'] ?? false) {
+            if (session('logged_in') === true || ($_SESSION['logged_in'] ?? false)) {
                 $sessionUser = (object) [
                     'id' => $_SESSION['user_id'] ?? session('user_id'),
                     'name' => $_SESSION['user_name'] ?? session('user_name') ?? 'Guest',
@@ -133,7 +133,7 @@
 
     <?php
         // Ensure we can reliably check admin status
-        if (session_status() === PHP_SESSION_NONE) {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
             session_start();
         }
         $isAdmin = (isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin')

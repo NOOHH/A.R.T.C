@@ -1016,9 +1016,11 @@ class BatchEnrollmentController extends Controller
                     'batch_id' => 1,
                     'batch_name' => 'Nursing Review Batch 2025-A',
                     'batch_code' => 'NUR2025A',
+                    'description' => 'Comprehensive nursing review batch for 2025 board exam preparation', // Add missing property
                     'program_id' => 1,
-                    'start_date' => now()->format('Y-m-d'),
-                    'end_date' => now()->addMonths(6)->format('Y-m-d'),
+                    'start_date' => now(), // Keep as Carbon object
+                    'end_date' => now()->addMonths(6), // Keep as Carbon object
+                    'registration_deadline' => now()->addDays(14), // Keep as Carbon object
                     'batch_status' => 'available',
                     'max_students' => 50,
                     'max_capacity' => 50,
@@ -1033,7 +1035,9 @@ class BatchEnrollmentController extends Controller
                         (object)[
                             'professor_id' => 1,
                             'firstname' => 'Dr. Maria',
-                            'lastname' => 'Santos'
+                            'lastname' => 'Santos',
+                            'professor_name' => 'Dr. Maria Santos',
+                            'professor_email' => 'maria.santos@example.com'
                         ]
                     ]),
                     'assignedProfessor' => (object)[
@@ -1042,6 +1046,7 @@ class BatchEnrollmentController extends Controller
                         'lastname' => 'Santos',
                         'professor_first_name' => 'Dr. Maria',
                         'professor_last_name' => 'Santos',
+                        'professor_name' => 'Dr. Maria Santos', // Add missing property
                         'name' => 'Dr. Maria Santos'
                     ]
                 ],
@@ -1049,9 +1054,11 @@ class BatchEnrollmentController extends Controller
                     'batch_id' => 2,
                     'batch_name' => 'Medical Technology Review Batch 2025-A',
                     'batch_code' => 'MEDTECH2025A',
+                    'description' => 'Medical technology certification review program for board exam prep', // Add missing property
                     'program_id' => 2,
-                    'start_date' => now()->addDays(30)->format('Y-m-d'),
-                    'end_date' => now()->addMonths(6)->addDays(30)->format('Y-m-d'),
+                    'start_date' => now()->addDays(30), // Keep as Carbon object
+                    'end_date' => now()->addMonths(6)->addDays(30), // Keep as Carbon object
+                    'registration_deadline' => now()->addDays(20), // Keep as Carbon object
                     'batch_status' => 'ongoing',
                     'max_students' => 40,
                     'max_capacity' => 40,
@@ -1066,7 +1073,9 @@ class BatchEnrollmentController extends Controller
                         (object)[
                             'professor_id' => 2,
                             'firstname' => 'Dr. Juan',
-                            'lastname' => 'Garcia'
+                            'lastname' => 'Garcia',
+                            'professor_name' => 'Dr. Juan Garcia',
+                            'professor_email' => 'juan.garcia@example.com'
                         ]
                     ]),
                     'assignedProfessor' => (object)[
@@ -1075,6 +1084,7 @@ class BatchEnrollmentController extends Controller
                         'lastname' => 'Garcia',
                         'professor_first_name' => 'Dr. Juan',
                         'professor_last_name' => 'Garcia',
+                        'professor_name' => 'Dr. Juan Garcia', // Add missing property
                         'name' => 'Dr. Juan Garcia'
                     ]
                 ]
@@ -1088,8 +1098,20 @@ class BatchEnrollmentController extends Controller
 
             // Mock professors
             $professors = collect([
-                (object)['professor_id' => 1, 'firstname' => 'Dr. Maria', 'lastname' => 'Santos'],
-                (object)['professor_id' => 2, 'firstname' => 'Dr. Juan', 'lastname' => 'Garcia']
+                (object)[
+                    'professor_id' => 1, 
+                    'firstname' => 'Dr. Maria', 
+                    'lastname' => 'Santos',
+                    'professor_name' => 'Dr. Maria Santos',
+                    'professor_email' => 'maria.santos@example.com'
+                ],
+                (object)[
+                    'professor_id' => 2, 
+                    'firstname' => 'Dr. Juan', 
+                    'lastname' => 'Garcia',
+                    'professor_name' => 'Dr. Juan Garcia',
+                    'professor_email' => 'juan.garcia@example.com'
+                ]
             ]);
 
             $html = view('admin.admin-student-enrollment.batch-enroll', [

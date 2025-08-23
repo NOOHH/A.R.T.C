@@ -77,10 +77,17 @@
                                     <td>{{ $batch->start_date->format('M d, Y') }}</td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="{{ route('admin.batches.show', $batch->batch_id) }}" 
-                                               class="btn btn-sm btn-outline-primary" title="View Details">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
+                                            @if(session('preview_mode'))
+                                                <button type="button" onclick="alert('Preview mode - View not available')"
+                                                        class="btn btn-sm btn-outline-primary" title="View (Preview)">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                            @else
+                                                <a href="{{ route('admin.batches.show', $batch->batch_id) }}" 
+                                                   class="btn btn-sm btn-outline-primary" title="View Details">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            @endif
                                             <button type="button" 
                                                     class="btn btn-sm btn-outline-secondary" 
                                                     data-bs-toggle="modal" 

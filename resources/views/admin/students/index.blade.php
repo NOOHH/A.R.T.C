@@ -169,29 +169,51 @@
                   <td>{{ $student->created_at->format('M d, Y') }}</td>
                   <td class="text-center">
                     <div class="btn-group">
-                      <a href="{{ route('admin.students.show', $student) }}"
-                         class="btn btn-sm btn-outline-info" title="View">
-                        <i class="bi bi-eye"></i>
-                      </a>
+                      @if(session('preview_mode'))
+                        <a href="#" onclick="alert('Preview mode - View details not available')"
+                           class="btn btn-sm btn-outline-info" title="View (Preview)">
+                          <i class="bi bi-eye"></i>
+                        </a>
+                      @else
+                        <a href="{{ route('admin.students.show', $student) }}"
+                           class="btn btn-sm btn-outline-info" title="View">
+                          <i class="bi bi-eye"></i>
+                        </a>
+                      @endif
                       @unless($student->date_approved)
-                        <form method="POST"
-                              action="{{ route('admin.students.approve', $student) }}"
-                              class="d-inline"
-                              onsubmit="return confirm('Approve this student?')">
-                          @csrf @method('PATCH')
-                          <button class="btn btn-sm btn-outline-success" title="Approve">
+                        @if(session('preview_mode'))
+                          <button type="button" onclick="alert('Preview mode - Actions not available')"
+                                  class="btn btn-sm btn-outline-success" title="Approve (Preview)">
                             <i class="bi bi-check-circle"></i>
                           </button>
-                        </form>
+                        @else
+                          <form method="POST"
+                                action="{{ route('admin.students.approve', $student) }}"
+                                class="d-inline"
+                                onsubmit="return confirm('Approve this student?')">
+                            @csrf 
+                            @method('PATCH')
+                            <button class="btn btn-sm btn-outline-success" title="Approve">
+                              <i class="bi bi-check-circle"></i>
+                            </button>
+                          </form>
+                        @endif
                       @endunless
-                      <button class="btn btn-sm btn-outline-secondary"
-                              data-bs-toggle="modal"
-                              data-bs-target="#archiveStudentModal"
-                              data-student-id="{{ $student->student_id }}"
-                              data-student-name="{{ $student->firstname.' '.$student->lastname }}"
-                              title="Archive">
-                        <i class="bi bi-archive"></i>
-                      </button>
+                      @if(session('preview_mode'))
+                        <button type="button" onclick="alert('Preview mode - Archive not available')"
+                                class="btn btn-sm btn-outline-secondary" title="Archive (Preview)">
+                          <i class="bi bi-archive"></i>
+                        </button>
+                      @else
+                        <button class="btn btn-sm btn-outline-secondary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#archiveStudentModal"
+                                data-student-id="{{ $student->student_id }}"
+                                data-student-name="{{ $student->firstname.' '.$student->lastname }}"
+                                title="Archive">
+                          <i class="bi bi-archive"></i>
+                        </button>
+                      @endif
                     </div>
                   </td>
                 </tr>

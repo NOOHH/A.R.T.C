@@ -278,28 +278,41 @@ class AdminDirectorController extends Controller
 
             // Mock directors data
             $directorsCollection = collect([
-                (object)[
+                $this->createMockObject([
                     'director_id' => 1,
                     'directors_first_name' => 'Sarah',
                     'directors_last_name' => 'Johnson',
                     'directors_email' => 'sarah.johnson@preview.com',
+                    'email' => 'sarah.johnson@preview.com', // Add missing property
                     'directors_name' => 'Sarah Johnson',
+                    'full_name' => 'Sarah Johnson', // Add missing property
                     'phone_number' => '+1-555-0123',
+                    'hire_date' => now()->subMonths(6), // Add missing property
                     'is_active' => true,
                     'created_at' => now()->subMonths(6),
-                    'programs_count' => 3
-                ],
-                (object)[
+                    'programs_count' => 3,
+                    'programs' => collect([
+                        $this->createMockObject(['program_id' => 1, 'program_name' => 'Nursing Review']),
+                        $this->createMockObject(['program_id' => 2, 'program_name' => 'Medical Technology'])
+                    ]) // Add missing property
+                ]),
+                $this->createMockObject([
                     'director_id' => 2,
                     'directors_first_name' => 'Michael',
                     'directors_last_name' => 'Chen',
                     'directors_email' => 'michael.chen@preview.com',
+                    'email' => 'michael.chen@preview.com', // Add missing property
                     'directors_name' => 'Michael Chen',
+                    'full_name' => 'Michael Chen', // Add missing property
                     'phone_number' => '+1-555-0124',
+                    'hire_date' => now()->subMonths(3), // Add missing property
                     'is_active' => true,
                     'created_at' => now()->subMonths(3),
-                    'programs_count' => 2
-                ]
+                    'programs_count' => 2,
+                    'programs' => collect([
+                        $this->createMockObject(['program_id' => 3, 'program_name' => 'Pharmacy Review'])
+                    ]) // Add missing property
+                ])
             ]);
 
             // Create paginator

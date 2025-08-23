@@ -109,18 +109,33 @@
                                             <td>{{ $student->updated_at->format('M d, Y') }}</td>
                                             <td class="text-center">
                                                 <div class="btn-group" role="group">
-                                                    <a href="{{ route('admin.students.show', $student) }}" 
-                                                       class="btn btn-sm btn-outline-info" title="View Details">
-                                                        <i class="bi bi-eye"></i>
-                                                    </a>
-                                                    <form method="POST" action="{{ route('admin.students.restore', $student) }}" 
-                                                          class="d-inline" onsubmit="return confirm('Are you sure you want to restore this student?')">
-                                                        @csrf
-                                                        @method('PATCH')
-                                                        <button type="submit" class="btn btn-sm btn-outline-success" title="Restore">
+                                                    @if(session('preview_mode'))
+                                                        <button type="button" onclick="alert('Preview mode - View not available')"
+                                                                class="btn btn-sm btn-outline-info" title="View (Preview)">
+                                                            <i class="bi bi-eye"></i>
+                                                        </button>
+                                                        <button type="button" onclick="alert('Preview mode - Restore not available')"
+                                                                class="btn btn-sm btn-outline-success" title="Restore (Preview)">
                                                             <i class="bi bi-arrow-counterclockwise"></i>
                                                         </button>
-                                                    </form>
+                                                        <button type="button" onclick="alert('Preview mode - Delete not available')"
+                                                                class="btn btn-sm btn-outline-danger" title="Delete (Preview)">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    @else
+                                                        <a href="{{ route('admin.students.show', $student) }}" 
+                                                           class="btn btn-sm btn-outline-info" title="View Details">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                        <form method="POST" action="{{ route('admin.students.restore', $student) }}" 
+                                                              class="d-inline" onsubmit="return confirm('Are you sure you want to restore this student?')">
+                                                            @csrf
+                                                            @method('PATCH')
+                                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Restore">
+                                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                                            </button>
+                                                        </form>
+                                                    @endif
                                                     <button type="button" class="btn btn-sm btn-outline-danger" 
                                                             data-bs-toggle="modal" 
                                                             data-bs-target="#deleteStudentModal"

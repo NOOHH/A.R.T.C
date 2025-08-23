@@ -68,26 +68,46 @@
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">
-                                                <a href="{{ route('admin.professors.edit', $professor->professor_id) }}" 
-                                                   class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
-                                                <button type="button" class="btn btn-sm btn-outline-success"
-                                                        onclick="showSimpleModal('{{ $professor->professor_id }}', '{{ $professor->full_name }}')"
-                                                        data-professor-id="{{ $professor->professor_id }}"
-                                                        data-professor-name="{{ $professor->full_name }}">
-                                                    <i class="bi bi-calendar-plus"></i>
-                                                </button>
-                                                <a href="{{ route('admin.professors.meetings', $professor->professor_id) }}" 
-                                                   class="btn btn-sm btn-outline-secondary"
-                                                   title="View Meetings">
-                                                    <i class="bi bi-calendar2-week"></i>
-                                                </a>
-                                                <button type="button" class="btn btn-sm btn-outline-warning"
-                                                        data-bs-toggle="modal" data-bs-target="#archiveModal"
-                                                        data-professor-id="{{ $professor->professor_id }}"
-                                                        data-professor-name="{{ $professor->full_name }}">
-                                                    <i class="bi bi-archive"></i>
+                                                @if(session('preview_mode'))
+                                                    <button type="button" onclick="alert('Preview mode - Edit not available')"
+                                                            class="btn btn-sm btn-outline-primary" title="Edit (Preview)">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button type="button" onclick="alert('Preview mode - Schedule not available')"
+                                                            class="btn btn-sm btn-outline-success" title="Schedule (Preview)">
+                                                        <i class="bi bi-calendar-plus"></i>
+                                                    </button>
+                                                    <button type="button" onclick="alert('Preview mode - Meetings not available')"
+                                                            class="btn btn-sm btn-outline-secondary" title="Meetings (Preview)">
+                                                        <i class="bi bi-calendar2-week"></i>
+                                                    </button>
+                                                    <button type="button" onclick="alert('Preview mode - Archive not available')"
+                                                            class="btn btn-sm btn-outline-warning" title="Archive (Preview)">
+                                                        <i class="bi bi-archive"></i>
+                                                    </button>
+                                                @else
+                                                    <a href="{{ route('admin.professors.edit', $professor->professor_id) }}" 
+                                                       class="btn btn-sm btn-outline-primary">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-outline-success"
+                                                            onclick="showSimpleModal('{{ $professor->professor_id }}', '{{ $professor->full_name }}')"
+                                                            data-professor-id="{{ $professor->professor_id }}"
+                                                            data-professor-name="{{ $professor->full_name }}">
+                                                        <i class="bi bi-calendar-plus"></i>
+                                                    </button>
+                                                    <a href="{{ route('admin.professors.meetings', $professor->professor_id) }}" 
+                                                       class="btn btn-sm btn-outline-secondary"
+                                                       title="View Meetings">
+                                                        <i class="bi bi-calendar2-week"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-outline-warning"
+                                                            data-bs-toggle="modal" data-bs-target="#archiveModal"
+                                                            data-professor-id="{{ $professor->professor_id }}"
+                                                            data-professor-name="{{ $professor->full_name }}">
+                                                        <i class="bi bi-archive"></i>
+                                                    </button>
+                                                @endif
                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-outline-danger"
                                                         data-bs-toggle="modal" data-bs-target="#deleteModal"

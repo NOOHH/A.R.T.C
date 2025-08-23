@@ -460,9 +460,9 @@ class AdminStudentListController extends Controller
                 ]
             ]);
 
-            // Mock students - simplified structure
-            $studentsCollection = collect([
-                (object)[
+            // Mock students - properly structured for the view
+            $mockStudents = [
+                $this->createMockObject([
                     'student_id' => 'STU001',
                     'firstname' => 'Juan',
                     'lastname' => 'Dela Cruz',
@@ -471,22 +471,22 @@ class AdminStudentListController extends Controller
                     'is_archived' => false,
                     'created_at' => now(),
                     'program_id' => 1,
-                    'program' => (object)[
+                    'program' => $this->createMockObject([
                         'program_id' => 1,
                         'program_name' => 'Nursing Review'
-                    ],
-                    'enrollment' => (object)[
-                        'learning_mode' => 'online',
-                        'start_date' => now(),
-                        'end_date' => now()->addMonths(6),
-                        'batch' => (object)[
+                    ]),
+                    'enrollment' => $this->createMockObject([
+                        'learning_mode' => 'synchronous',
+                        'start_date' => now()->format('Y-m-d'),
+                        'end_date' => now()->addMonths(6)->format('Y-m-d'),
+                        'batch' => $this->createMockObject([
                             'batch_name' => 'Batch 2025-A',
-                            'start_date' => now(),
-                            'end_date' => now()->addMonths(6)
-                        ]
-                    ]
-                ],
-                (object)[
+                            'start_date' => now()->format('Y-m-d'),
+                            'end_date' => now()->addMonths(6)->format('Y-m-d')
+                        ])
+                    ])
+                ]),
+                $this->createMockObject([
                     'student_id' => 'STU002',
                     'firstname' => 'Maria',
                     'lastname' => 'Santos',
@@ -495,105 +495,59 @@ class AdminStudentListController extends Controller
                     'is_archived' => false,
                     'created_at' => now()->subDays(5),
                     'program_id' => 2,
-                    'program' => (object)[
+                    'program' => $this->createMockObject([
                         'program_id' => 2,
                         'program_name' => 'Medical Technology Review'
-                    ],
-                    'enrollment' => (object)[
-                        'learning_mode' => 'hybrid',
-                        'start_date' => now()->addDays(7),
-                        'end_date' => now()->addMonths(6)->addDays(7),
-                        'batch' => (object)[
+                    ]),
+                    'enrollment' => $this->createMockObject([
+                        'learning_mode' => 'asynchronous',
+                        'start_date' => now()->subDays(10)->format('Y-m-d'),
+                        'end_date' => now()->addMonths(4)->format('Y-m-d'),
+                        'batch' => $this->createMockObject([
                             'batch_name' => 'Batch 2025-B',
-                            'start_date' => now()->addDays(7),
-                            'end_date' => now()->addMonths(6)->addDays(7)
-                        ]
-                    ]
-                ],
-                (object)[
+                            'start_date' => now()->subDays(10)->format('Y-m-d'),
+                            'end_date' => now()->addMonths(4)->format('Y-m-d')
+                        ])
+                    ])
+                ]),
+                $this->createMockObject([
                     'student_id' => 'STU003',
-                    'firstname' => 'Pedro',
-                    'lastname' => 'Garcia',
-                    'email' => 'pedro.garcia@example.com',
+                    'firstname' => 'Carlos',
+                    'lastname' => 'Gonzalez',
+                    'email' => 'carlos.gonzalez@example.com',
                     'date_approved' => now()->subDays(2),
                     'is_archived' => false,
-                    'created_at' => now()->subDays(10),
+                    'created_at' => now()->subDays(8),
                     'program_id' => 1,
-                    'program' => (object)[
+                    'program' => $this->createMockObject([
                         'program_id' => 1,
                         'program_name' => 'Nursing Review'
-                    ],
-                    'enrollment' => (object)[
-                        'learning_mode' => 'onsite',
-                        'start_date' => now()->subDays(1),
-                        'end_date' => now()->addMonths(6)->subDays(1),
-                        'batch' => (object)[
-                            'batch_name' => 'Batch 2025-A',
-                            'start_date' => now()->subDays(1),
-                            'end_date' => now()->addMonths(6)->subDays(1)
-                        ]
-                    ]
-                ]
-            ]);
+                    ]),
+                    'enrollment' => null
+                ])
+            ];
 
-            // Create paginator
+            // Create a mock paginated collection
             $students = new \Illuminate\Pagination\LengthAwarePaginator(
-                $studentsCollection,
-                $studentsCollection->count(),
-                10,
+                $mockStudents,
+                count($mockStudents),
+                20,
                 1,
-                ['path' => request()->url()]
+                ['path' => request()->url(), 'pageName' => 'page']
             );
+            $students->withQueryString();
 
-            $html = view('admin.students.index', [
-                'students' => $students,
-                'programs' => $programs,
-                'currentProgram' => null,
-                'search' => '',
-                'status' => 'all',
-                'isPreview' => true
-            ])->render();
-
-            
-            // Generate mock students data
-            $students = $this->generateMockData('students');
-            $programs = $this->generateMockData('programs');
-            
-            // Add program relationship to each student
-            $students = $students->map(function($student) use ($programs) {
-                $student->program = $programs->first();
-                $student->program_id = $programs->first()->program_id;
-                $student->enrollment = $this->createMockObject([
-                    'learning_mode' => 'online',
-                    'start_date' => now(),
-                    'batch' => null
-                ]);
-                return $student;
-            });
-            
-            view()->share('students', $students);
-            view()->share('programs', $programs);
-            view()->share('isPreviewMode', true);
-            
-            return response($html);
+            return view('admin.students.index', compact('students', 'programs'));
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Admin students preview error: ' . $e->getMessage());
-            // Fallback to simple HTML on error
-            return response('
-                <html>
-                    <head><title>Admin Students Preview</title></head>
-                    <body style="font-family: Arial;">
-                        <h1>Admin Students Preview - Tenant: '.$tenant.'</h1>
-                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
-                        <p>But route is working correctly!</p>
-                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
-                    </body>
-                </html>
-            ', 200);
-        } finally {
-            // Clear session after render
-            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
+            // Fallback error view
+            return response()->view('tenant.preview.error', [
+                'title' => 'Admin Students Preview - Tenant: ' . $tenant,
+                'error' => 'Error rendering full view: ' . $e->getMessage(),
+                'details' => 'View: ' . $e->getFile() . ' Line: ' . $e->getLine(),
+                'route_works' => true,
+                'backUrl' => '/t/draft/' . $tenant . '/admin-dashboard?website=' . request('website') . '&preview=true'
+            ]);
         }
     }
 }

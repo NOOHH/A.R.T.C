@@ -1,0 +1,2629 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="5SmdWn9OLW7yWLZcfDVA8RRLtZY2LZIR1VVyQyym">
+    <title>Directors Management</title>
+
+    
+    <!-- Global Variables for JavaScript - Must be loaded first -->
+    <script>
+        // Global variables accessible throughout the page
+                window.myId = null;
+        window.myName = null;
+        window.userRole = null;
+        window.isAuthenticated = false;
+        // DEBUG: show the session data for troubleshooting
+        window._sessionDebug = {"session_user_id":null,"session_logged_in":true,"session_role":"admin","session_type":null,"php_session_user_id":null,"php_session_logged_in":null,"php_session_type":null};
+        console.log('DEBUG Session data:', window._sessionDebug);
+        console.log('DEBUG Auth::user()', null);
+        console.log('DEBUG Auth::guard("director")->user()', null);
+        window.csrfToken = "5SmdWn9OLW7yWLZcfDVA8RRLtZY2LZIR1VVyQyym";
+        
+        // Global chat state
+        window.currentChatType = null;
+        window.currentChatUser = null;
+        
+        // Make variables available without window prefix
+        var myId = window.myId;
+        var myName = window.myName;
+        var isAuthenticated = window.isAuthenticated;
+        var userRole = window.userRole;
+        var csrfToken = window.csrfToken;
+        var currentChatType = window.currentChatType;
+        var currentChatUser = window.currentChatUser;
+        
+        console.log('Global variables initialized:', { myId, myName, isAuthenticated, userRole });
+    </script>
+
+        
+    <!-- jQuery (required for dynamic dropdowns and AJAX in child views) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Bootstrap & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Admin-specific CSS -->
+    <style>
+    :root {
+        --sidebar-width: 280px;
+        --sidebar-collapsed-width: 70px;
+        --sidebar-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --sidebar-text: #ffffff;
+        --sidebar-text-muted: #9ca3af;
+        --sidebar-hover: rgba(255, 255, 255, 0.1);
+        --sidebar-active: rgba(255, 255, 255, 0.2);
+        --sidebar-border: rgba(255, 255, 255, 0.1);
+        --sidebar-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
+        --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        --border-radius: 12px;
+    }
+
+    /* Global container */
+    .admin-container {
+        display: flex;
+        min-height: 100vh;
+        background: #f8f9fa;
+    }
+
+    /* Main content area */
+    .main-content-area {
+        flex: 1;
+        margin-left: var(--sidebar-width);
+        transition: margin-left 0.3s ease;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .main-content-area.sidebar-collapsed {
+        margin-left: var(--sidebar-collapsed-width);
+    }
+
+    @media (max-width: 768px) {
+        .main-content-area {
+            margin-left: 0;
+        }
+    }
+
+    /* Ensure consistent sidebar behavior */
+    .modern-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: var(--sidebar-width);
+        height: 100vh;
+        background: var(--sidebar-bg);
+        border-right: 1px solid var(--sidebar-border);
+        box-shadow: var(--sidebar-shadow);
+        transform: translateX(0);
+        transition: var(--transition-smooth);
+        z-index: 9999;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+    }
+
+    /* Add subtle hover effect for sidebar background areas */
+    .modern-sidebar:hover {
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Remove cursor pointer and hover effects from navigation elements */
+    .modern-sidebar .nav-link,
+    .modern-sidebar .submenu-link,
+    .modern-sidebar button,
+    .modern-sidebar a,
+    .modern-sidebar form {
+        cursor: pointer;
+    }
+
+    .modern-sidebar .nav-link:hover,
+    .modern-sidebar .submenu-link:hover,
+    .modern-sidebar button:hover,
+    .modern-sidebar a:hover {
+        box-shadow: none;
+    }
+
+    .modern-sidebar.collapsed {
+        width: var(--sidebar-collapsed-width);
+    }
+
+    /* Ensure sidebar content is properly structured */
+    .sidebar-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-height: 0;
+    }
+
+    /* Mobile: Hidden by default */
+    @media (max-width: 768px) {
+        .modern-sidebar {
+            transform: translateX(-100%);
+        }
+        
+        .modern-sidebar.mobile-open {
+            transform: translateX(0);
+        }
+    }
+
+    /* Sidebar Header */
+    .sidebar-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.2rem 1.2rem 0.8rem;
+        border-bottom: 1px solid var(--sidebar-border);
+        background: rgba(255, 255, 255, 0.05);
+        min-height: 0;
+        transition: padding 0.3s;
+        flex-shrink: 0;
+    }
+
+    /* Header Profile Styles */
+    .header-profile {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.8rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .header-profile:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .header-profile-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        flex-shrink: 0;
+        object-fit: cover;
+        transition: border-color 0.3s ease;
+    }
+
+    .header-profile:hover .header-profile-avatar {
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .header-profile-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .header-profile-name {
+        font-weight: 600;
+        color: #fff;
+        font-size: 0.95rem;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .header-profile-role {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.8rem;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Collapsed state for header profile */
+    .modern-sidebar.collapsed .header-profile {
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        justify-content: center;
+    }
+
+    .modern-sidebar.collapsed .header-profile-info {
+        display: none;
+    }
+
+    .modern-sidebar.collapsed .header-profile-avatar {
+        width: 32px;
+        height: 32px;
+    }
+
+    .modern-sidebar.collapsed .sidebar-header {
+        padding: 0.7rem 0.5rem 0.5rem;
+        justify-content: center;
+        min-height: 0;
+    }
+
+    /* Navigation */
+    .sidebar-nav {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 1rem 0;
+        min-width: 0;
+    }
+
+    /* Hide scrollbars for sidebar navigation */
+    .sidebar-nav::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .sidebar-nav {
+        -ms-overflow-style: none;  /* Internet Explorer 10+ */
+        scrollbar-width: none;  /* Firefox */
+    }
+
+    /* Hide scrollbars for sidebar content */
+    .sidebar-content::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .sidebar-content {
+        -ms-overflow-style: none;  /* Internet Explorer 10+ */
+        scrollbar-width: none;  /* Firefox */
+    }
+
+    /* Hide scrollbars for submenu */
+    .submenu::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .submenu {
+        -ms-overflow-style: none;  /* Internet Explorer 10+ */
+        scrollbar-width: none;  /* Firefox */
+    }
+
+    .nav-item {
+        margin: 0.25rem 1rem;
+        min-width: 0;
+    }
+
+    .nav-link {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        color: var(--sidebar-text);
+        text-decoration: none;
+        border-radius: var(--border-radius);
+        transition: var(--transition-smooth);
+        gap: 12px;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .nav-link:hover {
+        background: var(--sidebar-hover);
+        color: var(--sidebar-text);
+        text-decoration: none;
+    }
+
+    .nav-link.active {
+        background: var(--sidebar-active);
+        color: var(--sidebar-text);
+    }
+
+    .nav-link i {
+        width: 1.2rem;
+        text-align: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .nav-link span {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .modern-sidebar.collapsed .nav-link {
+        justify-content: center;
+        padding: 0.75rem 0.5rem;
+        gap: 0;
+    }
+
+    .modern-sidebar.collapsed .nav-link span {
+        opacity: 0;
+        pointer-events: none;
+        width: 0;
+        overflow: hidden;
+        display: none;
+    }
+
+    .modern-sidebar.collapsed .nav-link i {
+        margin: 0;
+        font-size: 1.3rem;
+    }
+
+    /* Dropdown styles */
+    .dropdown-toggle {
+        position: relative;
+    }
+
+    .dropdown-arrow {
+        margin-left: auto;
+        transition: transform 0.3s ease;
+        flex-shrink: 0;
+        width: 1rem;
+        text-align: center;
+    }
+
+    .dropdown-toggle[aria-expanded="true"] .dropdown-arrow {
+        transform: rotate(180deg);
+    }
+
+    .modern-sidebar.collapsed .dropdown-arrow {
+        display: none !important;
+        width: 0;
+        margin: 0;
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .modern-sidebar.collapsed .dropdown-toggle {
+        justify-content: center;
+    }
+
+    .modern-sidebar.collapsed .nav-link.dropdown-toggle {
+        padding: 0.75rem 0.5rem;
+        gap: 0;
+    }
+
+    /* Ensure main icon is centered in collapsed dropdown items */
+    .modern-sidebar.collapsed .dropdown-toggle i:first-child {
+        margin: 0 auto;
+        display: block;
+    }
+
+    .modern-sidebar.collapsed .nav-link i:first-child {
+        margin: 0 auto;
+    }
+
+    .submenu {
+        margin-left: 1rem;
+        margin-top: 0.5rem;
+        overflow: hidden;
+    }
+
+    .submenu-link {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        color: var(--sidebar-text);
+        text-decoration: none;
+        border-radius: var(--border-radius);
+        transition: var(--transition-smooth);
+        gap: 12px;
+        font-size: 0.9rem;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    .submenu-link:hover {
+        background: var(--sidebar-hover);
+        color: var(--sidebar-text);
+        text-decoration: none;
+    }
+
+    .submenu-link.active {
+        background: var(--sidebar-active);
+        color: var(--sidebar-text);
+    }
+
+    .submenu-link i {
+        width: 1rem;
+        text-align: center;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
+    .submenu-link span {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .modern-sidebar.collapsed .submenu {
+        display: none;
+    }
+
+    /* Logout button */
+    .logout-btn {
+        background: none;
+        border: none;
+        width: 100%;
+        text-align: left;
+        padding: 0.75rem 1rem;
+        color: inherit;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        gap: 12px;
+        border-radius: var(--border-radius);
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    .logout-btn:hover {
+        background: var(--sidebar-hover);
+        color: var(--sidebar-text);
+    }
+
+    .logout-btn i {
+        width: 1.2rem;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    .logout-btn span {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .modern-sidebar.collapsed .logout-btn {
+        justify-content: center;
+        padding: 0.75rem 0.5rem;
+    }
+
+    .modern-sidebar.collapsed .logout-btn span {
+        display: none;
+    }
+
+    .modern-sidebar.collapsed .logout-btn i {
+        margin: 0;
+        font-size: 1.3rem;
+    }
+
+    /* Sidebar backdrop for mobile */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9998;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .sidebar-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    @media (min-width: 769px) {
+        .sidebar-overlay {
+            display: none;
+        }
+    }
+
+    /* Mobile toggle button */
+    .mobile-sidebar-toggle {
+        position: fixed;
+        top: 1rem;
+        left: 1rem;
+        width: 48px;
+        height: 48px;
+        background: var(--sidebar-bg);
+        border: 2px solid var(--sidebar-border);
+        border-radius: 12px;
+        color: white;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: var(--transition-smooth);
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .mobile-sidebar-toggle:hover {
+        background: var(--sidebar-hover);
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .mobile-sidebar-toggle i {
+        font-size: 1.25rem;
+        transition: var(--transition-smooth);
+    }
+
+    .mobile-sidebar-toggle.active i {
+        transform: rotate(180deg);
+    }
+
+    @media (max-width: 768px) {
+        .mobile-sidebar-toggle {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+    }
+
+    @media (min-width: 769px) {
+        .mobile-sidebar-toggle {
+            display: none !important;
+        }
+    }
+
+    /* Content wrapper */
+    .content-wrapper {
+        flex: 1;
+        padding: 1rem;
+        overflow-y: auto;
+        min-height: 100vh;
+        background: #f8f9fa;
+        height: auto;
+    }
+
+    /* Header styles */
+    .main-header {
+        background: white;
+        border-bottom: 1px solid #dee2e6;
+        padding: 1rem 2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+    }
+
+    .header-center {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .brand-container {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .brand-logo {
+        height: 56px;
+        width: auto;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .brand-text-area {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .brand-text {
+        font-size: 1.25rem;
+        color: #764ba2;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }
+
+    .brand-subtext {
+        font-size: 0.9rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .search-container {
+        width: 100%;
+        max-width: 400px;
+        position: relative;
+    }
+
+    .profile-icon {
+        font-size: 1.5rem;
+        color: #764ba2;
+        background: #fff;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .main-header .btn-link {
+        color: #764ba2;
+        font-size: 1.5rem;
+        background: none;
+        border: none;
+        padding: 0;
+        margin-left: 1rem;
+        transition: color 0.2s;
+    }
+
+    .main-header .btn-link:hover {
+        color: #5b3b91;
+    }
+
+    /* Search box styles */
+    .search-box {
+        position: relative;
+        display: flex;
+        align-items: center;
+        background: #f8f9fa;
+        border-radius: 25px;
+        border: 1px solid #dee2e6;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .search-box:focus-within {
+        border-color: #764ba2;
+        box-shadow: 0 0 0 0.2rem rgba(118, 75, 162, 0.25);
+    }
+
+    .search-icon {
+        padding: 0 15px;
+        color: #6c757d;
+        font-size: 1rem;
+    }
+
+    .search-input {
+        border: none;
+        background: transparent;
+        padding: 0.75rem 0;
+        font-size: 0.95rem;
+        flex: 1;
+        outline: none;
+        box-shadow: none !important;
+    }
+
+    .search-input:focus {
+        box-shadow: none !important;
+        border: none !important;
+        outline: none !important;
+    }
+
+    .search-btn {
+        background: none;
+        border: none;
+        padding: 0 15px;
+        color: #6c757d;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: color 0.3s ease;
+    }
+
+    .search-btn:hover {
+        color: #764ba2;
+    }
+
+    /* Search dropdown styles */
+    .search-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        max-height: 400px;
+        overflow-y: auto;
+        margin-top: 0.5rem;
+    }
+
+    .search-dropdown-content {
+        padding: 0.5rem;
+    }
+
+    .search-suggestions,
+    .search-results {
+        margin-bottom: 0.5rem;
+    }
+
+    .search-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        color: #6c757d;
+    }
+    </style>
+
+    
+    
+        <style>
+        :root {
+            --navbar-header-bg: #ffffff;
+            --navbar-header-text: #333333;
+            --navbar-header-border: #e0e0e0;
+            --navbar-search-bg: #f8f9fa;
+            --navbar-sidebar-bg: #343a40;
+            --navbar-sidebar-text: #ffffff;
+            --navbar-active-link-bg: #007bff;
+            --navbar-active-link-text: #ffffff;
+            --navbar-hover-bg: #495057;
+            --navbar-hover-text: #ffffff;
+            --navbar-submenu-bg: #2c3034;
+            --navbar-submenu-text: #adb5bd;
+            --navbar-footer-bg: #212529;
+            --navbar-icon-color: #6c757d;
+        }
+        
+        /* Header Styles */
+        .main-header,
+        .navbar,
+        header {
+            background-color: var(--navbar-header-bg) !important;
+            color: var(--navbar-header-text) !important;
+            border-bottom: 1px solid var(--navbar-header-border) !important;
+        }
+        
+        .search-box,
+        .header-search input {
+            background-color: var(--navbar-search-bg) !important;
+        }
+        
+        /* Sidebar Styles */
+        .sidebar,
+        .sidebar-nav,
+        nav.sidebar {
+            background-color: var(--navbar-sidebar-bg) !important;
+            color: var(--navbar-sidebar-text) !important;
+        }
+        
+        .sidebar .sidebar-link,
+        .sidebar a,
+        .nav-link {
+            color: var(--navbar-sidebar-text) !important;
+        }
+        
+        .sidebar .sidebar-link:hover,
+        .sidebar a:hover,
+        .nav-link:hover {
+            background-color: var(--navbar-hover-bg) !important;
+            color: var(--navbar-hover-text) !important;
+        }
+        
+        .sidebar li.active > .sidebar-link,
+        .sidebar li.active > a,
+        .nav-link.active {
+            background-color: var(--navbar-active-link-bg) !important;
+            color: var(--navbar-active-link-text) !important;
+        }
+        
+        .sidebar .sidebar-submenu,
+        .dropdown-menu {
+            background-color: var(--navbar-submenu-bg) !important;
+        }
+        
+        .sidebar .sidebar-submenu a,
+        .dropdown-menu a {
+            color: var(--navbar-submenu-text) !important;
+        }
+        
+        .sidebar,
+        .modern-sidebar,
+        .sidebar-nav {
+            background: var(--navbar-sidebar-bg) !important;
+        }
+        
+        .sidebar-footer,
+        .footer {
+            background: var(--navbar-footer-bg) !important;
+            background-color: var(--navbar-footer-bg) !important;
+        }
+        
+        .sidebar .icon,
+        .fa,
+        .fas,
+        .far,
+        .fab {
+            color: var(--navbar-icon-color) !important;
+        }
+        
+        /* Student Portal Specific */
+        .student-navbar {
+            background: linear-gradient(135deg, var(--navbar-header-bg) 0%, var(--navbar-sidebar-bg) 100%) !important;
+        }
+        
+        /* Professor Portal Specific */
+        .professor-navbar {
+            background: linear-gradient(135deg, var(--navbar-header-bg) 0%, var(--navbar-active-link-bg) 100%) !important;
+        }
+        
+        /* Enrollment Page Background */
+        .enrollment-page {
+            background: linear-gradient(135deg, var(--navbar-header-bg) 0%, var(--navbar-sidebar-bg) 100%) !important;
+        }
+        
+        /* Homepage Background */
+        .homepage-hero {
+            background: linear-gradient(135deg, var(--navbar-active-link-bg) 0%, var(--navbar-hover-bg) 100%) !important;
+        }
+        </style>
+        
+
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+<div class="admin-container">
+    <!-- Include Sidebar Component -->
+    <!-- Admin Sidebar Component -->
+<aside class="modern-sidebar" id="modernSidebar">
+    <!-- Sidebar Header with Brand and Toggle -->
+    <div class="sidebar-header">
+        
+        <div class="header-profile">
+                            <div class="header-profile-avatar" style="background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;">
+                    A
+                </div>
+                        <div class="header-profile-info">
+                <p class="header-profile-name">Admin</p>
+                <p class="header-profile-role">Admin</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="sidebar-content d-flex flex-column overflow-hidden">
+                
+        <nav class="sidebar-nav">
+
+            <!-- Dashboard -->
+            <div class="nav-item">
+                                <a href="/t/draft/test1/admin-dashboard?website=15&amp;preview=true" class="nav-link ">
+                    <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+                </a>
+            </div>
+
+            <!-- Registration Menu -->
+                        
+            <!-- Account Management -->
+                        
+            <!-- Programs Menu -->
+                        
+            <!-- Analytics -->
+            
+            <!-- FAQ Management -->
+            <div class="nav-item">
+                <a href="http://127.0.0.1:8000/admin/faq" class="nav-link ">
+                    <i class="bi bi-question-circle"></i><span>FAQ Management</span>
+                </a>
+            </div>
+
+            <!-- Announcements -->
+            <div class="nav-item">
+                                <a href="/t/draft/test1/admin/announcements?website=15&amp;preview=true" class="nav-link ">
+                    <i class="bi bi-broadcast"></i><span>Announcements</span>
+                </a>
+            </div>
+
+            <!-- Settings -->
+            
+            <!-- Logout -->
+            <div class="nav-item">
+                <form action="http://127.0.0.1:8000/student/logout" method="POST" class="d-inline">
+                    <input type="hidden" name="_token" value="5SmdWn9OLW7yWLZcfDVA8RRLtZY2LZIR1VVyQyym">                    <button type="submit" class="nav-link logout-btn" onclick="return confirm('Are you sure you want to logout?')">
+                        <i class="bi bi-box-arrow-right"></i><span>Logout</span>
+                    </button>
+                </form>
+            </div>
+
+        </nav>
+    </div>
+</aside>
+
+<!-- Sidebar Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- Mobile Toggle Button -->
+<button class="mobile-sidebar-toggle" id="mobileSidebarToggle" title="Toggle Sidebar">
+    <i class="bi bi-list"></i>
+</button>
+
+    <!-- Main Content Area -->
+    <div class="main-content-area" id="mainContentArea">
+        <!-- Include Header Component -->
+        <header class="main-header">
+
+        <style>
+        /* ==== Search box styles ==== */
+        .search-container {
+            position: relative;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            padding-right: 3.5rem; /* space for button */
+            border-radius: 999px;
+            border: 1px solid #d1d5db;
+            font-size: 0.95rem;
+            height: 42px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.2);
+        }
+
+.search-btn {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    padding: 8px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    height: 34px;
+    min-width: 34px;
+    color: white;
+    font-size: 16px; /* make the emoji/icon visible */
+    gap: 4px;
+    transition: filter .15s, transform .15s;
+}
+
+
+        .search-btn:hover {
+            filter: brightness(1.05);
+        }
+
+        .search-btn:active {
+            transform: translateY(-50%) scale(.97);
+        }
+
+        .search-btn .spinner-border {
+            width: 16px;
+            height: 16px;
+            border-width: 2px;
+        }
+
+        .search-results-wrapper {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.08);
+            z-index: 1100;
+            overflow: hidden;
+            font-size: 0.9rem;
+        }
+
+        .search-dropdown {
+            display: none;
+        }
+
+        .search-dropdown.active {
+            display: block;
+        }
+
+        .search-dropdown-content {
+            padding: 10px;
+        }
+
+        .search-suggestion-item,
+        .search-result-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .search-suggestion-item:hover,
+        .search-result-item:hover {
+            background: #f1f5fe;
+        }
+
+        .search-loading {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            color: #555;
+            font-size: 0.85rem;
+        }
+
+        .visually-hidden {
+            position: absolute !important;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* Mobile Header Optimizations */
+        @media (max-width: 768px) {
+            .main-header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+            
+            .header-left,
+            .header-center,
+            .header-right {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .brand-container {
+                justify-content: center;
+            }
+            
+            .brand-text {
+                font-size: 1.1rem;
+            }
+            
+            .brand-subtext {
+                font-size: 0.85rem;
+            }
+            
+            .search-container {
+                max-width: 100%;
+            }
+            
+            .search-input {
+                font-size: 1rem;
+                height: 48px;
+                padding: 0.8rem 1.2rem;
+                padding-right: 4rem;
+            }
+            
+            .search-btn {
+                height: 40px;
+                min-width: 40px;
+                right: 4px;
+                z-index: 99
+            }
+            
+            #chatTriggerBtn {
+                font-size: 1.8rem !important;
+                padding: 0.5rem;
+                min-height: 44px;
+                min-width: 44px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-header {
+                padding: 0.8rem;
+                gap: 0.8rem;
+            }
+            
+            .brand-text {
+                font-size: 1rem;
+                text-align: center;
+            }
+            
+            .brand-subtext {
+                font-size: 0.8rem;
+                text-align: center;
+            }
+            
+            .search-input {
+                height: 44px;
+                padding: 0.7rem 1rem;
+                padding-right: 3.5rem;
+                font-size: 0.95rem;
+            }
+            
+            .search-btn {
+                height: 36px;
+                min-width: 36px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .brand-container {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .brand-logo {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .header-right {
+                flex-direction: row;
+                gap: 1rem;
+                justify-content: center;
+            }
+        }
+    </style>
+    <div class="header-left">
+        <!-- Brand Logo and Text -->
+        <div class="brand-container d-flex align-items-center gap-3">
+                            <img src="http://127.0.0.1:8000/storage/brand-logos/ksxYexp7RbeMfR9CH1RAqhrVz3lcyi6269g4cPkD.jpg" alt="Test1" class="brand-logo">
+                        <div class="brand-text-area d-flex flex-column justify-content-center">
+                <span class="brand-text fw-bold">Test1</span>
+                <span class="brand-subtext text-muted">Admin Portal</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-center">
+        <!-- Universal Search -->
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" 
+                       id="universalSearchInput" 
+                       class="form-control search-input" 
+                       placeholder="Search students, professors, programs..." 
+                       autocomplete="off"
+                       onkeyup="handleSearchInput()"
+                       onfocus="showSearchDropdown()"
+                       onblur="hideSearchDropdown()">
+                <button class="search-btn" type="button" onclick="performSearch()">🔍</button>
+            </div>
+            
+            <!-- Search Results Dropdown -->
+            <div id="searchResultsDropdown" class="search-dropdown" style="display: none;">
+                <div class="search-dropdown-content">
+                    <!-- Search suggestions -->
+                    <div id="searchSuggestions" class="search-suggestions">
+                        <!-- Dynamic suggestions -->
+                    </div>
+                    
+                    <!-- Search results -->
+                    <div id="searchResults" class="search-results">
+                        <!-- Dynamic results -->
+                    </div>
+                    
+                    <!-- Loading indicator -->
+                    <div id="searchLoading" class="search-loading d-none">
+                        <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span class="ms-2">Searching...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-right">
+        <!-- Chat Icon Button -->
+        <button class="btn btn-link p-0" id="chatTriggerBtn" title="Open Chat" style="font-size: 1.5rem; color: #764ba2;">
+            <i class="bi bi-chat-dots"></i>
+        </button>
+    </div>
+</header>
+
+        <!-- Page Content -->
+        <div class="content-wrapper">
+            <div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-person-badge"></i> Directors Management</h2>
+                <div class="d-flex gap-2">
+                    <a href="http://127.0.0.1:8000/admin/directors/archived" class="btn btn-outline-secondary">
+                        <i class="bi bi-archive"></i> View Archived
+                    </a>
+                    <a href="http://127.0.0.1:8000/admin/directors/create" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add Director
+                    </a>
+                </div>
+            </div>
+
+            
+            
+            <div class="card shadow">
+                <div class="card-body">
+                                            <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Assigned Programs</th>
+                                        <th>Hire Date</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                                                            <tr>
+                                            <td>
+                                                <strong>Sarah Johnson</strong>
+                                            </td>
+                                            <td>sarah.johnson@preview.com</td>
+                                            <td>
+                                                                                                    <span class="badge bg-info">2 program(s)</span>
+                                                                                            </td>
+                                            <td>Feb 23, 2025</td>
+                                            <td class="text-center">
+                                                <div class="btn-group" role="group">
+                                                                                                            <button type="button" onclick="alert('Preview mode - View not available')"
+                                                                class="btn btn-sm btn-outline-info" title="View (Preview)">
+                                                            <i class="bi bi-eye"></i>
+                                                        </button>
+                                                        <button type="button" onclick="alert('Preview mode - Edit not available')"
+                                                                class="btn btn-sm btn-outline-warning" title="Edit (Preview)">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </button>
+                                                        <button type="button" onclick="alert('Preview mode - Archive not available')"
+                                                                class="btn btn-sm btn-outline-secondary" title="Archive (Preview)">
+                                                            <i class="bi bi-archive"></i>
+                                                        </button>
+                                                                                                        </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                                                            <tr>
+                                            <td>
+                                                <strong>Michael Chen</strong>
+                                            </td>
+                                            <td>michael.chen@preview.com</td>
+                                            <td>
+                                                                                                    <span class="badge bg-info">1 program(s)</span>
+                                                                                            </td>
+                                            <td>May 23, 2025</td>
+                                            <td class="text-center">
+                                                <div class="btn-group" role="group">
+                                                                                                            <button type="button" onclick="alert('Preview mode - View not available')"
+                                                                class="btn btn-sm btn-outline-info" title="View (Preview)">
+                                                            <i class="bi bi-eye"></i>
+                                                        </button>
+                                                        <button type="button" onclick="alert('Preview mode - Edit not available')"
+                                                                class="btn btn-sm btn-outline-warning" title="Edit (Preview)">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </button>
+                                                        <button type="button" onclick="alert('Preview mode - Archive not available')"
+                                                                class="btn btn-sm btn-outline-secondary" title="Archive (Preview)">
+                                                            <i class="bi bi-archive"></i>
+                                                        </button>
+                                                                                                        </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                                                    </tbody>
+                            </table>
+                        </div>
+                                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Compiled Application Script (includes page initializers) -->
+    <script src="/js/app.js" defer></script>
+
+<!-- Admin Layout JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('modernSidebar');
+    const backdrop = document.getElementById('sidebarOverlay');
+    const mobileToggle = document.getElementById('mobileSidebarToggle');
+    const mainContentArea = document.getElementById('mainContentArea');
+
+    // Toggle sidebar function
+    function toggleSidebar() {
+        if (window.innerWidth >= 769) {
+            // Desktop: Toggle collapsed state
+            if (sidebar) {
+                sidebar.classList.toggle('collapsed');
+                
+                // Update content margin
+                if (sidebar.classList.contains('collapsed')) {
+                    mainContentArea.style.marginLeft = '70px';
+                } else {
+                    mainContentArea.style.marginLeft = '280px';
+                }
+            }
+        } else {
+            // Mobile: Toggle visibility
+            if (sidebar) {
+                sidebar.classList.toggle('mobile-open');
+            }
+            if (backdrop) {
+                backdrop.classList.toggle('active');
+            }
+            
+            // Prevent body scroll when sidebar is open
+            if (sidebar && sidebar.classList.contains('mobile-open')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = 'auto';
+            }
+        }
+    }
+
+    // Close sidebar (mobile)
+    function closeSidebar() {
+        if (sidebar) {
+            sidebar.classList.remove('mobile-open');
+        }
+        if (backdrop) {
+            backdrop.classList.remove('active');
+        }
+        document.body.style.overflow = 'auto';
+    }
+
+    // Make entire sidebar clickable to toggle
+    if (sidebar) {
+        sidebar.addEventListener('click', function(e) {
+            // Only toggle if we're not clicking on navigation links or forms
+            if (!e.target.closest('.nav-link') && 
+                !e.target.closest('.submenu-link') && 
+                !e.target.closest('form') && 
+                !e.target.closest('button') &&
+                !e.target.closest('a')) {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleSidebar();
+            }
+        });
+    }
+
+    // Mobile toggle button
+    if (mobileToggle) {
+        mobileToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSidebar();
+        });
+    }
+
+    // Backdrop click to close (mobile)
+    if (backdrop) {
+        backdrop.addEventListener('click', closeSidebar);
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 769) {
+            // Desktop mode
+            if (sidebar) {
+                sidebar.classList.remove('mobile-open');
+            }
+            if (backdrop) {
+                backdrop.classList.remove('active');
+            }
+            document.body.style.overflow = 'auto';
+            
+            // Set proper margin
+            if (sidebar && sidebar.classList.contains('collapsed')) {
+                mainContentArea.style.marginLeft = '70px';
+            } else if (sidebar) {
+                mainContentArea.style.marginLeft = '280px';
+            }
+        } else {
+            // Mobile mode
+            if (sidebar) {
+                sidebar.classList.remove('collapsed');
+            }
+            mainContentArea.style.marginLeft = '0';
+        }
+    });
+
+    // Initialize proper layout on load
+    function initializeLayout() {
+        if (window.innerWidth >= 769) {
+            if (sidebar) {
+                mainContentArea.style.marginLeft = '280px';
+            }
+        } else {
+            mainContentArea.style.marginLeft = '0';
+        }
+    }
+
+    // Initialize layout
+    initializeLayout();
+    
+    // Ensure body can scroll on page load
+    document.body.style.overflow = 'auto';
+    document.documentElement.style.overflow = 'auto';
+
+    // Chat Offcanvas trigger
+    var chatBtn = document.getElementById('chatTriggerBtn');
+    if (chatBtn) {
+        chatBtn.addEventListener('click', function() {
+            var chatOffcanvas = new bootstrap.Offcanvas(document.getElementById('chatOffcanvas'));
+            chatOffcanvas.show();
+        });
+    }
+});
+
+// Search functionality
+let searchTimeout;
+let currentSearchType = 'all';
+
+function handleSearchInput() {
+    const searchInput = document.getElementById('universalSearchInput');
+    const query = searchInput.value.trim();
+    
+    // Clear previous timeout
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+    
+    // If query is empty, hide dropdown
+    if (query.length === 0) {
+        hideSearchDropdown();
+        return;
+    }
+    
+    // Show loading and perform search after delay
+    showSearchLoading(true);
+    searchTimeout = setTimeout(() => {
+        performSearch(query);
+    }, 300);
+}
+
+function performSearch(query = null) {
+    const searchInput = document.getElementById('universalSearchInput');
+    const searchQuery = query || searchInput.value.trim();
+    
+    if (searchQuery.length === 0) {
+        hideSearchDropdown();
+        return;
+    }
+
+    showSearchLoading(true);
+    
+    // Make AJAX request to search endpoint
+    fetch(`/admin/search?q=${encodeURIComponent(searchQuery)}&type=${currentSearchType}`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Search response received:', data);
+        showSearchLoading(false);
+        displaySearchResults(data);
+    })
+    .catch(error => {
+        console.error('Search error:', error);
+        showSearchLoading(false);
+        // Display error message to user
+        const resultsContainer = document.getElementById('searchResults');
+        if (resultsContainer) {
+            resultsContainer.innerHTML = '<div class="p-3 text-danger text-center">Search temporarily unavailable</div>';
+        }
+    });
+}
+
+function showSearchDropdown() {
+    const dropdown = document.getElementById('searchResultsDropdown');
+    if (dropdown) {
+        dropdown.style.display = 'block';
+    }
+}
+
+function hideSearchDropdown() {
+    const dropdown = document.getElementById('searchResultsDropdown');
+    if (dropdown) {
+        setTimeout(() => {
+            dropdown.style.display = 'none';
+        }, 200);
+    }
+}
+
+function showSearchLoading(show) {
+    const loading = document.getElementById('searchLoading');
+    if (loading) {
+        if (show) {
+            loading.classList.remove('d-none');
+        } else {
+            loading.classList.add('d-none');
+        }
+    }
+}
+
+function displaySearchResults(data) {
+    console.log('Displaying search results:', data);
+    const resultsContainer = document.getElementById('searchResults');
+    if (!resultsContainer) {
+        console.error('Search results container not found');
+        return;
+    }
+
+    resultsContainer.innerHTML = '';
+
+    if (data.results && data.results.length > 0) {
+        console.log('Processing', data.results.length, 'results');
+        data.results.forEach((result, index) => {
+            console.log(`Result ${index}:`, result);
+            const resultItem = document.createElement('div');
+            resultItem.className = 'search-result-item p-2 border-bottom';
+            
+            // Create avatar or icon element
+            let avatarElement = '';
+            if (result.avatar && (result.type === 'student' || result.type === 'professor')) {
+                avatarElement = `<img src="${result.avatar}" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;" alt="Profile">`;
+            } else {
+                avatarElement = `<i class="bi ${result.icon || 'bi-search'} me-2"></i>`;
+            }
+            
+            resultItem.innerHTML = `
+                <div class="d-flex align-items-center">
+                    ${avatarElement}
+                    <div>
+                        <div class="fw-medium">${result.title}</div>
+                        <small class="text-muted">${result.subtitle || ''}</small>
+                    </div>
+                </div>
+            `;
+            resultItem.addEventListener('click', () => {
+                console.log('Search result clicked:', result);
+                if (result.url) {
+                    console.log('Redirecting to:', result.url);
+                    window.location.href = result.url;
+                } else {
+                    console.error('No URL found for result:', result);
+                }
+            });
+            resultsContainer.appendChild(resultItem);
+        });
+    } else {
+        resultsContainer.innerHTML = '<div class="p-3 text-muted text-center">No results found</div>';
+    }
+}
+</script>
+
+
+<!-- Admin Functions JavaScript - Shared across all admin pages -->
+<script src="http://127.0.0.1:8000/js/admin/admin-functions.js?v=1755948314"></script>
+
+<!-- Admin Sidebar JavaScript -->
+<script src="http://127.0.0.1:8000/js/admin/admin-sidebar.js?v=1755948314"></script>
+
+<!-- Include Global Chat Component -->
+<script>
+(function() {
+
+  // UTILS
+  function clearSearch() {
+    document.getElementById('userSearchInput').value = '';
+    document.getElementById('searchResults').innerHTML = '';
+  }
+  function clearChatHistory() {
+    document.getElementById('chatMessages').innerHTML =
+      '<div class="text-center text-muted py-3">Chat history cleared.</div>';
+  }
+
+  // FETCH current user if needed
+  function fetchCurrentUserInfo() {
+    if (!myId && isAuthenticated) {
+      fetch('/api/me', {
+        headers: { 'X-CSRF-TOKEN': csrfToken },
+        credentials: 'include'
+      })
+      .then(r => r.json())
+      .then(d => console.log('User info:', d.data))
+      .catch(console.error);
+    }
+  }
+
+  // LOAD USERS
+  function loadUsersByType(type) {
+    fetch(`/api/chat/session/users?type=${type}`, {
+      headers: { 'X-CSRF-TOKEN': csrfToken },
+      credentials: 'include'
+    })
+    .then(r => r.json())
+    .then(json => displayUsers(json.data || []))
+    .catch(console.error);
+  }
+  function displayUsers(users) {
+    const c = document.getElementById('searchResults');
+    if (!users.length) {
+      return c.innerHTML = '<div class="text-center text-muted py-3">No users found.</div>';
+    }
+    
+    // Check if current user can communicate with these users
+    const filteredUsers = users.filter(u => {
+      const canChat = isCommunicationAllowed(u.role);
+      return canChat.allowed;
+    });
+    
+    if (!filteredUsers.length) {
+      return c.innerHTML = '<div class="text-center text-warning py-3">No authorized recipients found. Your role does not allow you to message any of these users.</div>';
+    }
+    
+    c.innerHTML = filteredUsers.map(u => {
+      // Get role-based styling
+      const roleColor = {
+        'student': 'primary',
+        'professor': 'success', 
+        'admin': 'warning',
+        'director': 'info'
+      }[u.role.toLowerCase()] || 'secondary';
+      
+      // Format name initials
+      const initials = u.name.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase();
+      
+      // Return user card with proper ARIA roles
+      return `
+        <div class="user-item card p-2 border mb-2" onclick="selectUserForChat(${u.id},'${u.name}','${u.role}')" role="button" aria-label="Chat with ${u.name} (${u.role})">
+          <div class="d-flex align-items-center">
+            <div class="avatar-circle bg-${roleColor} me-3">${initials}</div>
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-center">
+                <span class="fw-bold">${u.name}</span>
+                <span class="badge bg-${roleColor} ${roleColor === 'warning' ? 'text-dark' : ''} ms-2">${u.role.charAt(0).toUpperCase() + u.role.slice(1)}</span>
+              </div>
+              <div class="text-muted small">${u.email || ''}</div>
+            </div>
+            <span class="badge ${u.is_online?'bg-success':'bg-secondary'} ms-2">
+              ${u.is_online?'Online':'Offline'}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // SELECT USER & LOAD MESSAGES
+  window.selectUserForChat = function(userId, userName, userRole) {
+    // Stop any existing real-time chat polling
+    stopRealTimeChat();
+    
+    // Check if communication is allowed between these roles
+    const canCommunicate = isCommunicationAllowed(userRole);
+    
+    if (!canCommunicate.allowed) {
+      // Show an error message if communication is not allowed
+      alert(canCommunicate.message);
+      return;
+    }
+    
+    currentChatUser = { id:userId, name:userName, role:userRole };
+    document.getElementById('chatInterface').classList.remove('d-none');
+    document.getElementById('availableUsers').classList.add('d-none');
+    document.getElementById('chatSelectionPanel').classList.add('d-none');
+    
+    // Update chat header with user info
+    document.getElementById('chatWithName').textContent = userName;
+    document.getElementById('chatStatus').textContent = 'Online';
+    
+    // Get role-based color class
+    const roleColorClass = {
+      'student': 'bg-primary',
+      'professor': 'bg-success',
+      'admin': 'bg-warning',
+      'director': 'bg-info'
+    }[userRole.toLowerCase()] || 'bg-secondary';
+    
+    // Update avatar in chat header with role-based styling
+    const chatAvatar = document.querySelector('.chat-avatar');
+    const initials = userName.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase();
+    chatAvatar.innerHTML = `
+      <div class="avatar-circle ${roleColorClass}">
+        ${initials}
+      </div>
+    `;
+    
+    // Update recipient role badge
+    const recipientRoleBadge = document.getElementById('recipientRoleBadge');
+    if (recipientRoleBadge) {
+      recipientRoleBadge.textContent = userRole.charAt(0).toUpperCase() + userRole.slice(1);
+      recipientRoleBadge.className = `badge ${roleColorClass === 'bg-warning' ? 'text-dark' : ''} ${roleColorClass}`;
+    }
+    
+    // Update chat status info
+    const chatStatusInfo = document.getElementById('chatStatusInfo');
+    if (chatStatusInfo) {
+      chatStatusInfo.innerHTML = `Chatting with <strong>${userRole}</strong> • <span class="text-success">Online</span>`;
+    }
+    
+    // Load existing messages and start real-time chat
+    loadMessages(userId);
+    startRealTimeChat();
+  };
+  
+  // Helper function to check if communication is allowed between roles
+  function isCommunicationAllowed(recipientRole) {
+    // Default to not allowed with a generic message
+    const result = { 
+      allowed: false, 
+      message: 'Communication with this user is not allowed based on your roles.' 
+    };
+    
+    // If role is not defined, deny
+    if (!userRole || !recipientRole) {
+      return result;
+    }
+    
+    // Define allowed communication flows
+    const allowedFlows = {
+      'student': ['professor', 'admin', 'director'],
+      'professor': ['student', 'admin', 'director'],
+      'admin': ['student', 'professor', 'director'],
+      'director': ['student', 'professor', 'admin']
+    };
+    
+    // Check if the flow is allowed
+    if (allowedFlows[userRole.toLowerCase()]?.includes(recipientRole.toLowerCase())) {
+      return { 
+        allowed: true, 
+        message: 'Communication allowed' 
+      };
+    }
+    
+    // Provide a specific error message based on the roles
+    result.message = `As a ${userRole}, you cannot send messages to ${recipientRole}s.`;
+    return result;
+  }
+
+  function loadMessages(userId) {
+    fetch(`/api/chat/session/messages?with=${userId}`, {
+      headers: { 'X-CSRF-TOKEN': csrfToken },
+      credentials: 'include'
+    })
+    .then(r => r.json())
+    .then(json => displayChatMessages(json.data || []))
+    .catch(console.error);
+  }
+  
+  function displayChatMessages(msgs) {
+    const c = document.getElementById('chatMessages');
+    if (!msgs.length) {
+      return c.innerHTML = '<div class="text-center text-muted py-3">No messages yet. Start the conversation!</div>';
+    }
+    
+    // Format date helper function
+    const formatMessageDate = (dateString) => {
+      const date = new Date(dateString);
+      const now = new Date();
+      const isToday = date.toDateString() === now.toDateString();
+      
+      const time = date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      
+      if (isToday) {
+        return `Today at ${time}`;
+      } else {
+        return `${date.toLocaleDateString([], {month: 'short', day: 'numeric'})} at ${time}`;
+      }
+    };
+    
+    c.innerHTML = msgs.map(m => {
+      const isMe = m.sender_id === myId;
+      const cls = isMe ? 'user-message' : 'other-message';
+      
+      // Get sender name and properly format with role
+      let name = isMe ? 'You' : (m.sender?.name || 'Unknown');
+      let role = m.sender_role || m.sender?.role || (isMe ? userRole : currentChatUser?.role || 'Unknown');
+      
+      // Capitalize role for display
+      const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
+      
+      // Format timestamp
+      const formattedTime = formatMessageDate(m.sent_at);
+      
+      // Get initials for avatar
+      const nameForInitials = isMe ? myName : name;
+      const initials = nameForInitials.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase();
+      
+      // Select background color class based on role
+      const roleColorClass = {
+        'student': 'bg-primary',
+        'professor': 'bg-success',
+        'admin': 'bg-warning',
+        'director': 'bg-info'
+      }[role.toLowerCase()] || 'bg-secondary';
+      
+      return `
+        <article role="article" class="message-card ${cls}" aria-label="${isMe ? 'Your message' : `Message from ${name}`}">
+          <div class="message ${cls}">
+            <div class="message-header d-flex align-items-center mb-2">
+              <div class="avatar-circle ${roleColorClass} me-2" aria-hidden="true">
+                ${initials}
+              </div>
+              <div>
+                <div class="message-sender fw-bold">
+                  ${name} <span class="badge bg-secondary ms-1">${capitalizedRole}</span>
+                </div>
+                <div class="message-time text-muted">
+                  ${formattedTime}
+                </div>
+              </div>
+            </div>
+            <div class="message-content">
+              <div class="message-text">${m.message}</div>
+            </div>
+          </div>
+        </article>
+      `;
+    }).join('');
+    c.scrollTop = c.scrollHeight;
+  }
+
+  // SEND MESSAGE
+  document.addEventListener('submit', function(e) {
+    if (e.target.id === 'chatForm') {
+      e.preventDefault();
+      const txt = document.getElementById('chatInput').value.trim();
+      if (!txt || !currentChatUser) return;
+      
+      // Check if communication is allowed between these roles
+      const canCommunicate = isCommunicationAllowed(currentChatUser.role);
+      
+      if (!canCommunicate.allowed) {
+        // Show error message
+        const errorHtml = `
+          <div class="alert alert-danger mx-auto my-3" style="max-width: 90%;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            ${canCommunicate.message}
+          </div>
+        `;
+        document.getElementById('chatMessages').insertAdjacentHTML('beforeend', errorHtml);
+        document.getElementById('chatInput').value = '';
+        return;
+      }
+      
+      // Add message to UI immediately for better UX
+      const tempMessage = {
+        sender_id: myId,
+        message: txt,
+        sent_at: new Date(),
+        sender: { name: 'You' },
+        sender_role: userRole
+      };
+      addMessageToChat(tempMessage);
+      document.getElementById('chatInput').value = '';
+      
+      // Send message to server
+      fetch('/api/chat/session/send', {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'X-CSRF-TOKEN':csrfToken
+        },
+        credentials:'include',
+        body: JSON.stringify({
+          receiver_id: currentChatUser.id,
+          message: txt,
+          sender_role: userRole,
+          receiver_role: currentChatUser.role
+        })
+      })
+      .then(r => {
+        if (!r.ok) {
+          throw new Error(`Server responded with status: ${r.status}`);
+        }
+        return r.json();
+      })
+      .then(d => {
+        if (!d.success) {
+          console.error('Failed to send message:', d);
+          // Show error message to user
+          const errorHtml = `
+            <div class="alert alert-danger mx-auto my-3" style="max-width: 90%;">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              ${d.error || 'Failed to send message. Please try again.'}
+            </div>
+          `;
+          document.getElementById('chatMessages').insertAdjacentHTML('beforeend', errorHtml);
+        }
+      })
+      .catch(err => {
+        console.error('Error sending message:', err);
+        // Show error message to user
+        const errorHtml = `
+          <div class="alert alert-danger mx-auto my-3" style="max-width: 90%;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Message could not be sent. Please try again later.
+          </div>
+        `;
+        document.getElementById('chatMessages').insertAdjacentHTML('beforeend', errorHtml);
+      });
+    }
+  });
+
+  // Helper function to add a single message to chat
+  function addMessageToChat(message) {
+    const c = document.getElementById('chatMessages');
+    const isMe = message.sender_id === myId;
+    const cls = isMe ? 'user-message' : 'other-message';
+    
+    // Get sender name and properly format with role
+    let name = isMe ? 'You' : (message.sender?.name || 'Unknown');
+    let role = message.sender_role || message.sender?.role || (isMe ? userRole : currentChatUser?.role || 'Unknown');
+    
+    // Capitalize role for display
+    const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
+    
+    // Format timestamp
+    const date = new Date(message.sent_at);
+    const formattedTime = `Today at ${date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+    
+    // Get initials for avatar
+    const nameForInitials = isMe ? myName : name;
+    const initials = nameForInitials.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase();
+    
+    // Select background color class based on role
+    const roleColorClass = {
+      'student': 'bg-primary',
+      'professor': 'bg-success',
+      'admin': 'bg-warning',
+      'director': 'bg-info'
+    }[role.toLowerCase()] || 'bg-secondary';
+    
+    const messageHtml = `
+      <article role="article" class="message-card ${cls}" aria-label="${isMe ? 'Your message' : `Message from ${name}`}">
+        <div class="message ${cls}">
+          <div class="message-header d-flex align-items-center mb-2">
+            <div class="avatar-circle ${roleColorClass} me-2" aria-hidden="true">
+              ${initials}
+            </div>
+            <div>
+              <div class="message-sender fw-bold">
+                ${name} <span class="badge bg-secondary ms-1">${capitalizedRole}</span>
+              </div>
+              <div class="message-time text-muted">
+                ${formattedTime}
+              </div>
+            </div>
+          </div>
+          <div class="message-content">
+            <div class="message-text">${message.message}</div>
+          </div>
+        </div>
+      </article>
+    `;
+    
+    c.insertAdjacentHTML('beforeend', messageHtml);
+    c.scrollTop = c.scrollHeight;
+  }
+
+  // USER‐TYPE BUTTONS
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.user-type-btn');
+    if (btn) {
+      currentChatType = btn.dataset.type;
+      document.getElementById('chatSelectionPanel').classList.add('d-none');
+      if (currentChatType === 'faq') {
+        document.getElementById('availableUsers').classList.add('d-none');
+        document.getElementById('chatInterface').classList.remove('d-none');
+        document.getElementById('faqQuickResponses').classList.remove('d-none');
+        // Optionally hide chat messages area if you want only FAQ visible:
+        // document.getElementById('chatMessages').classList.add('d-none');
+      } else {
+        document.getElementById('faqQuickResponses').classList.add('d-none');
+        // Show search interface instead of loading users by type
+        showSearchInterface();
+      }
+    }
+  });
+
+  // ─────── SEARCH FUNCTIONALITY ───────
+  document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('userSearchInput');
+    if (searchInput) {
+      let searchTimeout;
+      
+      searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+          document.getElementById('searchResults').innerHTML = 
+            '<div class="text-center text-muted py-3">Type at least 2 characters to search...</div>';
+          return;
+        }
+        
+        // Show loading state
+        document.getElementById('searchResults').innerHTML = 
+          '<div class="search-loading"><div class="spinner-border spinner-border-sm me-2"></div>Searching...</div>';
+        
+        // Debounce search
+        searchTimeout = setTimeout(() => {
+          performSearch(query);
+        }, 500);
+      });
+      
+      searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const query = this.value.trim();
+          if (query.length >= 2) {
+            performSearch(query);
+          }
+        }
+      });
+    }
+  });
+
+  function performSearch(query) {
+    fetch('/api/chat/session/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrfToken,
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      credentials: 'include',
+      body: JSON.stringify({ query: query })
+    })
+    .then(response => {
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Please log in to search for users');
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.success && data.data && data.data.length > 0) {
+        displaySearchResults(data.data);
+      } else {
+        document.getElementById('searchResults').innerHTML = 
+          '<div class="text-center text-muted py-3">No users found for "' + query + '"</div>';
+      }
+    })
+    .catch(error => {
+      console.error('Search error:', error);
+      let errorMessage = 'Search failed. Please try again.';
+      if (error.message.includes('log in')) {
+        errorMessage = 'Please log in to search for users.';
+      }
+      document.getElementById('searchResults').innerHTML = 
+        '<div class="text-center text-danger py-3">' + errorMessage + '</div>';
+    });
+  }
+
+  function displaySearchResults(users) {
+    const container = document.getElementById('searchResults');
+    if (!users || users.length === 0) {
+      container.innerHTML = '<div class="text-center text-muted py-3">No users found.</div>';
+      return;
+    }
+    
+    container.innerHTML = users.map(user => {
+      const initials = user.name.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase();
+      const roleColor = {
+        'student': 'primary',
+        'professor': 'success', 
+        'admin': 'warning',
+        'director': 'info'
+      }[user.role] || 'secondary';
+      
+      return `
+        <div class="user-item p-3 border-bottom" onclick="selectUserForChat(${user.id},'${user.name}','${user.role}')">
+          <div class="d-flex align-items-center">
+            <div class="avatar-circle me-3 bg-${roleColor}">
+              ${initials}
+            </div>
+            <div class="flex-grow-1">
+              <div class="fw-bold text-dark">${user.name}</div>
+              <div class="text-muted small">${user.email}</div>
+              <div class="text-muted small d-flex align-items-center">
+                <i class="bi bi-person-badge me-1"></i>
+                <span class="text-capitalize">${user.role}</span>
+              </div>
+            </div>
+            <div class="d-flex flex-column align-items-end">
+              <span class="badge bg-${user.status === 'online' ? 'success' : 'secondary'} mb-1">
+                ${user.status === 'online' ? 'Online' : 'Offline'}
+              </span>
+              ${user.last_seen ? `<small class="text-muted">${user.last_seen}</small>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Function to show/hide search section
+  function showSearchInterface() {
+    document.getElementById('chatSelectionPanel').classList.add('d-none');
+    document.getElementById('availableUsers').classList.remove('d-none');
+    document.getElementById('chatInterface').classList.add('d-none');
+    
+    // Focus on search input
+    setTimeout(() => {
+      const searchInput = document.getElementById('userSearchInput');
+      if (searchInput) {
+        searchInput.focus();
+      }
+    }, 100);
+  }
+
+  window.goBackToSelection = function() {
+    document.getElementById('availableUsers').classList.add('d-none');
+    document.getElementById('chatSelectionPanel').classList.remove('d-none');
+    document.getElementById('chatInterface').classList.add('d-none');
+    
+    // Clear search
+    const searchInput = document.getElementById('userSearchInput');
+    if (searchInput) {
+      searchInput.value = '';
+    }
+    document.getElementById('searchResults').innerHTML = '';
+    
+    // Reset current chat user
+    currentChatUser = null;
+  };
+
+  // INITIALIZE
+  document.addEventListener('DOMContentLoaded', fetchCurrentUserInfo);
+})();
+</script>
+
+<!-- Chat Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="chatOffcanvas" aria-labelledby="chatOffcanvasLabel" style="width: 400px;">
+    <div class="offcanvas-header border-bottom">
+        <h5 class="offcanvas-title fw-bold text-primary" id="chatOffcanvasLabel">
+            <i class="bi bi-chat-dots me-2"></i>Live Chat
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    
+    <!-- Chat Selection Panel -->
+    <div id="chatSelectionPanel" class="p-3 border-bottom">
+        <h6 class="mb-3">Choose who to chat with:</h6>
+        
+        <!-- User Type Selection -->
+        <div class="user-type-selection mb-3">
+            
+                                                <div class="row g-2">
+                        <div class="col-4">
+                            <button class="btn btn-outline-primary w-100 btn-sm user-type-btn" data-type="student">
+                                <i class="bi bi-person-circle d-block"></i>
+                                <small>Students</small>
+                            </button>
+                        </div>
+                        <div class="col-4">
+                            <button class="btn btn-outline-success w-100 btn-sm user-type-btn" data-type="professor">
+                                <i class="bi bi-person-badge d-block"></i>
+                                <small>Professors</small>
+                            </button>
+                        </div>
+                        <div class="col-4">
+                            <button class="btn btn-outline-info w-100 btn-sm user-type-btn" data-type="support">
+                                <i class="bi bi-headset d-block"></i>
+                                <small>Support</small>
+                            </button>
+                        </div>
+                    </div>
+                                    </div>
+
+        <!-- Group Chat Options (Admin/Director only) -->
+                <div class="group-chat-options mt-3">
+            <button class="btn btn-outline-secondary btn-sm w-100" onclick="createGroupChat()">
+                <i class="bi bi-people me-1"></i>Create Group Chat
+            </button>
+        </div>
+            </div>
+    
+    <!-- Enhanced Search Section -->
+    <div id="availableUsers" class="d-none p-3 border-bottom">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">
+                <i class="bi bi-person-lines-fill me-2"></i>Search Users
+            </h6>
+            <button class="btn btn-outline-secondary btn-sm" onclick="goBackToSelection()">
+                <i class="bi bi-arrow-left me-1"></i>Back
+            </button>
+        </div>
+        
+        <!-- Enhanced Search Input -->
+        <div class="mb-3">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input
+                    type="text"
+                    id="userSearchInput"
+                    class="form-control"
+                    placeholder="Type name or email to search..."
+                    autocomplete="off"
+                >
+                <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
+                    <i class="bi bi-x-circle"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Search Results Container -->
+        <div class="search-results-container">
+            <div id="searchResults" class="search-results" style="max-height: 250px; overflow-y: auto;">
+                <!-- Results will be populated here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chat Interface -->
+    <div id="chatInterface" class="d-none flex-grow-1 d-flex flex-column">
+        <!-- Chat Header -->
+        <div class="chat-header p-3 border-bottom bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <div class="chat-avatar me-2">
+                        <i class="bi bi-person-circle text-primary" style="font-size: 1.5rem;"></i>
+                    </div>
+                    <div>
+                        <div class="fw-medium" id="chatWithName">Support Team</div>
+                        <div class="d-flex align-items-center">
+                            <span id="recipientRoleBadge" class="badge bg-secondary me-2">Unknown</span>
+                            <small class="text-muted" id="chatStatus">Online</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="backToSelection()" aria-label="Back to selection">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-info" onclick="showChatRules()" aria-label="Show chat rules">
+                        <i class="bi bi-info-circle"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="clearChatHistory()" aria-label="Clear chat history">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex-grow-1 d-flex flex-column">
+            <!-- Chat Messages Area -->
+            <div id="chatMessages" class="flex-grow-1 overflow-auto p-3" style="max-height: calc(100vh - 300px);">
+                <!-- Messages will be populated here -->
+            </div>
+            
+            <!-- FAQ Quick Responses -->
+            <div id="faqQuickResponses" class="d-none p-3 border-top">
+                <h6 class="mb-2">Frequently Asked Questions:</h6>
+                <div class="faq-buttons">
+                    <button class="btn btn-sm btn-outline-primary mb-2 w-100" onclick="selectFAQ('enrollment')">
+                        How do I enroll in a course?
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary mb-2 w-100" onclick="selectFAQ('payment')">
+                        What are the payment options?
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary mb-2 w-100" onclick="selectFAQ('schedule')">
+                        How do I check my class schedule?
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary mb-2 w-100" onclick="selectFAQ('certificate')">
+                        How do I get my certificate?
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary mb-2 w-100" onclick="selectFAQ('support')">
+                        How do I contact support?
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Chat Input Form -->
+            <div class="border-top p-3 bg-light">
+                <form id="chatForm" class="d-flex gap-2">
+                    <input 
+                        type="text" 
+                        id="chatInput" 
+                        class="form-control" 
+                        placeholder="Type your message..."
+                        required
+                        aria-label="Type your message"
+                    >
+                    <button 
+                        type="submit" 
+                        class="btn btn-primary d-flex align-items-center justify-content-center" 
+                        style="min-width: 45px;"
+                        aria-label="Send message">
+                        <i class="bi bi-send"></i>
+                    </button>
+                </form>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <small class="text-muted">
+                        Press Enter to send
+                    </small>
+                    <small class="text-muted" id="chatStatusInfo">
+                        Role-based chat system • <span class="text-success">Online</span>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+// Global variables already defined in layout files
+
+// Fetch current user info if myId is null
+if (typeof myId !== 'undefined' && !myId && isAuthenticated) {
+    fetchCurrentUserInfo();
+}
+
+// ─────── REAL-TIME CHAT FUNCTIONALITY ───────
+if (typeof window.chatPollingInterval === 'undefined') {
+    window.chatPollingInterval = null;
+}
+if (typeof window.lastMessageId === 'undefined') {
+    window.lastMessageId = 0;
+}
+
+// Setup notification sound (disabled for now to avoid 404 errors)
+if (typeof window.chatNotificationSound === 'undefined') {
+    // Disable audio notifications for now
+    console.log('Audio notifications disabled - no sound file available');
+    window.chatNotificationSound = null;
+}
+
+function startRealTimeChat() {
+    if (currentChatUser && currentChatUser.id) {
+        window.chatPollingInterval = setInterval(() => {
+            checkForNewMessages(currentChatUser.id);
+        }, 3000); // Check every 3 seconds
+    }
+}
+
+function stopRealTimeChat() {
+    if (window.chatPollingInterval) {
+        clearInterval(window.chatPollingInterval);
+        window.chatPollingInterval = null;
+    }
+}
+
+function checkForNewMessages(userId) {
+    if (!userId) return;
+    
+    fetch(`/api/chat/session/messages?with=${userId}&after=${window.lastMessageId}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'include'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
+            // Add new messages to chat
+            const chatMessages = document.getElementById('chatMessages');
+            data.data.forEach(msg => {
+                // Store the last message ID for subsequent polling
+                if (msg.id > window.lastMessageId) {
+                    window.lastMessageId = msg.id;
+                }
+                
+                // Don't show messages from blocked roles
+                const msgRole = msg.sender_role || msg.sender?.role || 'unknown';
+                const canReceive = isCommunicationAllowed(msgRole);
+                
+                if (canReceive.allowed) {
+                    // Add the message to the chat
+                    addMessageToChat(msg);
+                } else {
+                    console.warn('Blocked message from unauthorized role:', msgRole);
+                    
+                    // Optionally show a blocked message notification
+                    const chatMessages = document.getElementById('chatMessages');
+                    if (chatMessages && chatMessages.querySelector('.blocked-message-alert') === null) {
+                        chatMessages.insertAdjacentHTML('beforeend', `
+                            <div class="alert alert-warning text-center my-3 blocked-message-alert">
+                                <i class="bi bi-shield-exclamation me-2"></i>
+                                A message was blocked due to communication restrictions.
+                            </div>
+                        `);
+                        
+                        // Remove the alert after 5 seconds
+                        setTimeout(() => {
+                            const alertEl = chatMessages.querySelector('.blocked-message-alert');
+                            if (alertEl) {
+                                alertEl.remove();
+                            }
+                        }, 5000);
+                    }
+                }
+            });
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Play notification sound if available
+            if (window.chatNotificationSound) {
+                window.chatNotificationSound.play().catch(err => console.log('Could not play notification sound'));
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error checking for new messages:', error);
+    });
+}
+
+// ─────── NAVIGATION FUNCTIONS ───────
+function goBackToSelection() {
+    document.getElementById('availableUsers').classList.add('d-none');
+    document.getElementById('chatSelectionPanel').classList.remove('d-none');
+}
+
+function backToSelection() {
+    // Stop real-time polling
+    stopRealTimeChat();
+    
+    document.getElementById('chatInterface').classList.add('d-none');
+    document.getElementById('chatSelectionPanel').classList.remove('d-none');
+    
+    // Clear current chat user
+    currentChatUser = null;
+}
+
+function createGroupChat() {
+    alert('Group chat feature coming soon!');
+}
+
+function showChatRules() {
+    const roleRules = {
+        student: ['professor', 'admin', 'director'],
+        professor: ['student', 'admin', 'director'],
+        admin: ['student', 'professor', 'director'],
+        director: ['student', 'professor', 'admin']
+    };
+    
+    let currentRules = roleRules[userRole.toLowerCase()] || [];
+    
+    if (currentRules.length === 0) {
+        alert('Chat rules not defined for your role.');
+        return;
+    }
+    
+    const rulesText = `
+    CHAT COMMUNICATION RULES
+    
+    As a ${userRole.toUpperCase()}, you can communicate with:
+    ${currentRules.map(r => `- ${r.charAt(0).toUpperCase() + r.slice(1)}s`).join('\n')}
+    
+    These rules are enforced by the system for proper educational hierarchy.
+    `;
+    
+    alert(rulesText);
+}
+
+function selectFAQ(type) {
+    // FAQ responses mapping (should match admin FAQ management)
+    const faqResponses = {
+        enrollment: "To enroll in a course, go to your dashboard, select 'Available Courses', choose your desired course, and click 'Enroll Now'. Complete the payment process to finalize your enrollment.",
+        payment: "We accept credit/debit cards, PayPal, bank transfers, and installment plans for select courses. All payments are processed securely.",
+        schedule: "Login to your dashboard, go to 'My Courses', and click the 'Schedule' tab. You can also export your schedule to your calendar.",
+        certificate: "Complete all course modules, pass assessments, maintain 80% attendance, and complete the final project. Certificates are generated automatically within 5-7 business days.",
+        support: "Contact support via live chat, email (support@example.edu), phone (+1-555-123-4567), or submit a ticket through the support portal."
+    };
+    const chatMessages = document.getElementById('chatMessages');
+    const response = faqResponses[type];
+    
+    if (response) {
+        // Format current time
+        const now = new Date();
+        const formattedTime = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        const messageHtml = `
+            <article role="article" class="message-card other-message" aria-label="FAQ Bot response">
+                <div class="message bot">
+                    <div class="message-header d-flex align-items-center mb-2">
+                        <div class="avatar-circle bg-warning me-2" aria-hidden="true">
+                            <i class="bi bi-question-circle"></i>
+                        </div>
+                        <div>
+                            <div class="message-sender fw-bold">
+                                FAQ Bot <span class="badge bg-warning text-dark ms-1">System</span>
+                            </div>
+                            <div class="message-time text-muted">
+                                Today at ${formattedTime}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-text">${response.replace(/\n/g, '<br>')}</div>
+                    </div>
+                </div>
+            </article>
+        `;
+        
+        chatMessages.insertAdjacentHTML('beforeend', messageHtml);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+}
+</script>
+
+<!-- Include Real-time Chat Component -->
+<style>
+.online-status {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: 5px;
+}
+
+.online-status.online {
+    background-color: #28a745;
+}
+
+.online-status.offline {
+    background-color: #6c757d;
+}
+
+.chat-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+</body>
+</html>
