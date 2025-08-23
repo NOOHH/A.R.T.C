@@ -1,41 +1,15 @@
-@extends('admin.admin-dashboard.admin-dashboard-layout')
 
-@section('title', 'Directors Management')
 
-@section('content')
+<?php $__env->startSection('title', 'Directors Management'); ?>
+
+<?php $__env->startSection('content'); ?>
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="bi bi-person-badge"></i> Directors Management</h2>
                 <div class="d-flex gap-2">
-                    @php
-                        // Detect if we're in tenant preview mode
-                        $currentUrl = request()->fullUrl();
-                        $segments = explode('/', parse_url($currentUrl, PHP_URL_PATH));
-                        $tenantSlug = null;
-                        $basePreviewUrl = '';
-                        $urlParams = '';
-
-                        // Check for tenant preview URL pattern
-                        if (count($segments) >= 4 && $segments[1] === 't' && $segments[2] === 'draft') {
-                            $tenantSlug = $segments[3];
-                            $basePreviewUrl = "/t/draft/{$tenantSlug}";
-                            
-                            // Get URL parameters for tenant preview
-                            $queryParams = request()->query();
-                            if (!empty($queryParams)) {
-                                $urlParams = '?' . http_build_query($queryParams);
-                            }
-                        }
-
-                        // Construct tenant-aware URL for archived directors
-                        $archivedUrl = $tenantSlug 
-                            ? $basePreviewUrl . "/admin/directors/archived" . $urlParams
-                            : route('admin.directors.archived');
-                    @endphp
-                    
-                    <a href="{{ $archivedUrl }}" class="btn btn-outline-secondary">
+                    <a href="<?php echo e(route('admin.directors.archived')); ?>" class="btn btn-outline-secondary">
                         <i class="bi bi-archive"></i> View Archived
                     </a>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDirectorModal">
@@ -44,23 +18,25 @@
                 </div>
             </div>
 
-            @if(session('success'))
+            <?php if(session('success')): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            @endif
+                    <?php echo e(session('success')); ?>
 
-            @if(session('error'))
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    {{ session('error') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-            @endif
+            <?php endif; ?>
+
+            <?php if(session('error')): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <?php echo e(session('error')); ?>
+
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
 
             <div class="card shadow">
                 <div class="card-body">
-                    @if($directors->count() > 0)
+                    <?php if($directors->count() > 0): ?>
                         <div class="table-responsive">
                             <table class="table table-hover">
                                 <thead class="table-dark">
@@ -73,17 +49,17 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($directors as $director)
+                                    <?php $__currentLoopData = $directors; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $director): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <tr>
                                             <td>
-                                                <strong>{{ $director->full_name }}</strong>
+                                                <strong><?php echo e($director->full_name); ?></strong>
                                             </td>
-                                            <td>{{ $director->directors_email }}</td>
+                                            <td><?php echo e($director->directors_email); ?></td>
                                             <td>
-                                                @if($director->has_all_program_access)
+                                                <?php if($director->has_all_program_access): ?>
                                                     <span class="badge bg-primary">All Programs</span>
-                                                @else
-                                                    @php
+                                                <?php else: ?>
+                                                    <?php
                                                         // Get programs from both relationships
                                                         $allAssignedPrograms = collect();
                                                         if($director->programs->count() > 0) {
@@ -93,33 +69,33 @@
                                                             $allAssignedPrograms = $allAssignedPrograms->merge($director->assignedPrograms);
                                                         }
                                                         $allAssignedPrograms = $allAssignedPrograms->unique('program_id');
-                                                    @endphp
+                                                    ?>
                                                     
-                                                    @if($allAssignedPrograms->count() > 0)
-                                                        @foreach($allAssignedPrograms as $program)
-                                                            <span class="badge bg-info me-1 mb-1">{{ $program->program_name }}</span>
-                                                        @endforeach
-                                                    @else
+                                                    <?php if($allAssignedPrograms->count() > 0): ?>
+                                                        <?php $__currentLoopData = $allAssignedPrograms; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $program): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                            <span class="badge bg-info me-1 mb-1"><?php echo e($program->program_name); ?></span>
+                                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                                    <?php else: ?>
                                                         <span class="text-muted">No programs assigned</span>
-                                                    @endif
-                                                @endif
+                                                    <?php endif; ?>
+                                                <?php endif; ?>
                                             </td>
-                                            <td>{{ $director->created_at->format('M d, Y') }}</td>
+                                            <td><?php echo e($director->created_at->format('M d, Y')); ?></td>
                                             <td class="text-center">
                                                 <div class="btn-group" role="group">
-                                                    <a href="{{ route('admin.directors.show', $director) }}" 
+                                                    <a href="<?php echo e(route('admin.directors.show', $director)); ?>" 
                                                        class="btn btn-sm btn-outline-info" title="View">
                                                         <i class="bi bi-eye"></i>
                                                     </a>
-                                                    <a href="{{ route('admin.directors.edit', $director) }}" 
+                                                    <a href="<?php echo e(route('admin.directors.edit', $director)); ?>" 
                                                        class="btn btn-sm btn-outline-warning" title="Edit">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
-                                                    <form method="POST" action="{{ route('admin.directors.archive', $director) }}" 
+                                                    <form method="POST" action="<?php echo e(route('admin.directors.archive', $director)); ?>" 
                                                           style="display: inline;" 
-                                                          onsubmit="return confirm('Are you sure you want to archive {{ $director->full_name }}?');">
-                                                        @csrf
-                                                        @method('PATCH')
+                                                          onsubmit="return confirm('Are you sure you want to archive <?php echo e($director->full_name); ?>?');">
+                                                        <?php echo csrf_field(); ?>
+                                                        <?php echo method_field('PATCH'); ?>
                                                         <button type="submit" class="btn btn-sm btn-outline-secondary" title="Archive">
                                                             <i class="bi bi-archive"></i>
                                                         </button>
@@ -127,11 +103,11 @@
                                                 </div>
                                             </td>
                                         </tr>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>
                             </table>
                         </div>
-                    @else
+                    <?php else: ?>
                         <div class="text-center py-5">
                             <i class="bi bi-person-badge fs-1 text-muted"></i>
                             <h4 class="text-muted mt-3">No Directors Found</h4>
@@ -140,7 +116,7 @@
                                 <i class="bi bi-plus-circle"></i> Add Director
                             </button>
                         </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -157,29 +133,57 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="POST" action="{{ route('admin.directors.store') }}">
-                @csrf
+            <form method="POST" action="<?php echo e(route('admin.directors.store')); ?>">
+                <?php echo csrf_field(); ?>
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="directors_first_name" class="form-label">First Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control @error('directors_first_name') is-invalid @enderror" 
-                                       id="directors_first_name" name="directors_first_name" value="{{ old('directors_first_name') }}" required>
-                                @error('directors_first_name')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <input type="text" class="form-control <?php $__errorArgs = ['directors_first_name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
+                                       id="directors_first_name" name="directors_first_name" value="<?php echo e(old('directors_first_name')); ?>" required>
+                                <?php $__errorArgs = ['directors_first_name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                    <div class="invalid-feedback"><?php echo e($message); ?></div>
+                                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                             </div>
                         </div>
                         
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="directors_last_name" class="form-label">Last Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control @error('directors_last_name') is-invalid @enderror" 
-                                       id="directors_last_name" name="directors_last_name" value="{{ old('directors_last_name') }}" required>
-                                @error('directors_last_name')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <input type="text" class="form-control <?php $__errorArgs = ['directors_last_name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
+                                       id="directors_last_name" name="directors_last_name" value="<?php echo e(old('directors_last_name')); ?>" required>
+                                <?php $__errorArgs = ['directors_last_name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                    <div class="invalid-feedback"><?php echo e($message); ?></div>
+                                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                             </div>
                         </div>
                     </div>
@@ -188,22 +192,50 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="directors_email" class="form-label">Email <span class="text-danger">*</span></label>
-                                <input type="email" class="form-control @error('directors_email') is-invalid @enderror" 
-                                       id="directors_email" name="directors_email" value="{{ old('directors_email') }}" required>
-                                @error('directors_email')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <input type="email" class="form-control <?php $__errorArgs = ['directors_email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
+                                       id="directors_email" name="directors_email" value="<?php echo e(old('directors_email')); ?>" required>
+                                <?php $__errorArgs = ['directors_email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                    <div class="invalid-feedback"><?php echo e($message); ?></div>
+                                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                             </div>
                         </div>
                         
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="directors_password" class="form-label">Password <span class="text-danger">*</span></label>
-                                <input type="password" class="form-control @error('directors_password') is-invalid @enderror" 
+                                <input type="password" class="form-control <?php $__errorArgs = ['directors_password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
                                        id="directors_password" name="directors_password" required>
-                                @error('directors_password')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <?php $__errorArgs = ['directors_password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                    <div class="invalid-feedback"><?php echo e($message); ?></div>
+                                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                             </div>
                         </div>
                     </div>
@@ -220,19 +252,27 @@
                                         </label>
                                     </div>
                                     <hr class="my-2">
-                                    @foreach($programs as $program)
+                                    <?php $__currentLoopData = $programs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $program): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <div class="form-check">
-                                            <input class="form-check-input program-checkbox" type="checkbox" value="{{ $program->program_id }}" 
-                                                   id="program_{{ $program->program_id }}" name="program_access[]">
-                                            <label class="form-check-label" for="program_{{ $program->program_id }}">
-                                                {{ $program->program_name }}
+                                            <input class="form-check-input program-checkbox" type="checkbox" value="<?php echo e($program->program_id); ?>" 
+                                                   id="program_<?php echo e($program->program_id); ?>" name="program_access[]">
+                                            <label class="form-check-label" for="program_<?php echo e($program->program_id); ?>">
+                                                <?php echo e($program->program_name); ?>
+
                                             </label>
                                         </div>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </div>
-                                @error('program_access')
-                                    <div class="text-danger mt-1">{{ $message }}</div>
-                                @enderror
+                                <?php $__errorArgs = ['program_access'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                    <div class="text-danger mt-1"><?php echo e($message); ?></div>
+                                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                 <div class="form-text">
                                     Select "All Programs" for full access, or choose specific programs. You can select multiple programs.
                                 </div>
@@ -250,21 +290,21 @@
         </div>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-@endpush
+<?php $__env->stopPush(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 // Reopen modal with validation errors
-@if($errors->any())
+<?php if($errors->any()): ?>
     document.addEventListener('DOMContentLoaded', function() {
         var addDirectorModal = new bootstrap.Modal(document.getElementById('addDirectorModal'));
         addDirectorModal.show();
     });
-@endif
+<?php endif; ?>
 
 // Clear form when modal is closed
 const addDirectorModal = document.getElementById('addDirectorModal');
@@ -336,3 +376,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<?php echo $__env->make('admin.admin-dashboard.admin-dashboard-layout', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/admin/directors/director.blade.php ENDPATH**/ ?>

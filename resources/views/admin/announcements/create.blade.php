@@ -2,6 +2,20 @@
 
 @section('title', 'Create Announcement')
 
+@php
+    // Detect tenant mode for preview
+    $tenantSlug = request()->route('tenant') ?? null;
+    $urlParams = '';
+    
+    if ($tenantSlug) {
+        // Build query parameters for tenant preview
+        $queryParams = request()->query();
+        if (!empty($queryParams)) {
+            $urlParams = '?' . http_build_query($queryParams);
+        }
+    }
+@endphp
+
 @push('styles')
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 <style>
@@ -105,13 +119,23 @@
                         <a href="{{ route('admin.dashboard') }}">Dashboard</a>
                     </li>
                     <li class="breadcrumb-item">
-                        <a href="{{ route('admin.announcements.index') }}">Announcements</a>
+                        @php
+                            $indexUrl = $tenantSlug 
+                                ? route('tenant.draft.admin.announcements', ['tenant' => $tenantSlug]) . $urlParams
+                                : route('admin.announcements.index');
+                        @endphp
+                        <a href="{{ $indexUrl }}">Announcements</a>
                     </li>
                     <li class="breadcrumb-item active">Create</li>
                 </ol>
             </nav>
         </div>
-        <a href="{{ route('admin.announcements.index') }}" class="btn btn-secondary">
+        @php
+            $backUrl = $tenantSlug 
+                ? route('tenant.draft.admin.announcements', ['tenant' => $tenantSlug]) . $urlParams
+                : route('admin.announcements.index');
+        @endphp
+        <a href="{{ $backUrl }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left me-2"></i>Back to List
         </a>
     </div>
@@ -368,7 +392,12 @@
                     <button type="submit" class="btn btn-primary btn-lg">
                         <i class="bi bi-check-circle me-2"></i>Create Announcement
                     </button>
-                    <a href="{{ route('admin.announcements.index') }}" class="btn btn-secondary">
+                    @php
+                        $cancelUrl = $tenantSlug 
+                            ? route('tenant.draft.admin.announcements', ['tenant' => $tenantSlug]) . $urlParams
+                            : route('admin.announcements.index');
+                    @endphp
+                    <a href="{{ $cancelUrl }}" class="btn btn-secondary">
                         <i class="bi bi-x-circle me-2"></i>Cancel
                     </a>
                 </div>

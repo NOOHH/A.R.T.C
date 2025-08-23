@@ -932,6 +932,10 @@ Route::prefix('t')->group(function() {
         return app(\App\Http\Controllers\AdminDirectorController::class)->previewIndex($tenant);
     })->name('tenant.draft.admin.directors');
 
+    Route::get('/draft/{tenant}/admin/directors/archived', function($tenant) {
+        return app(\App\Http\Controllers\AdminDirectorController::class)->previewArchived($tenant);
+    })->name('tenant.draft.admin.directors.archived');
+
     Route::get('/draft/{tenant}/admin/quiz-generator', function($tenant) {
         return app(\App\Http\Controllers\Admin\QuizGeneratorController::class)->previewIndex($tenant);
     })->name('tenant.draft.admin.quiz-generator');
@@ -1022,75 +1026,11 @@ Route::prefix('t')->group(function() {
     // API endpoint for courses by module (tenant preview)
     Route::get('/draft/{tenant}/admin/modules/{moduleId}/courses', [AdminController::class, 'previewCoursesByModule'])->name('tenant.draft.admin.modules.courses');
 
-    Route::get('/draft/{tenant}/admin/announcements/create', function($tenant) {
-        try {
-            session(['preview_tenant' => $tenant, 'user_name' => 'Preview Admin', 'user_role' => 'admin', 'logged_in' => true, 'preview_mode' => true]);
-            
-            $programs = collect([
-                (object)['program_id' => 1, 'program_name' => 'Nursing Review'],
-                (object)['program_id' => 2, 'program_name' => 'Medical Technology Review']
-            ]);
-            
-            $batches = collect([
-                (object)['batch_id' => 1, 'batch_name' => 'Nursing Batch 2025-A'],
-                (object)['batch_id' => 2, 'batch_name' => 'MedTech Batch 2025-A']
-            ]);
-            
-            return view('admin.admin-announcements.create', ['programs' => $programs, 'batches' => $batches, 'isPreview' => true])->render();
-        } catch (\Exception $e) {
-            return response('<h1>Create Announcement Preview - Tenant: '.$tenant.'</h1><p>✅ Route working correctly!</p><p>Preview form loaded successfully.</p>');
-        }
-    })->name('tenant.draft.admin.announcements.create');
+    Route::get('/draft/{tenant}/admin/announcements/create', [App\Http\Controllers\Admin\AnnouncementController::class, 'previewCreate'])->name('tenant.draft.admin.announcements.create');
 
-    Route::get('/draft/{tenant}/admin/announcements/{id}', function($tenant, $id) {
-        try {
-            session(['preview_tenant' => $tenant, 'user_name' => 'Preview Admin', 'user_role' => 'admin', 'logged_in' => true, 'preview_mode' => true]);
-            
-            $announcement = (object)[
-                'id' => $id,
-                'title' => 'Sample Announcement',
-                'content' => 'This is a preview announcement for demonstration purposes.',
-                'target_users' => ['students', 'professors'],
-                'target_programs' => [1, 2],
-                'is_active' => true,
-                'created_at' => now()->subDays(3)
-            ];
-            
-            return view('admin.admin-announcements.show', ['announcement' => $announcement, 'isPreview' => true])->render();
-        } catch (\Exception $e) {
-            return response('<h1>View Announcement Preview - Tenant: '.$tenant.'</h1><p>✅ Route working correctly!</p><p>Announcement ID: '.$id.'</p>');
-        }
-    })->name('tenant.draft.admin.announcements.show');
+    Route::get('/draft/{tenant}/admin/announcements/{id}', [App\Http\Controllers\Admin\AnnouncementController::class, 'previewShow'])->name('tenant.draft.admin.announcements.show');
 
-    Route::get('/draft/{tenant}/admin/announcements/{id}/edit', function($tenant, $id) {
-        try {
-            session(['preview_tenant' => $tenant, 'user_name' => 'Preview Admin', 'user_role' => 'admin', 'logged_in' => true, 'preview_mode' => true]);
-            
-            $announcement = (object)[
-                'id' => $id,
-                'title' => 'Sample Announcement',
-                'content' => 'This is a preview announcement for demonstration purposes.',
-                'target_users' => ['students', 'professors'],
-                'target_programs' => [1, 2],
-                'is_active' => true,
-                'created_at' => now()->subDays(3)
-            ];
-            
-            $programs = collect([
-                (object)['program_id' => 1, 'program_name' => 'Nursing Review'],
-                (object)['program_id' => 2, 'program_name' => 'Medical Technology Review']
-            ]);
-            
-            $batches = collect([
-                (object)['batch_id' => 1, 'batch_name' => 'Nursing Batch 2025-A'],
-                (object)['batch_id' => 2, 'batch_name' => 'MedTech Batch 2025-A']
-            ]);
-            
-            return view('admin.admin-announcements.edit', ['announcement' => $announcement, 'programs' => $programs, 'batches' => $batches, 'isPreview' => true])->render();
-        } catch (\Exception $e) {
-            return response('<h1>Edit Announcement Preview - Tenant: '.$tenant.'</h1><p>✅ Route working correctly!</p><p>Announcement ID: '.$id.'</p>');
-        }
-    })->name('tenant.draft.admin.announcements.edit');
+    Route::get('/draft/{tenant}/admin/announcements/{id}/edit', [App\Http\Controllers\Admin\AnnouncementController::class, 'previewEdit'])->name('tenant.draft.admin.announcements.edit');
 });
 
 // Legacy root login (fallback) – optionally redirect if tenant query provided

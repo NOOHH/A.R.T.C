@@ -103,7 +103,12 @@ class AnnouncementController extends Controller
 
     public function show($id)
     {
-        $announcement = Announcement::with(['program'])->findOrFail($id);
+        try {
+            $announcement = Announcement::with(['program'])->findOrFail($id);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->route('admin.announcements.index')
+                ->with('error', "Announcement with ID {$id} not found.");
+        }
         
         // Get target audience stats
         $stats = $this->getAnnouncementStats($announcement);
@@ -113,7 +118,13 @@ class AnnouncementController extends Controller
 
     public function edit($id)
     {
-        $announcement = Announcement::findOrFail($id);
+        try {
+            $announcement = Announcement::findOrFail($id);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->route('admin.announcements.index')
+                ->with('error', "Announcement with ID {$id} not found.");
+        }
+        
         // Get all programs and batches for targeting, regardless of status
         $programs = Program::orderBy('program_name')->get();
         $batches = StudentBatch::orderBy('batch_name')->get();
@@ -143,7 +154,13 @@ class AnnouncementController extends Controller
             'is_published' => 'boolean'
         ]);
 
-        $announcement = Announcement::findOrFail($id);
+        try {
+            $announcement = Announcement::findOrFail($id);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->route('admin.announcements.index')
+                ->with('error', "Announcement with ID {$id} not found.");
+        }
+
         $announcement->title = $request->title;
         $announcement->content = $request->content;
         $announcement->description = $request->description;
@@ -182,37 +199,56 @@ class AnnouncementController extends Controller
 
     public function destroy($id)
     {
-        $announcement = Announcement::findOrFail($id);
-        $announcement->delete();
+        try {
+            $announcement = Announcement::findOrFail($id);
+            $announcement->delete();
 
-        return redirect()->route('admin.announcements.index')
-            ->with('success', 'Announcement deleted successfully!');
+            return redirect()->route('admin.announcements.index')
+                ->with('success', 'Announcement deleted successfully!');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->route('admin.announcements.index')
+                ->with('error', "Announcement with ID {$id} not found.");
+        }
     }
 
     public function toggleStatus($id)
     {
-        $announcement = Announcement::findOrFail($id);
-        $announcement->is_active = !$announcement->is_active;
-        $announcement->save();
+        try {
+            $announcement = Announcement::findOrFail($id);
+            $announcement->is_active = !$announcement->is_active;
+            $announcement->save();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Announcement status updated successfully!',
-            'is_active' => $announcement->is_active
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Announcement status updated successfully!',
+                'is_active' => $announcement->is_active
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => "Announcement with ID {$id} not found."
+            ], 404);
+        }
     }
 
     public function togglePublished($id)
     {
-        $announcement = Announcement::findOrFail($id);
-        $announcement->is_published = !$announcement->is_published;
-        $announcement->save();
+        try {
+            $announcement = Announcement::findOrFail($id);
+            $announcement->is_published = !$announcement->is_published;
+            $announcement->save();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Announcement publish status updated successfully!',
-            'is_published' => $announcement->is_published
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Announcement publish status updated successfully!',
+                'is_published' => $announcement->is_published
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => "Announcement with ID {$id} not found."
+            ], 404);
+        }
     }
 
     private function getAnnouncementStats($announcement)
@@ -440,5 +476,205 @@ class AnnouncementController extends Controller
         };
         
         return new $mockAnnouncement($data);
+    }
+
+    /**
+     * Preview show method for tenant announcement viewing
+     */
+    public function previewShow($tenant, $id)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Create mock announcement based on ID
+            $announcement = $this->createMockAnnouncement([
+                'announcement_id' => $id,
+                'title' => 'Sample Announcement #' . $id,
+                'content' => 'This is a detailed view of announcement #' . $id . '. In a real scenario, this would show the actual announcement content with all formatting, attachments, and metadata.',
+                'description' => 'Preview description for announcement #' . $id,
+                'type' => 'general',
+                'target_scope' => 'all',
+                'is_published' => true,
+                'admin_id' => 1,
+                'professor_id' => null,
+                'created_at' => now()->subDays(rand(1, 10)),
+                'updated_at' => now()->subDays(rand(1, 5)),
+            ]);
+
+            // Create mock stats for the template
+            $stats = [
+                'target_students' => 125,
+                'target_professors' => 15,
+                'target_directors' => 3,
+                'target_programs' => ['Computer Science', 'Business Administration'],
+                'target_batches' => ['Batch 2024-A', 'Batch 2024-B']
+            ];
+
+            $html = view('admin.announcements.show', [
+                'announcement' => $announcement,
+                'stats' => $stats,
+                'isPreview' => true
+            ])->render();
+
+            return response($html);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Admin announcement show preview error: ' . $e->getMessage());
+            // Fallback to simple HTML on error
+            return response('
+                <html>
+                    <head><title>View Announcement Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>View Announcement Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>Announcement ID: '.$id.'</p>
+                        <a href="/t/draft/'.$tenant.'/admin/announcements">← Back to Announcements</a>
+                    </body>
+                </html>
+            ', 200);
+        } finally {
+            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
+        }
+    }
+
+    /**
+     * Preview edit method for tenant announcement editing
+     */
+    public function previewEdit($tenant, $id)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Create mock announcement for editing
+            $announcement = $this->createMockAnnouncement([
+                'announcement_id' => $id,
+                'title' => 'Sample Announcement #' . $id,
+                'content' => 'This is the editable content of announcement #' . $id . '. In edit mode, you would be able to modify all aspects of this announcement.',
+                'description' => 'Preview description for announcement #' . $id,
+                'type' => 'general',
+                'target_scope' => 'all',
+                'is_published' => true,
+                'admin_id' => 1,
+                'professor_id' => null,
+                'created_at' => now()->subDays(rand(1, 10)),
+                'updated_at' => now()->subDays(rand(1, 5)),
+            ]);
+
+            // Mock programs and batches for the form
+            $programs = collect([
+                (object)['program_id' => 1, 'program_name' => 'Computer Science'],
+                (object)['program_id' => 2, 'program_name' => 'Business Administration'],
+                (object)['program_id' => 3, 'program_name' => 'Engineering'],
+            ]);
+
+            $batches = collect([
+                (object)['batch_id' => 1, 'batch_name' => 'Batch 2024-A'],
+                (object)['batch_id' => 2, 'batch_name' => 'Batch 2024-B'],
+                (object)['batch_id' => 3, 'batch_name' => 'Batch 2025-A'],
+            ]);
+
+            $html = view('admin.announcements.edit', [
+                'announcement' => $announcement,
+                'programs' => $programs,
+                'batches' => $batches,
+                'isPreview' => true
+            ])->render();
+
+            return response($html);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Admin announcement edit preview error: ' . $e->getMessage());
+            // Fallback to simple HTML on error
+            return response('
+                <html>
+                    <head><title>Edit Announcement Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>Edit Announcement Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>Announcement ID: '.$id.'</p>
+                        <a href="/t/draft/'.$tenant.'/admin/announcements">← Back to Announcements</a>
+                    </body>
+                </html>
+            ', 200);
+        } finally {
+            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
+        }
+    }
+
+    /**
+     * Preview create method for tenant announcement creation
+     */
+    public function previewCreate($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Mock programs and batches for the form
+            $programs = collect([
+                (object)['program_id' => 1, 'program_name' => 'Computer Science'],
+                (object)['program_id' => 2, 'program_name' => 'Business Administration'],
+                (object)['program_id' => 3, 'program_name' => 'Engineering'],
+            ]);
+
+            $batches = collect([
+                (object)['batch_id' => 1, 'batch_name' => 'Batch 2024-A'],
+                (object)['batch_id' => 2, 'batch_name' => 'Batch 2024-B'],
+                (object)['batch_id' => 3, 'batch_name' => 'Batch 2025-A'],
+            ]);
+
+            $html = view('admin.announcements.create', [
+                'programs' => $programs,
+                'batches' => $batches,
+                'isPreview' => true
+            ])->render();
+
+            return response($html);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Admin announcement create preview error: ' . $e->getMessage());
+            // Fallback to simple HTML on error
+            return response('
+                <html>
+                    <head><title>Create Announcement Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>Create Announcement Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <a href="/t/draft/'.$tenant.'/admin/announcements">← Back to Announcements</a>
+                    </body>
+                </html>
+            ', 200);
+        } finally {
+            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
+        }
     }
 }

@@ -9,10 +9,40 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="bi bi-person-badge"></i> Directors Management</h2>
                 <div class="d-flex gap-2">
-                    <a href="{{ route('admin.directors.archived') }}" class="btn btn-outline-secondary">
+                    @php
+                        // Detect if we're in tenant preview mode
+                        $currentUrl = request()->fullUrl();
+                        $segments = explode('/', parse_url($currentUrl, PHP_URL_PATH));
+                        $tenantSlug = null;
+                        $basePreviewUrl = '';
+                        $urlParams = '';
+
+                        // Check for tenant preview URL pattern
+                        if (count($segments) >= 4 && $segments[1] === 't' && $segments[2] === 'draft') {
+                            $tenantSlug = $segments[3];
+                            $basePreviewUrl = "/t/draft/{$tenantSlug}";
+                            
+                            // Get URL parameters for tenant preview
+                            $queryParams = request()->query();
+                            if (!empty($queryParams)) {
+                                $urlParams = '?' . http_build_query($queryParams);
+                            }
+                        }
+
+                        // Construct tenant-aware URL for archived directors
+                        $archivedUrl = $tenantSlug 
+                            ? $basePreviewUrl . "/admin/directors/archived" . $urlParams
+                            : route('admin.directors.archived');
+                        
+                        $createUrl = $tenantSlug 
+                            ? $basePreviewUrl . "/admin/directors/create" . $urlParams
+                            : route('admin.directors.create');
+                    @endphp
+                    
+                    <a href="{{ $archivedUrl }}" class="btn btn-outline-secondary">
                         <i class="bi bi-archive"></i> View Archived
                     </a>
-                    <a href="{{ route('admin.directors.create') }}" class="btn btn-primary">
+                    <a href="{{ $createUrl }}" class="btn btn-primary">
                         <i class="bi bi-plus-circle"></i> Add Director
                     </a>
                 </div>

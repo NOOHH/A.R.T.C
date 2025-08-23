@@ -356,4 +356,80 @@ class AdminDirectorController extends Controller
             session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
         }
     }
+
+    /**
+     * Preview mode for tenant preview system - Archived Directors
+     */
+    public function previewArchived($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'user_type' => 'admin', // Add for sidebar compatibility
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Mock archived directors data
+            $directorsCollection = collect([
+                $this->createMockObject([
+                    'director_id' => 10,
+                    'directors_first_name' => 'Robert',
+                    'directors_last_name' => 'Martinez',
+                    'directors_email' => 'robert.martinez@archived.com',
+                    'email' => 'robert.martinez@archived.com',
+                    'directors_name' => 'Robert Martinez',
+                    'full_name' => 'Robert Martinez',
+                    'phone_number' => '+1-555-9876',
+                    'directors_archived' => true,
+                    'created_at' => '2024-01-15',
+                    'archived_at' => '2024-08-01',
+                    'archived_reason' => 'Position ended'
+                ]),
+                $this->createMockObject([
+                    'director_id' => 11,
+                    'directors_first_name' => 'Linda',
+                    'directors_last_name' => 'Chen',
+                    'directors_email' => 'linda.chen@archived.com',
+                    'email' => 'linda.chen@archived.com',
+                    'directors_name' => 'Linda Chen',
+                    'full_name' => 'Linda Chen',
+                    'phone_number' => '+1-555-5432',
+                    'directors_archived' => true,
+                    'created_at' => '2023-12-10',
+                    'archived_at' => '2024-07-15',
+                    'archived_reason' => 'Transferred to another department'
+                ])
+            ]);
+
+            $directors = $this->addPaginationMethods($directorsCollection, 50);
+
+            $html = view('admin.directors.archived', [
+                'directors' => $directors,
+                'isPreview' => true
+            ])->render();
+
+            return response($html);
+
+        } catch (\Exception $e) {
+            return response('<html>
+                    <head><title>Preview Error</title></head>
+                    <body>
+                        <h1>Preview Error</h1>
+                        <p>Error loading archived directors preview: ' . htmlspecialchars($e->getMessage()) . '</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200);
+        } finally {
+            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
+        }
+    }
 }

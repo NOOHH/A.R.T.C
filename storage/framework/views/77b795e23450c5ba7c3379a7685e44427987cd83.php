@@ -1,8 +1,8 @@
-@extends('admin.admin-dashboard.admin-dashboard-layout')
 
-@section('title', 'Announcement Management')
 
-@php
+<?php $__env->startSection('title', 'Announcement Management'); ?>
+
+<?php
     // Detect tenant mode for preview
     $tenantSlug = request()->route('tenant') ?? null;
     $urlParams = '';
@@ -14,9 +14,9 @@
             $urlParams = '?' . http_build_query($queryParams);
         }
     }
-@endphp
+?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 <style>
 .announcement-card {
@@ -68,9 +68,9 @@
     object-fit: cover;
 }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="container-fluid px-4">
     <!-- Header Section -->
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -80,23 +80,24 @@
             </h1>
             <p class="text-muted">Create and manage system announcements</p>
         </div>
-        @php
+        <?php
             $createUrl = $tenantSlug 
                 ? route('tenant.draft.admin.announcements.create', ['tenant' => $tenantSlug]) . $urlParams
                 : route('admin.announcements.create');
-        @endphp
-        <a href="{{ $createUrl }}" class="btn btn-primary">
+        ?>
+        <a href="<?php echo e($createUrl); ?>" class="btn btn-primary">
             <i class="bi bi-plus-circle me-2"></i>Create Announcement
         </a>
     </div>
 
     <!-- Success Message -->
-    @if(session('success'))
+    <?php if(session('success')): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+            <i class="bi bi-check-circle me-2"></i><?php echo e(session('success')); ?>
+
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    @endif
+    <?php endif; ?>
 
     <!-- Statistics Cards -->
     <div class="row mb-4">
@@ -108,7 +109,7 @@
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                 Total Announcements
                             </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $announcements->total() }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo e($announcements->total()); ?></div>
                         </div>
                         <div class="col-auto">
                             <i class="bi bi-megaphone fa-2x text-gray-300"></i>
@@ -127,7 +128,8 @@
                                 Urgent
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ $announcements->where('type', 'urgent')->count() }}
+                                <?php echo e($announcements->where('type', 'urgent')->count()); ?>
+
                             </div>
                         </div>
                         <div class="col-auto">
@@ -147,7 +149,8 @@
                                 Active
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ $announcements->where('is_active', true)->count() }}
+                                <?php echo e($announcements->where('is_active', true)->count()); ?>
+
                             </div>
                         </div>
                         <div class="col-auto">
@@ -167,7 +170,7 @@
             </h6>
         </div>
         <div class="card-body">
-            @if($announcements->count() > 0)
+            <?php if($announcements->count() > 0): ?>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead class="table-light">
@@ -181,11 +184,11 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($announcements as $announcement)
+                            <?php $__currentLoopData = $announcements; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $announcement): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <tr>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            @php
+                                            <?php
                                                 $currentUserId = auth('admin')->id();
                                                 $creator = $announcement->getCreator();
                                                 $creatorName = $announcement->getCreatorName();
@@ -195,39 +198,40 @@
                                                 if ($announcement->admin_id && $announcement->admin_id == $currentUserId) {
                                                     $isCurrentUser = true;
                                                 }
-                                            @endphp
+                                            ?>
                                             
                                             <div class="me-2">
-                                                @if($creatorAvatar && file_exists(public_path($creatorAvatar)))
-                                                    <img src="{{ asset($creatorAvatar) }}" alt="Profile" class="creator-avatar rounded-circle">
-                                                @else
-                                                    <img src="{{ asset('images/default-avatar.svg') }}" alt="Default Profile" class="creator-avatar rounded-circle">
-                                                @endif
+                                                <?php if($creatorAvatar && file_exists(public_path($creatorAvatar))): ?>
+                                                    <img src="<?php echo e(asset($creatorAvatar)); ?>" alt="Profile" class="creator-avatar rounded-circle">
+                                                <?php else: ?>
+                                                    <img src="<?php echo e(asset('images/default-avatar.svg')); ?>" alt="Default Profile" class="creator-avatar rounded-circle">
+                                                <?php endif; ?>
                                             </div>
                                             <div>
-                                                <small class="fw-bold">{{ $isCurrentUser ? 'YOU' : $creatorName }}</small>
+                                                <small class="fw-bold"><?php echo e($isCurrentUser ? 'YOU' : $creatorName); ?></small>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="d-flex flex-column">
-                                            <strong>{{ $announcement->title }}</strong>
-                                            @if($announcement->description)
-                                                <small class="text-muted">{{ Str::limit($announcement->description, 60) }}</small>
-                                            @endif
+                                            <strong><?php echo e($announcement->title); ?></strong>
+                                            <?php if($announcement->description): ?>
+                                                <small class="text-muted"><?php echo e(Str::limit($announcement->description, 60)); ?></small>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge announcement-type-badge announcement-type-{{ $announcement->type }}">
-                                            {{ ucfirst($announcement->type) }}
+                                        <span class="badge announcement-type-badge announcement-type-<?php echo e($announcement->type); ?>">
+                                            <?php echo e(ucfirst($announcement->type)); ?>
+
                                         </span>
                                     </td>
                                     <td>
                                         <div class="target-info">
-                                            @if($announcement->target_scope === 'all')
+                                            <?php if($announcement->target_scope === 'all'): ?>
                                                 <span class="badge bg-secondary">All Users</span>
-                                            @else
-                                                @php
+                                            <?php else: ?>
+                                                <?php
                                                     // Handle both array (new format) and JSON string (old format)
                                                     $targetUsers = [];
                                                     if (is_array($announcement->target_users)) {
@@ -242,27 +246,27 @@
                                                     } elseif (is_string($announcement->target_programs)) {
                                                         $targetPrograms = json_decode($announcement->target_programs, true) ?: [];
                                                     }
-                                                @endphp
-                                                @if($targetUsers)
-                                                    @foreach($targetUsers as $user)
-                                                        <span class="badge bg-info me-1">{{ ucfirst($user) }}</span>
-                                                    @endforeach
-                                                @endif
-                                                @if($targetPrograms)
-                                                    <br><small class="text-muted">{{ count($targetPrograms) }} program(s)</small>
-                                                @endif
-                                            @endif
+                                                ?>
+                                                <?php if($targetUsers): ?>
+                                                    <?php $__currentLoopData = $targetUsers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $user): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                        <span class="badge bg-info me-1"><?php echo e(ucfirst($user)); ?></span>
+                                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                                <?php endif; ?>
+                                                <?php if($targetPrograms): ?>
+                                                    <br><small class="text-muted"><?php echo e(count($targetPrograms)); ?> program(s)</small>
+                                                <?php endif; ?>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="announcement-meta">
-                                            {{ $announcement->created_at->format('M d, Y') }}<br>
-                                            <small>{{ $announcement->created_at->format('g:i A') }}</small>
+                                            <?php echo e($announcement->created_at->format('M d, Y')); ?><br>
+                                            <small><?php echo e($announcement->created_at->format('g:i A')); ?></small>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
-                                            @php
+                                            <?php
                                                 $viewUrl = $tenantSlug 
                                                     ? route('tenant.draft.admin.announcements.show', ['tenant' => $tenantSlug, 'id' => $announcement->announcement_id]) . $urlParams
                                                     : route('admin.announcements.show', $announcement->announcement_id);
@@ -270,48 +274,49 @@
                                                 $editUrl = $tenantSlug 
                                                     ? route('tenant.draft.admin.announcements.edit', ['tenant' => $tenantSlug, 'id' => $announcement->announcement_id]) . $urlParams
                                                     : route('admin.announcements.edit', $announcement->announcement_id);
-                                            @endphp
-                                            <a href="{{ $viewUrl }}" 
+                                            ?>
+                                            <a href="<?php echo e($viewUrl); ?>" 
                                                class="btn btn-outline-info" title="View">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            <a href="{{ $editUrl }}" 
+                                            <a href="<?php echo e($editUrl); ?>" 
                                                class="btn btn-outline-primary" title="Edit">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
                                             <button class="btn btn-outline-danger delete-btn" 
-                                                    data-id="{{ $announcement->announcement_id }}"
-                                                    data-title="{{ $announcement->title }}"
+                                                    data-id="<?php echo e($announcement->announcement_id); ?>"
+                                                    data-title="<?php echo e($announcement->title); ?>"
                                                     title="Delete">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
                     </table>
                 </div>
                 
                 <!-- Pagination -->
                 <div class="d-flex justify-content-center mt-4">
-                    {{ $announcements->links() }}
+                    <?php echo e($announcements->links()); ?>
+
                 </div>
-            @else
+            <?php else: ?>
                 <div class="text-center py-5">
                     <i class="bi bi-megaphone text-muted" style="font-size: 3rem;"></i>
                     <h4 class="text-muted mt-3">No announcements found</h4>
                     <p class="text-muted">Create your first announcement to get started.</p>
-                    @php
+                    <?php
                         $emptyCreateUrl = $tenantSlug 
                             ? route('tenant.draft.admin.announcements.create', ['tenant' => $tenantSlug]) . $urlParams
                             : route('admin.announcements.create');
-                    @endphp
-                    <a href="{{ $emptyCreateUrl }}" class="btn btn-primary">
+                    ?>
+                    <a href="<?php echo e($emptyCreateUrl); ?>" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-2"></i>Create Announcement
                     </a>
                 </div>
-            @endif
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -331,17 +336,17 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <form id="deleteForm" method="POST" style="display: inline;">
-                    @csrf
-                    @method('DELETE')
+                    <?php echo csrf_field(); ?>
+                    <?php echo method_field('DELETE'); ?>
                     <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -359,4 +364,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('admin.admin-dashboard.admin-dashboard-layout', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/admin/announcements/index.blade.php ENDPATH**/ ?>
