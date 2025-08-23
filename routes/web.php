@@ -918,6 +918,14 @@ Route::prefix('t')->group(function() {
         return app(\App\Http\Controllers\Admin\QuizGeneratorController::class)->previewIndex($tenant);
     })->name('tenant.draft.admin.quiz-generator');
 
+    Route::get('/draft/{tenant}/admin/faq', function($tenant) {
+        return app(\App\Http\Controllers\AdminController::class)->previewFaqIndex($tenant);
+    })->name('tenant.draft.admin.faq');
+
+    Route::get('/draft/{tenant}/admin/submissions', function($tenant) {
+        return app(\App\Http\Controllers\AdminController::class)->previewSubmissions($tenant);
+    })->name('tenant.draft.admin.submissions');
+
     // Additional admin preview routes for missing pages
     Route::get('/draft/{tenant}/admin/programs/archived', function($tenant) {
         try {
@@ -964,50 +972,21 @@ Route::prefix('t')->group(function() {
         }
     })->name('tenant.draft.admin.enrollments.history');
 
-    Route::get('/draft/{tenant}/admin/payments/pending', function($tenant) {
-        try {
-            session(['preview_tenant' => $tenant, 'user_name' => 'Preview Admin', 'user_role' => 'admin', 'logged_in' => true, 'preview_mode' => true]);
-            
-            $pendingPayments = collect([
-                (object)['id' => 1, 'student_name' => 'Maria Santos', 'amount' => 15000, 'program_name' => 'Nursing Review', 'status' => 'pending', 'due_date' => now()->addDays(7)],
-                (object)['id' => 2, 'student_name' => 'Carlos Garcia', 'amount' => 12000, 'program_name' => 'Medical Tech', 'status' => 'pending', 'due_date' => now()->addDays(3)]
-            ]);
-            
-            return view('admin.payments.pending', ['pendingPayments' => $pendingPayments, 'isPreview' => true])->render();
-        } catch (\Exception $e) {
-            return response('<h1>Payment Pending Preview - Tenant: '.$tenant.'</h1><p>✅ Route working correctly!</p><p>Preview data loaded successfully.</p>');
-        }
-    })->name('tenant.draft.admin.payments.pending');
+    Route::get('/draft/{tenant}/admin/payments/pending', [AdminController::class, 'previewPaymentPending'])->name('tenant.draft.admin.payments.pending');
 
-    Route::get('/draft/{tenant}/admin/payments/history', function($tenant) {
-        try {
-            session(['preview_tenant' => $tenant, 'user_name' => 'Preview Admin', 'user_role' => 'admin', 'logged_in' => true, 'preview_mode' => true]);
-            
-            $paymentHistory = collect([
-                (object)['id' => 1, 'student_name' => 'Elena Rodriguez', 'amount' => 15000, 'program_name' => 'Nursing Review', 'status' => 'paid', 'paid_at' => now()->subWeeks(3)],
-                (object)['id' => 2, 'student_name' => 'Miguel Torres', 'amount' => 12000, 'program_name' => 'Medical Tech', 'status' => 'paid', 'paid_at' => now()->subWeeks(2)]
-            ]);
-            
-            return view('admin.payments.history', ['paymentHistory' => $paymentHistory, 'isPreview' => true])->render();
-        } catch (\Exception $e) {
-            return response('<h1>Payment History Preview - Tenant: '.$tenant.'</h1><p>✅ Route working correctly!</p><p>Preview data loaded successfully.</p>');
-        }
-    })->name('tenant.draft.admin.payments.history');
+    Route::get('/draft/{tenant}/admin/payments/history', [AdminController::class, 'previewPaymentHistory'])->name('tenant.draft.admin.payments.history');
 
-    Route::get('/draft/{tenant}/admin/faq', function($tenant) {
-        try {
-            session(['preview_tenant' => $tenant, 'user_name' => 'Preview Admin', 'user_role' => 'admin', 'logged_in' => true, 'preview_mode' => true]);
-            
-            $faqs = collect([
-                (object)['id' => 1, 'question' => 'How do I enroll in a program?', 'answer' => 'You can enroll by visiting our enrollment page...', 'category' => 'Enrollment', 'is_active' => true],
-                (object)['id' => 2, 'question' => 'What are the payment options?', 'answer' => 'We accept various payment methods...', 'category' => 'Payments', 'is_active' => true]
-            ]);
-            
-            return view('admin.faq.index', ['faqs' => $faqs, 'isPreview' => true])->render();
-        } catch (\Exception $e) {
-            return response('<h1>FAQ Management Preview - Tenant: '.$tenant.'</h1><p>✅ Route working correctly!</p><p>Preview data loaded successfully.</p>');
-        }
-    })->name('tenant.draft.admin.faq');
+    // Certificate routes
+    Route::get('/draft/{tenant}/admin/certificates', [AdminController::class, 'previewCertificates'])->name('tenant.draft.admin.certificates');
+    Route::get('/draft/{tenant}/admin/certificates/manage', [AdminController::class, 'previewCertificates'])->name('tenant.draft.admin.certificates.manage');
+
+    // Archived content routes
+    Route::get('/draft/{tenant}/admin/archived', [AdminController::class, 'previewArchivedContent'])->name('tenant.draft.admin.archived');
+    Route::get('/draft/{tenant}/admin/archived/programs', [AdminController::class, 'previewArchivedContent'])->name('tenant.draft.admin.archived.programs');
+
+    // Course content routes
+    Route::get('/draft/{tenant}/admin/courses/upload', [AdminController::class, 'previewCourseContentUpload'])->name('tenant.draft.admin.courses.upload');
+    Route::get('/draft/{tenant}/admin/courses/content', [AdminController::class, 'previewCourseContentUpload'])->name('tenant.draft.admin.courses.content');
 
     Route::get('/draft/{tenant}/admin/announcements/create', function($tenant) {
         try {
@@ -3802,6 +3781,13 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function () {
     Route::post('/payments/{id}/update-rejection', [\App\Http\Controllers\Admin\PaymentController::class, 'updateRejection'])->name('admin.payments.update-rejection');
     Route::get('/payments/{id}/download-proof', [\App\Http\Controllers\Admin\PaymentController::class, 'downloadProof'])->name('admin.payments.download-proof');
     Route::get('/payments/stats', [\App\Http\Controllers\Admin\PaymentController::class, 'getStats'])->name('admin.payments.stats');
+    
+    // Archived content management
+    Route::get('/archived', [AdminController::class, 'archivedIndex'])->name('admin.archived');
+    Route::get('/archived/programs', [AdminController::class, 'archivedPrograms'])->name('admin.archived.programs');
+    
+    // Course content upload
+    Route::get('/courses/upload', [AdminController::class, 'coursesUpload'])->name('admin.courses.upload');
     
     // Payment method field management
     Route::get('/payment-methods/settings', function() {
