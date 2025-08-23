@@ -1945,6 +1945,7 @@ class AdminSettingsController extends Controller
                 'preview_tenant' => $tenant,
                 'user_name' => 'Preview Admin',
                 'user_role' => 'admin',
+                'user_type' => 'admin', // Add for sidebar compatibility
                 'logged_in' => true,
                 'preview_mode' => true
             ]);

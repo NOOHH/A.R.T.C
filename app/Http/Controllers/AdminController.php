@@ -2827,6 +2827,7 @@ class AdminController extends Controller
                 'preview_tenant' => $tenant,
                 'user_name' => 'Preview Admin',
                 'user_role' => 'admin',
+                'user_type' => 'admin', // Add this for sidebar compatibility
                 'logged_in' => true,
                 'preview_mode' => true
             ]);
@@ -2872,6 +2873,7 @@ class AdminController extends Controller
                 'preview_tenant' => $tenant,
                 'user_name' => 'Preview Admin',
                 'user_role' => 'admin',
+                'user_type' => 'admin', // Add for sidebar compatibility
                 'logged_in' => true,
                 'preview_mode' => true
             ]);
@@ -2979,6 +2981,7 @@ class AdminController extends Controller
                 'preview_tenant' => $tenant,
                 'user_name' => 'Preview Admin',
                 'user_role' => 'admin',
+                'user_type' => 'admin', // Add for sidebar compatibility
                 'logged_in' => true,
                 'preview_mode' => true
             ]);
@@ -3066,6 +3069,7 @@ class AdminController extends Controller
                 'preview_tenant' => $tenant,
                 'user_name' => 'Preview Admin',
                 'user_role' => 'admin',
+                'user_type' => 'admin', // Add for sidebar compatibility
                 'logged_in' => true,
                 'preview_mode' => true
             ]);
@@ -3156,6 +3160,7 @@ class AdminController extends Controller
                 'preview_tenant' => $tenant,
                 'user_name' => 'Preview Admin',
                 'user_role' => 'admin',
+                'user_type' => 'admin', // Add for sidebar compatibility
                 'logged_in' => true,
                 'preview_mode' => true
             ]);
@@ -3248,6 +3253,7 @@ class AdminController extends Controller
                 'preview_tenant' => $tenant,
                 'user_name' => 'Preview Admin',
                 'user_role' => 'admin',
+                'user_type' => 'admin', // Add for sidebar compatibility
                 'logged_in' => true,
                 'preview_mode' => true
             ]);
@@ -3358,6 +3364,7 @@ class AdminController extends Controller
                 'preview_tenant' => $tenant,
                 'user_name' => 'Preview Admin',
                 'user_role' => 'admin',
+                'user_type' => 'admin', // Add for sidebar compatibility
                 'logged_in' => true,
                 'preview_mode' => true
             ]);
@@ -3547,6 +3554,7 @@ class AdminController extends Controller
                 'preview_tenant' => $tenant,
                 'user_name' => 'Preview Admin',
                 'user_role' => 'admin',
+                'user_type' => 'admin', // Add for sidebar compatibility
                 'logged_in' => true,
                 'preview_mode' => true
             ]);
@@ -3619,6 +3627,7 @@ class AdminController extends Controller
                 'preview_tenant' => $tenant,
                 'user_name' => 'Preview Admin',
                 'user_role' => 'admin',
+                'user_type' => 'admin', // Add for sidebar compatibility
                 'logged_in' => true,
                 'preview_mode' => true
             ]);
@@ -3753,6 +3762,7 @@ class AdminController extends Controller
                 'preview_tenant' => $tenant,
                 'user_name' => 'Preview Admin',
                 'user_role' => 'admin',
+                'user_type' => 'admin', // Add for sidebar compatibility
                 'logged_in' => true,
                 'preview_mode' => true
             ]);
@@ -3914,6 +3924,7 @@ class AdminController extends Controller
                 'preview_tenant' => $tenant,
                 'user_name' => 'Preview Admin',
                 'user_role' => 'admin',
+                'user_type' => 'admin', // Add for sidebar compatibility
                 'logged_in' => true,
                 'preview_mode' => true
             ]);
@@ -3971,6 +3982,7 @@ class AdminController extends Controller
                 'preview_tenant' => $tenant,
                 'user_name' => 'Preview Admin',
                 'user_role' => 'admin',
+                'user_type' => 'admin', // Add for sidebar compatibility
                 'logged_in' => true,
                 'preview_mode' => true
             ]);
@@ -4024,7 +4036,8 @@ class AdminController extends Controller
             session([
                 'preview_tenant' => $tenant, 
                 'user_name' => 'Preview Admin', 
-                'user_role' => 'admin', 
+                'user_role' => 'admin',
+                'user_type' => 'admin', // Add for sidebar compatibility 
                 'logged_in' => true, 
                 'preview_mode' => true
             ]);
@@ -4091,7 +4104,8 @@ class AdminController extends Controller
             session([
                 'preview_tenant' => $tenant, 
                 'user_name' => 'Preview Admin', 
-                'user_role' => 'admin', 
+                'user_role' => 'admin',
+                'user_type' => 'admin', // Add for sidebar compatibility 
                 'logged_in' => true, 
                 'preview_mode' => true
             ]);
@@ -4161,6 +4175,7 @@ class AdminController extends Controller
                 'preview_tenant' => $tenant,
                 'user_name' => 'Preview Admin',
                 'user_role' => 'admin',
+                'user_type' => 'admin', // Add for sidebar compatibility
                 'logged_in' => true,
                 'preview_mode' => true
             ]);
@@ -4277,6 +4292,7 @@ class AdminController extends Controller
                 'preview_tenant' => $tenant,
                 'user_name' => 'Preview Admin',
                 'user_role' => 'admin',
+                'user_type' => 'admin', // Add for sidebar compatibility
                 'logged_in' => true,
                 'preview_mode' => true
             ]);

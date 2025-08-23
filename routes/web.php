@@ -2595,8 +2595,46 @@ Route::post('/admin/directors/{director:directors_id}/unassign-program', [AdminD
 
 // Director Dashboard Routes
 Route::get('/director/dashboard', function() {
-    return redirect('/admin-dashboard');
-})->name('director.dashboard');
+    // Check if user is logged in as admin
+    if (!auth('admin')->check()) {
+        return redirect()->route('admin.login')->with('error', 'Please log in as an admin to access director features.');
+    }
+    
+    $admin = auth('admin')->user();
+    
+    // Check if admin has director permissions
+    $directorEnabled = DB::table('admin_settings')
+        ->where('setting_key', 'enable_director_mode')
+        ->where('setting_value', 'true')
+        ->where('is_active', 1)
+        ->exists();
+    
+    $directorAdminId = DB::table('admin_settings')
+        ->where('setting_key', 'director_admin_id')
+        ->where('is_active', 1)
+        ->value('setting_value');
+    
+    if (!$directorEnabled || ($directorAdminId && $admin->id != $directorAdminId)) {
+        return redirect()->route('admin.dashboard')->with('error', 'Director access not enabled for this account.');
+    }
+    
+    // Prepare director dashboard data
+    $director = (object) [
+        'directors_first_name' => explode(' ', $admin->name)[0] ?? 'Director',
+        'directors_last_name' => explode(' ', $admin->name)[1] ?? 'User',
+        'email' => $admin->email,
+        'id' => $admin->id
+    ];
+    
+    $analytics = [
+        'accessible_programs' => DB::table('programs')->count(),
+        'total_students' => 0, // Implement as needed
+        'active_batches' => 0, // Implement as needed  
+        'pending_enrollments' => 0 // Implement as needed
+    ];
+    
+    return view('director.dashboard', compact('director', 'analytics'));
+})->name('director.dashboard')->middleware('auth:admin');
 
 Route::get('/director/profile', [DirectorController::class, 'profile'])
      ->name('director.profile');

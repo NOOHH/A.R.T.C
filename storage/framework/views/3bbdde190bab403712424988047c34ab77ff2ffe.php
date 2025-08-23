@@ -158,7 +158,12 @@
                             </a>
                         <?php endif; ?>
                         <?php if($isAdmin): ?>
-                            <a href="<?php echo e(route('admin.directors.index')); ?>" class="submenu-link <?php if(str_starts_with(Route::currentRouteName(), 'admin.directors')): ?> active <?php endif; ?>">
+                            <?php
+                                $directorsUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin/directors" . $urlParams
+                                    : route('admin.directors.index');
+                            ?>
+                            <a href="<?php echo e($directorsUrl); ?>" class="submenu-link <?php if(str_starts_with(Route::currentRouteName(), 'admin.directors')): ?> active <?php endif; ?>">
                                 <i class="bi bi-person-badge"></i><span>Directors</span>
                             </a>
                         <?php endif; ?>

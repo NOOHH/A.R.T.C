@@ -157,7 +157,12 @@
                             </a>
                         @endif
                         @if($isAdmin)
-                            <a href="{{ route('admin.directors.index') }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'admin.directors')) active @endif">
+                            @php
+                                $directorsUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin/directors" . $urlParams
+                                    : route('admin.directors.index');
+                            @endphp
+                            <a href="{{ $directorsUrl }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'admin.directors')) active @endif">
                                 <i class="bi bi-person-badge"></i><span>Directors</span>
                             </a>
                         @endif
