@@ -15,9 +15,11 @@ use App\Models\PaymentMethod;
 use App\Services\DynamicFieldService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Http\Controllers\Traits\AdminPreviewCustomization;
 
 class AdminSettingsController extends Controller
 {
+    use AdminPreviewCustomization;
     public function __construct()
     {
         // Only apply to directors
@@ -1926,6 +1928,78 @@ class AdminSettingsController extends Controller
                 'success' => false,
                 'error' => 'Failed to update terms and conditions: ' . $e->getMessage()
             ], 500);
+        }
+    }
+    
+    /**
+     * Preview mode for tenant preview system
+     */
+    public function previewIndex($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Mock settings for preview
+            $settings = [
+                'homepage' => [
+                    'site_name' => 'Preview Learning Platform',
+                    'hero_title' => 'Welcome to Preview Mode',
+                    'hero_subtitle' => 'This is a preview of the admin settings interface'
+                ],
+                'navbar' => [
+                    'logo_url' => '/images/preview-logo.png',
+                    'show_search' => true
+                ],
+                'footer' => [
+                    'copyright_text' => '© 2024 Preview Platform. All rights reserved.'
+                ]
+            ];
+
+            // Generate mock data for the view
+            $mockProfessors = $this->generateMockData('professors');
+            $mockPrograms = $this->generateMockData('programs');
+            
+            // Share mock data with view
+            view()->share('mockProfessors', $mockProfessors);
+            view()->share('mockPrograms', $mockPrograms);
+            view()->share('isPreviewMode', true);
+
+            $html = view('admin.admin-settings.admin-settings', [
+                'settings' => $settings,
+                'isPreview' => true,
+                'professors' => $mockProfessors,
+                'programs' => $mockPrograms
+            ])->render();
+
+            return response($html);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Admin settings preview error: ' . $e->getMessage());
+            // Fallback to simple HTML on error
+            return response('
+                <html>
+                    <head><title>Admin Settings Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>Admin Settings Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200);
+        } finally {
+            // Clear session after render
+            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
         }
     }
 }

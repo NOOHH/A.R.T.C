@@ -36,11 +36,48 @@
     </div>
 
     <div class="sidebar-content d-flex flex-column overflow-hidden">
+        <?php
+            // Detect tenant context and preserve URL parameters for proper routing
+            $tenantSlug = null;
+            $routePrefix = '';
+            $isDraft = false;
+            $urlParams = '';
+            
+            // Check if we're in tenant preview mode
+            if (request()->is('t/*')) {
+                $segments = request()->segments();
+                if (count($segments) >= 2 && $segments[0] === 't') {
+                    if ($segments[1] === 'draft' && count($segments) >= 3) {
+                        $tenantSlug = $segments[2];
+                        $routePrefix = 'tenant.draft.';
+                        $isDraft = true;
+                    } else {
+                        $tenantSlug = $segments[1];
+                        $routePrefix = 'tenant.';
+                    }
+                }
+                
+                // Preserve URL parameters (website, preview, t, etc.)
+                $queryParams = request()->query();
+                if (!empty($queryParams)) {
+                    $urlParams = '?' . http_build_query($queryParams);
+                }
+            }
+            
+            // Build base URL for tenant preview links
+            $basePreviewUrl = $tenantSlug ? "/t/draft/{$tenantSlug}" : '';
+        ?>
+        
         <nav class="sidebar-nav">
 
             <!-- Dashboard -->
             <div class="nav-item">
-                <a href="<?php echo e(route('admin.dashboard')); ?>" class="nav-link <?php if(Route::currentRouteName() === 'admin.dashboard'): ?> active <?php endif; ?>">
+                <?php
+                    $dashboardUrl = $tenantSlug 
+                        ? $basePreviewUrl . "/admin-dashboard" . $urlParams
+                        : route('admin.dashboard');
+                ?>
+                <a href="<?php echo e($dashboardUrl); ?>" class="nav-link <?php if(Route::currentRouteName() === 'admin.dashboard'): ?> active <?php endif; ?>">
                     <i class="bi bi-speedometer2"></i><span>Dashboard</span>
                 </a>
             </div>
@@ -71,7 +108,12 @@
                             </a>
                         <?php endif; ?>
                         <?php if($isAdmin || ($isDirector && $directorFeatures['manage_batches'])): ?>
-                            <a href="<?php echo e(route('admin.batches.index')); ?>" class="submenu-link <?php if(str_starts_with(Route::currentRouteName(), 'admin.batches')): ?> active <?php endif; ?>">
+                            <?php
+                                $batchesUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin/batches" . $urlParams
+                                    : route('admin.batches.index');
+                            ?>
+                            <a href="<?php echo e($batchesUrl); ?>" class="submenu-link <?php if(str_starts_with(Route::currentRouteName(), 'admin.batches')): ?> active <?php endif; ?>">
                                 <i class="bi bi-people"></i><span>Batch Enroll</span>
                             </a>
                         <?php endif; ?>
@@ -92,7 +134,12 @@
                 <div class="collapse <?php if(str_starts_with(Route::currentRouteName(), 'admin.students') || str_starts_with(Route::currentRouteName(), 'admin.professors') || str_starts_with(Route::currentRouteName(), 'admin.directors')): ?> show <?php endif; ?>" id="collapseAccounts">
                     <div class="submenu">
                         <?php if($isAdmin || ($isDirector && $directorFeatures['view_students'])): ?>
-                            <a href="<?php echo e(route('admin.students.index')); ?>" class="submenu-link <?php if(Route::currentRouteName() === 'admin.students.index'): ?> active <?php endif; ?>">
+                            <?php
+                                $studentsUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin/students" . $urlParams
+                                    : route('admin.students.index');
+                            ?>
+                            <a href="<?php echo e($studentsUrl); ?>" class="submenu-link <?php if(Route::currentRouteName() === 'admin.students.index'): ?> active <?php endif; ?>">
                                 <i class="bi bi-person"></i><span>Students</span>
                             </a>
                         <?php endif; ?>
@@ -102,7 +149,12 @@
                             </a>
                         <?php endif; ?>
                         <?php if($isAdmin || ($isDirector && $directorFeatures['manage_professors'])): ?>
-                            <a href="<?php echo e(route('admin.professors.index')); ?>" class="submenu-link <?php if(str_starts_with(Route::currentRouteName(), 'admin.professors')): ?> active <?php endif; ?>">
+                            <?php
+                                $professorsUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin/professors" . $urlParams
+                                    : route('admin.professors.index');
+                            ?>
+                            <a href="<?php echo e($professorsUrl); ?>" class="submenu-link <?php if(str_starts_with(Route::currentRouteName(), 'admin.professors')): ?> active <?php endif; ?>">
                                 <i class="bi bi-person-workspace"></i><span>Professors</span>
                             </a>
                         <?php endif; ?>
@@ -123,22 +175,42 @@
                 <div class="collapse <?php if(str_starts_with(Route::currentRouteName(), 'admin.programs') || str_starts_with(Route::currentRouteName(), 'admin.modules') || Route::currentRouteName() === 'admin.packages.index' || Route::currentRouteName() === 'admin.certificates' || str_starts_with(Route::currentRouteName(), 'admin.submissions')): ?> show <?php endif; ?>" id="collapsePrograms">
                     <div class="submenu">
                         <?php if($isAdmin || ($isDirector && $directorFeatures['manage_programs'])): ?>
-                            <a href="<?php echo e(route('admin.programs.index')); ?>" class="submenu-link <?php if(Route::currentRouteName() === 'admin.programs.index'): ?> active <?php endif; ?>">
+                            <?php
+                                $programsUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin/programs" . $urlParams
+                                    : route('admin.programs.index');
+                            ?>
+                            <a href="<?php echo e($programsUrl); ?>" class="submenu-link <?php if(Route::currentRouteName() === 'admin.programs.index'): ?> active <?php endif; ?>">
                                 <i class="bi bi-collection"></i><span>Manage Programs</span>
                             </a>
                         <?php endif; ?>
                         <?php if($isAdmin || ($isDirector && $directorFeatures['manage_modules'])): ?>
-                            <a href="<?php echo e(route('admin.modules.index')); ?>" class="submenu-link <?php if(str_starts_with(Route::currentRouteName(), 'admin.modules')): ?> active <?php endif; ?>">
+                            <?php
+                                $modulesUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin/modules" . $urlParams
+                                    : route('admin.modules.index');
+                            ?>
+                            <a href="<?php echo e($modulesUrl); ?>" class="submenu-link <?php if(str_starts_with(Route::currentRouteName(), 'admin.modules')): ?> active <?php endif; ?>">
                                 <i class="bi bi-puzzle"></i><span>Manage Modules</span>
                             </a>
                         <?php endif; ?>
                         <?php if($isAdmin || ($isDirector && $directorFeatures['manage_batches'])): ?>
-                            <a href="<?php echo e(route('admin.batches.index')); ?>" class="submenu-link <?php if(str_starts_with(Route::currentRouteName(), 'admin.batches')): ?> active <?php endif; ?>">
+                            <?php
+                                $batchesUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin/batches" . $urlParams
+                                    : route('admin.batches.index');
+                            ?>
+                            <a href="<?php echo e($batchesUrl); ?>" class="submenu-link <?php if(str_starts_with(Route::currentRouteName(), 'admin.batches')): ?> active <?php endif; ?>">
                                 <i class="bi bi-people"></i><span>Manage Batches</span>
                             </a>
                         <?php endif; ?>
                         <?php if($isAdmin): ?>
-                            <a href="<?php echo e(route('admin.packages.index')); ?>" class="submenu-link <?php if(Route::currentRouteName() === 'admin.packages.index'): ?> active <?php endif; ?>">
+                            <?php
+                                $packagesUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin/packages" . $urlParams
+                                    : route('admin.packages.index');
+                            ?>
+                            <a href="<?php echo e($packagesUrl); ?>" class="submenu-link <?php if(Route::currentRouteName() === 'admin.packages.index'): ?> active <?php endif; ?>">
                                 <i class="bi bi-box-seam"></i><span>Packages</span>
                             </a>
                         <?php endif; ?>
@@ -160,7 +232,12 @@
             <!-- Analytics -->
             <?php if($isAdmin || ($isDirector && $directorFeatures['view_analytics'])): ?>
             <div class="nav-item">
-                <a href="<?php echo e(route('admin.analytics.index')); ?>" class="nav-link <?php if(Route::currentRouteName() === 'admin.analytics.index'): ?> active <?php endif; ?>">
+                <?php
+                    $analyticsUrl = $tenantSlug 
+                        ? $basePreviewUrl . "/admin/analytics" . $urlParams
+                        : route('admin.analytics.index');
+                ?>
+                <a href="<?php echo e($analyticsUrl); ?>" class="nav-link <?php if(Route::currentRouteName() === 'admin.analytics.index'): ?> active <?php endif; ?>">
                     <i class="bi bi-graph-up"></i><span>Analytics</span>
                 </a>
             </div>
@@ -175,7 +252,12 @@
 
             <!-- Announcements -->
             <div class="nav-item">
-                <a href="<?php echo e(route('admin.announcements.index')); ?>" class="nav-link <?php if(str_starts_with(Route::currentRouteName(), 'admin.announcements')): ?> active <?php endif; ?>">
+                <?php
+                    $announcementsUrl = $tenantSlug 
+                        ? $basePreviewUrl . "/admin/announcements" . $urlParams
+                        : route('admin.announcements.index');
+                ?>
+                <a href="<?php echo e($announcementsUrl); ?>" class="nav-link <?php if(str_starts_with(Route::currentRouteName(), 'admin.announcements')): ?> active <?php endif; ?>">
                     <i class="bi bi-broadcast"></i><span>Announcements</span>
                 </a>
             </div>
@@ -183,7 +265,12 @@
             <!-- Settings -->
             <?php if($isAdmin): ?>
             <div class="nav-item">
-                <a href="<?php echo e(route('admin.settings.index')); ?>" class="nav-link <?php if(Route::currentRouteName() === 'admin.settings.index'): ?> active <?php endif; ?>">
+                <?php
+                    $settingsUrl = $tenantSlug 
+                        ? $basePreviewUrl . "/admin/settings" . $urlParams
+                        : route('admin.settings.index');
+                ?>
+                <a href="<?php echo e($settingsUrl); ?>" class="nav-link <?php if(Route::currentRouteName() === 'admin.settings.index'): ?> active <?php endif; ?>">
                     <i class="bi bi-gear"></i><span>Settings</span>
                 </a>
             </div>

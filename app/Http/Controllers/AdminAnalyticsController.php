@@ -15,9 +15,11 @@ use App\Models\StudentBatch;
 use Carbon\Carbon;
 use League\Csv\Reader;
 use League\Csv\Writer;
+use App\Http\Controllers\Traits\AdminPreviewCustomization;
 
 class AdminAnalyticsController extends Controller
 {
+    use AdminPreviewCustomization;
     public function index()
     {
         // Check if user is admin or director
@@ -1986,6 +1988,59 @@ class AdminAnalyticsController extends Controller
         } catch (\Exception $e) {
             Log::error('Batch performance data error: ' . $e->getMessage());
             return [];
+        }
+    }
+    
+    /**
+     * Preview mode for tenant preview system
+     */
+    public function previewIndex($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            $html = view('admin.admin-analytics.admin-analytics', [
+                'isAdmin' => true,
+                'userType' => 'admin',
+                'isPreview' => true
+            ])->render();
+
+            
+            
+            // Generate mock analytics data
+            $analyticsData = $this->generateMockData('analytics');
+            view()->share('analyticsData', $analyticsData);
+            view()->share('isPreviewMode', true);
+            
+            return response($html);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Admin analytics preview error: ' . $e->getMessage());
+            // Fallback to simple HTML on error
+            return response('
+                <html>
+                    <head><title>Admin Analytics Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>Admin Analytics Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200);
+        } finally {
+            // Clear session after render
+            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
         }
     }
 }

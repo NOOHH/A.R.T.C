@@ -12,9 +12,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use App\Models\AdminSetting;
+use App\Http\Controllers\Traits\AdminPreviewCustomization;
 
 class AdminModuleController extends Controller
 {
+    use AdminPreviewCustomization;
     public function __construct()
     {
         $user = Auth::user();
@@ -2071,6 +2073,83 @@ class AdminModuleController extends Controller
                 'success' => false,
                 'message' => 'Error getting statistics'
             ], 500);
+        }
+    }
+
+    /**
+     * Preview mode for tenant preview system - Modules
+     */
+    public function previewIndex($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Mock data for preview
+            $programs = collect([
+                (object)[
+                    'program_id' => 1,
+                    'program_name' => 'Nursing Review'
+                ],
+                (object)[
+                    'program_id' => 2,
+                    'program_name' => 'Medical Technology Review'
+                ]
+            ]);
+
+            $modules = collect([
+                (object)[
+                    'module_id' => 1,
+                    'module_name' => 'Fundamentals of Nursing',
+                    'module_description' => 'Basic nursing principles and practices',
+                    'is_archived' => false,
+                    'program_id' => 1,
+                    'program' => $programs->first(),
+                    'courses_count' => 5,
+                    'content_count' => 12
+                ],
+                (object)[
+                    'module_id' => 2,
+                    'module_name' => 'Clinical Chemistry',
+                    'module_description' => 'Laboratory analysis and chemistry fundamentals',
+                    'is_archived' => false,
+                    'program_id' => 2,
+                    'program' => $programs->last(),
+                    'courses_count' => 4,
+                    'content_count' => 8
+                ]
+            ]);
+
+            $html = view('admin.admin-modules.admin-modules', [
+                'modules' => $modules,
+                'programs' => $programs,
+                'isPreview' => true
+            ])->render();
+
+            // Clear session after render
+            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
+            
+            
+            
+            // Generate mock modules data
+            $modules = $this->generateMockData('modules');
+            view()->share('modules', $modules);
+            view()->share('isPreviewMode', true);
+            
+            return response($html);
+
+        } catch (\Exception $e) {
+            Log::error('Admin modules preview error: ' . $e->getMessage());
+            return response('Preview mode error: ' . $e->getMessage(), 500);
         }
     }
 }

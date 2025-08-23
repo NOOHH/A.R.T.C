@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\AdminPreviewCustomization;
 use App\Models\Director;
 use App\Models\Program;
 use App\Http\Controllers\UnifiedLoginController;
@@ -10,6 +11,7 @@ use Illuminate\Validation\Rule;
 
 class AdminDirectorController extends Controller
 {
+    use AdminPreviewCustomization;
     public function index()
     {
         // Check if user is admin
@@ -254,5 +256,90 @@ class AdminDirectorController extends Controller
 
         return redirect()->route('admin.directors.show', $director)
             ->with('success', 'Program unassigned successfully!');
+    }
+
+    /**
+     * Preview mode for tenant preview system - Directors
+     */
+    public function previewIndex($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Mock directors data
+            $directorsCollection = collect([
+                (object)[
+                    'director_id' => 1,
+                    'directors_first_name' => 'Sarah',
+                    'directors_last_name' => 'Johnson',
+                    'directors_email' => 'sarah.johnson@preview.com',
+                    'directors_name' => 'Sarah Johnson',
+                    'phone_number' => '+1-555-0123',
+                    'is_active' => true,
+                    'created_at' => now()->subMonths(6),
+                    'programs_count' => 3
+                ],
+                (object)[
+                    'director_id' => 2,
+                    'directors_first_name' => 'Michael',
+                    'directors_last_name' => 'Chen',
+                    'directors_email' => 'michael.chen@preview.com',
+                    'directors_name' => 'Michael Chen',
+                    'phone_number' => '+1-555-0124',
+                    'is_active' => true,
+                    'created_at' => now()->subMonths(3),
+                    'programs_count' => 2
+                ]
+            ]);
+
+            // Create paginator
+            $directors = new \Illuminate\Pagination\LengthAwarePaginator(
+                $directorsCollection,
+                $directorsCollection->count(),
+                15,
+                1,
+                ['path' => request()->url()]
+            );
+
+            $html = view('admin.directors.index', [
+                'directors' => $directors,
+                'isPreview' => true
+            ])->render();
+
+            
+            
+            // Generate mock directors data
+            $directors = $this->generateMockData('directors');
+            view()->share('directors', $directors);
+            view()->share('isPreviewMode', true);
+            
+            return response($html);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Admin directors preview error: ' . $e->getMessage());
+            return response('
+                <html>
+                    <head><title>Admin Directors Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>Admin Directors Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200);
+        } finally {
+            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
+        }
     }
 }

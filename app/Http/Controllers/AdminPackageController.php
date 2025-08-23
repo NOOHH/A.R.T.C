@@ -11,9 +11,11 @@ use App\Models\Registration;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Traits\AdminPreviewCustomization;
 
 class AdminPackageController extends Controller
 {
+    use AdminPreviewCustomization;
     /**
      * Display all packages.
      */
@@ -414,6 +416,67 @@ class AdminPackageController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ], 500);
+        }
+    }
+    
+    /**
+     * Preview mode for tenant preview system
+     */
+    public function previewIndex($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Use mock data generator
+            $packagesCollection = $this->generateMockData('packages');
+            $programs = $this->generateMockData('programs');
+            $modules = $this->generateMockData('modules');
+
+            // Mock analytics
+            $analytics = [
+                'totalPackages' => $packagesCollection->count(),
+                'totalEnrollments' => 77,
+                'totalRevenue' => $packagesCollection->sum('price'),
+                'popularPackage' => $packagesCollection->first()
+            ];
+
+            $html = view('admin.admin-packages.admin-packages', [
+                'packages' => $packagesCollection,
+                'programs' => $programs,
+                'modules' => $modules,
+                'analytics' => $analytics,
+                'isPreview' => true
+            ])->render();
+
+            return response($html);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Admin packages preview error: ' . $e->getMessage());
+            // Fallback to simple HTML on error
+            return response('
+                <html>
+                    <head><title>Admin Packages Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>Admin Packages Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200);
+        } finally {
+            // Clear session after render
+            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
         }
     }
 }

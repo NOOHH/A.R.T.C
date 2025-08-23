@@ -17,10 +17,13 @@ use App\Models\Enrollment;
 use App\Models\Payment;
 use App\Models\PaymentHistory;
 use App\Models\AssignmentSubmission;
+use App\Http\Controllers\Traits\AdminPreviewCustomization;
 use Carbon\Carbon;
 
 class AdminController extends Controller
 {
+    use AdminPreviewCustomization;
+    
     public function __construct()
     {
         // Apply middleware conditionally - skip for preview requests
@@ -2772,5 +2775,166 @@ class AdminController extends Controller
 
         // Simple preview response for admin dashboard
         return response()->view('admin.simple-preview', compact('registrations', 'analytics'));
+    }
+
+    /**
+     * Preview mode for payment pending page
+     */
+    public function previewPaymentPending($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Generate mock enrollments for pending payments
+            $enrollments = collect([
+                $this->createMockObject([
+                    'enrollment_id' => 1,
+                    'student_name' => 'Juan Dela Cruz',
+                    'student_email' => 'juan.delacruz@example.com',
+                    'payment_status' => 'pending',
+                    'total_amount' => 15000.00,
+                    'created_at' => now()->subDays(2),
+                    'program' => $this->createMockObject([
+                        'program_name' => 'Nursing Review Program'
+                    ]),
+                    'package' => $this->createMockObject([
+                        'package_name' => 'Complete Nursing Package'
+                    ])
+                ]),
+                $this->createMockObject([
+                    'enrollment_id' => 2,
+                    'student_name' => 'Maria Santos',
+                    'student_email' => 'maria.santos@example.com',
+                    'payment_status' => 'pending',
+                    'total_amount' => 18000.00,
+                    'created_at' => now()->subDays(1),
+                    'program' => $this->createMockObject([
+                        'program_name' => 'Medical Technology Review'
+                    ]),
+                    'package' => $this->createMockObject([
+                        'package_name' => 'MedTech Premium Package'
+                    ])
+                ])
+            ]);
+
+            $pendingApprovals = collect();
+
+            return view('admin.admin-student-registration.admin-payment-pending', [
+                'enrollments' => $enrollments,
+                'pendingApprovals' => $pendingApprovals,
+                'isPreview' => true
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Payment pending preview error: ' . $e->getMessage());
+            return response('
+                <html>
+                    <head><title>Payment Pending Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>Payment Pending Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200);
+        }
+    }
+
+    /**
+     * Preview mode for payment history page
+     */
+    public function previewPaymentHistory($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Generate mock payment history
+            $paymentHistory = collect([
+                $this->createMockObject([
+                    'payment_history_id' => 1,
+                    'payment_date' => now()->subDays(10),
+                    'amount_paid' => 15000.00,
+                    'payment_method' => 'Bank Transfer',
+                    'status' => 'completed',
+                    'payment_status' => 'completed',
+                    'enrollment' => $this->createMockObject([
+                        'enrollment_id' => 1,
+                        'student' => $this->createMockObject([
+                            'firstname' => 'Juan',
+                            'lastname' => 'Dela Cruz',
+                            'email' => 'juan.delacruz@example.com'
+                        ]),
+                        'program' => $this->createMockObject([
+                            'program_name' => 'Nursing Review Program'
+                        ]),
+                        'package' => $this->createMockObject([
+                            'package_name' => 'Complete Nursing Package'
+                        ])
+                    ])
+                ]),
+                $this->createMockObject([
+                    'payment_history_id' => 2,
+                    'payment_date' => now()->subDays(5),
+                    'amount_paid' => 18000.00,
+                    'payment_method' => 'GCash',
+                    'status' => 'completed',
+                    'payment_status' => 'completed',
+                    'enrollment' => $this->createMockObject([
+                        'enrollment_id' => 2,
+                        'student' => $this->createMockObject([
+                            'firstname' => 'Maria',
+                            'lastname' => 'Santos',
+                            'email' => 'maria.santos@example.com'
+                        ]),
+                        'program' => $this->createMockObject([
+                            'program_name' => 'Medical Technology Review'
+                        ]),
+                        'package' => $this->createMockObject([
+                            'package_name' => 'MedTech Premium Package'
+                        ])
+                    ])
+                ])
+            ]);
+
+            return view('admin.admin-student-registration.admin-payment-history', [
+                'paymentHistory' => $paymentHistory,
+                'isPreview' => true
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Payment history preview error: ' . $e->getMessage());
+            return response('
+                <html>
+                    <head><title>Payment History Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>Payment History Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200);
+        }
     }
 }

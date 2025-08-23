@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\AdminPreviewCustomization;
 use Illuminate\Http\Request;
 use App\Models\Announcement;
 use App\Models\Program;
@@ -16,6 +17,7 @@ use Carbon\Carbon;
 
 class AnnouncementController extends Controller
 {
+    use AdminPreviewCustomization;
     public function index()
     {
         $announcements = Announcement::with(['program', 'admin', 'professor'])
@@ -261,5 +263,182 @@ class AnnouncementController extends Controller
         }
 
         return $stats;
+    }
+    
+    /**
+     * Preview mode for tenant preview system
+     */
+    public function previewIndex($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Create mock announcement objects that behave like real Announcement models
+            $mockAnnouncements = collect([
+                $this->createMockAnnouncement([
+                    'announcement_id' => 1,
+                    'title' => 'Welcome to the New Academic Year',
+                    'content' => 'We are excited to announce the start of the new academic year. This year brings new opportunities, courses, and exciting developments for all our students and faculty members.',
+                    'description' => 'Important information for all students and faculty',
+                    'type' => 'general',
+                    'target_scope' => 'all',
+                    'is_published' => true,
+                    'admin_id' => 1,
+                    'professor_id' => null,
+                    'created_at' => now()->subDays(2),
+                    'updated_at' => now()->subDays(2),
+                ]),
+                $this->createMockAnnouncement([
+                    'announcement_id' => 2,
+                    'title' => 'System Maintenance Scheduled',
+                    'content' => 'Please be advised that system maintenance is scheduled for this weekend from 2:00 AM to 6:00 AM EST. During this time, the platform may be temporarily unavailable.',
+                    'description' => 'Temporary service interruption notice',
+                    'type' => 'system',
+                    'target_scope' => 'all',
+                    'is_published' => true,
+                    'admin_id' => 2,
+                    'professor_id' => null,
+                    'created_at' => now()->subDays(5),
+                    'updated_at' => now()->subDays(5),
+                ]),
+                $this->createMockAnnouncement([
+                    'announcement_id' => 3,
+                    'title' => 'New Course Materials Available',
+                    'content' => 'New study materials and practice exams are now available in the student portal. Please check your enrolled courses for the latest resources.',
+                    'description' => 'Course updates and new materials',
+                    'type' => 'event',
+                    'target_scope' => 'specific',
+                    'is_published' => true,
+                    'admin_id' => null,
+                    'professor_id' => 1,
+                    'created_at' => now()->subDays(1),
+                    'updated_at' => now()->subDays(1),
+                ])
+            ]);
+
+            // Create paginator
+            $announcements = new \Illuminate\Pagination\LengthAwarePaginator(
+                $mockAnnouncements,
+                $mockAnnouncements->count(),
+                15,
+                1,
+                ['path' => request()->url()]
+            );
+
+            $html = view('admin.announcements.index', [
+                'announcements' => $announcements,
+                'isPreview' => true
+            ])->render();
+
+            
+            
+            // Generate mock announcements data 
+            $announcements = $this->generateMockData('announcements');
+            view()->share('announcements', $announcements);
+            view()->share('isPreviewMode', true);
+            
+            return response($html);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Admin announcements preview error: ' . $e->getMessage());
+            // Fallback to simple HTML on error
+            return response('
+                <html>
+                    <head><title>Admin Announcements Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>Admin Announcements Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200);
+        } finally {
+            // Clear session after render
+            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
+        }
+    }
+
+    /**
+     * Create a mock announcement object with all required methods
+     */
+    private function createMockAnnouncement($data)
+    {
+        // Create a mock announcement instance
+        $mockAnnouncement = new class extends Announcement {
+            public $mockData = [];
+            
+            public function __construct($data = []) {
+                $this->mockData = $data;
+                // Set properties directly
+                foreach ($data as $key => $value) {
+                    $this->$key = $value;
+                }
+            }
+            
+            public function getCreator() {
+                if ($this->professor_id) {
+                    return (object)[
+                        'professor_id' => $this->professor_id,
+                        'professor_name' => 'Dr. Preview Professor',
+                        'professor_first_name' => 'Dr. Preview',
+                        'professor_last_name' => 'Professor',
+                        'professor_email' => 'professor@preview.com',
+                        'email' => 'professor@preview.com',
+                        'avatar' => null
+                    ];
+                } elseif ($this->admin_id) {
+                    return (object)[
+                        'admin_id' => $this->admin_id,
+                        'admin_name' => 'Preview Admin',
+                        'first_name' => 'Preview',
+                        'last_name' => 'Admin',
+                        'email' => 'admin@preview.com',
+                        'avatar' => null
+                    ];
+                }
+                return null;
+            }
+            
+            public function getCreatorName() {
+                $creator = $this->getCreator();
+                if (!$creator) return 'Unknown';
+                
+                if ($this->professor_id) {
+                    return $creator->professor_name ?? 'Dr. Preview Professor';
+                } else {
+                    return $creator->admin_name ?? 'Preview Admin';
+                }
+            }
+            
+            public function getCreatorAvatar() {
+                return null; // No avatars in preview mode
+            }
+            
+            // Mock relationship methods
+            public function admin() {
+                return $this->getCreator();
+            }
+            
+            public function professor() {
+                return $this->getCreator();
+            }
+            
+            public function program() {
+                return null; // No program relationships in preview
+            }
+        };
+        
+        return new $mockAnnouncement($data);
     }
 }

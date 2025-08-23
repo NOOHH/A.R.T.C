@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\AdminPreviewCustomization;
 use App\Models\Professor;
 use App\Models\Program;
 use App\Models\StudentBatch;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 
 class AdminProfessorController extends Controller
 {
+    use AdminPreviewCustomization;
     public function __construct()
     {
         // Only apply to directors
@@ -522,5 +524,91 @@ class AdminProfessorController extends Controller
             'success' => true,
             'profile' => $profile
         ]);
+    }
+
+    /**
+     * Preview mode for tenant preview system - Professors
+     */
+    public function previewIndex($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Mock data for preview
+            $programs = collect([
+                (object)['program_id' => 1, 'program_name' => 'Nursing Review'],
+                (object)['program_id' => 2, 'program_name' => 'Medical Technology Review']
+            ]);
+
+            $professorsCollection = collect([
+                (object)[
+                    'professor_id' => 1,
+                    'firstname' => 'Dr. Jane',
+                    'lastname' => 'Smith',
+                    'full_name' => 'Dr. Jane Smith',
+                    'email' => 'jane.smith@university.edu',
+                    'specialization' => 'Nursing',
+                    'is_archived' => false,
+                    'created_at' => now(),
+                    'programs_count' => 2,
+                    'batches_count' => 3,
+                    'programs' => collect([$programs->first()])
+                ],
+                (object)[
+                    'professor_id' => 2,
+                    'firstname' => 'Dr. Robert',
+                    'lastname' => 'Johnson',
+                    'full_name' => 'Dr. Robert Johnson',
+                    'email' => 'robert.johnson@university.edu',
+                    'specialization' => 'Medical Technology',
+                    'is_archived' => false,
+                    'created_at' => now()->subDays(15),
+                    'programs_count' => 1,
+                    'batches_count' => 2,
+                    'programs' => collect([$programs->last()])
+                ]
+            ]);
+
+            // Create a mock paginator
+            $professors = new \Illuminate\Pagination\LengthAwarePaginator(
+                $professorsCollection,
+                $professorsCollection->count(),
+                10,
+                1,
+                ['path' => request()->url()]
+            );
+
+            $html = view('admin.professors.index', [
+                'professors' => $professors,
+                'programs' => $programs,
+                'isPreview' => true
+            ])->render();
+
+            // Clear session after render
+            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
+            
+            
+            
+            // Generate mock professors data
+            $professors = $this->generateMockData('professors');
+            view()->share('professors', $professors);
+            view()->share('isPreviewMode', true);
+            
+            return response($html);
+
+        } catch (\Exception $e) {
+            Log::error('Admin professors preview error: ' . $e->getMessage());
+            return response('Preview mode error: ' . $e->getMessage(), 500);
+        }
     }
 }

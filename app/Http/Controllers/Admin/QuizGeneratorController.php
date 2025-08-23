@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\AdminPreviewCustomization;
 use App\Models\Professor;
 use App\Models\Quiz;
 use App\Models\QuizQuestion;
@@ -21,6 +22,7 @@ use Illuminate\Support\Facades\Schema;
 
 class QuizGeneratorController extends Controller
 {
+    use AdminPreviewCustomization;
     protected $geminiQuizService;
 
     public function __construct(GeminiQuizService $geminiQuizService)
@@ -1755,5 +1757,122 @@ class QuizGeneratorController extends Controller
     {
         // This method is an alias for updateQuiz to maintain route compatibility
         return $this->updateQuiz($request, $quizId);
+    }
+
+    /**
+     * Preview mode for tenant preview system - Quiz Generator
+     */
+    public function previewIndex($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Mock quiz data
+            $quizzesCollection = collect([
+                (object)[
+                    'quiz_id' => 1,
+                    'quiz_title' => 'Nursing Fundamentals Quiz',
+                    'quiz_description' => 'Basic nursing concepts and principles',
+                    'quiz_instructions' => 'Answer all questions to the best of your ability',
+                    'total_questions' => 10,
+                    'time_limit' => 30,
+                    'passing_score' => 70,
+                    'is_active' => true,
+                    'created_at' => now()->subDays(7),
+                    'module' => (object)[
+                        'module_name' => 'Nursing Fundamentals',
+                        'module_id' => 1
+                    ]
+                ],
+                (object)[
+                    'quiz_id' => 2,
+                    'quiz_title' => 'Medical Terminology Assessment',
+                    'quiz_description' => 'Test your knowledge of medical terms',
+                    'quiz_instructions' => 'Select the best answer for each question',
+                    'total_questions' => 15,
+                    'time_limit' => 45,
+                    'passing_score' => 80,
+                    'is_active' => true,
+                    'created_at' => now()->subDays(3),
+                    'module' => (object)[
+                        'module_name' => 'Medical Terminology',
+                        'module_id' => 2
+                    ]
+                ]
+            ]);
+
+            // Generate mock data for quiz generator
+            $modules = $this->generateMockData('modules');
+            $assignedPrograms = $this->generateMockData('programs');
+            
+            // Mock quiz collections by status
+            $draftQuizzes = collect([
+                $this->createMockObject([
+                    'id' => 1,
+                    'quiz_id' => 1,
+                    'title' => 'Draft Quiz 1',
+                    'quiz_title' => 'Draft Quiz 1',
+                    'status' => 'draft',
+                    'created_at' => now()
+                ])
+            ]);
+            
+            $publishedQuizzes = collect([
+                $this->createMockObject([
+                    'id' => 2,
+                    'quiz_id' => 2,
+                    'title' => 'Published Quiz 1',
+                    'quiz_title' => 'Published Quiz 1',
+                    'status' => 'published',
+                    'created_at' => now()
+                ])
+            ]);
+            
+            $archivedQuizzes = collect([
+                $this->createMockObject([
+                    'id' => 3,
+                    'quiz_id' => 3,
+                    'title' => 'Archived Quiz 1',
+                    'quiz_title' => 'Archived Quiz 1',
+                    'status' => 'archived',
+                    'created_at' => now()
+                ])
+            ]);
+            
+            view()->share('modules', $modules);
+            view()->share('assignedPrograms', $assignedPrograms);
+            view()->share('draftQuizzes', $draftQuizzes);
+            view()->share('publishedQuizzes', $publishedQuizzes);
+            view()->share('archivedQuizzes', $archivedQuizzes);
+            view()->share('isPreviewMode', true);
+
+            $html = view('admin.quiz-generator.index', compact('assignedPrograms', 'draftQuizzes', 'publishedQuizzes', 'archivedQuizzes'))->render();
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Admin quiz generator preview error: ' . $e->getMessage());
+            return response('
+                <html>
+                    <head><title>Admin Quiz Generator Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>Admin Quiz Generator Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200);
+        } finally {
+            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
+        }
     }
 }

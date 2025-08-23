@@ -11,9 +11,11 @@ use App\Models\Professor;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Traits\AdminPreviewCustomization;
 
 class BatchEnrollmentController extends Controller
 {
+    use AdminPreviewCustomization;
     public function index()
     {
         // Authentication is handled by middleware
@@ -988,5 +990,143 @@ class BatchEnrollmentController extends Controller
             'success' => true,
             'message' => 'Student removed from batch and moved to available students'
         ]);
+    }
+    
+    /**
+     * Preview mode for tenant preview system
+     */
+    public function previewIndex($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Mock batches data
+            $batchesCollection = collect([
+                (object)[
+                    'batch_id' => 1,
+                    'batch_name' => 'Nursing Review Batch 2025-A',
+                    'batch_code' => 'NUR2025A',
+                    'program_id' => 1,
+                    'start_date' => now()->format('Y-m-d'),
+                    'end_date' => now()->addMonths(6)->format('Y-m-d'),
+                    'batch_status' => 'available',
+                    'max_students' => 50,
+                    'max_capacity' => 50,
+                    'current_capacity' => 25,
+                    'created_at' => now()->subDays(10),
+                    'updated_at' => now()->subDays(10),
+                    'program' => (object)[
+                        'program_id' => 1,
+                        'program_name' => 'Nursing Review'
+                    ],
+                    'professors' => collect([
+                        (object)[
+                            'professor_id' => 1,
+                            'firstname' => 'Dr. Maria',
+                            'lastname' => 'Santos'
+                        ]
+                    ]),
+                    'assignedProfessor' => (object)[
+                        'professor_id' => 1,
+                        'firstname' => 'Dr. Maria',
+                        'lastname' => 'Santos',
+                        'professor_first_name' => 'Dr. Maria',
+                        'professor_last_name' => 'Santos',
+                        'name' => 'Dr. Maria Santos'
+                    ]
+                ],
+                (object)[
+                    'batch_id' => 2,
+                    'batch_name' => 'Medical Technology Review Batch 2025-A',
+                    'batch_code' => 'MEDTECH2025A',
+                    'program_id' => 2,
+                    'start_date' => now()->addDays(30)->format('Y-m-d'),
+                    'end_date' => now()->addMonths(6)->addDays(30)->format('Y-m-d'),
+                    'batch_status' => 'ongoing',
+                    'max_students' => 40,
+                    'max_capacity' => 40,
+                    'current_capacity' => 35,
+                    'created_at' => now()->subDays(5),
+                    'updated_at' => now()->subDays(5),
+                    'program' => (object)[
+                        'program_id' => 2,
+                        'program_name' => 'Medical Technology Review'
+                    ],
+                    'professors' => collect([
+                        (object)[
+                            'professor_id' => 2,
+                            'firstname' => 'Dr. Juan',
+                            'lastname' => 'Garcia'
+                        ]
+                    ]),
+                    'assignedProfessor' => (object)[
+                        'professor_id' => 2,
+                        'firstname' => 'Dr. Juan',
+                        'lastname' => 'Garcia',
+                        'professor_first_name' => 'Dr. Juan',
+                        'professor_last_name' => 'Garcia',
+                        'name' => 'Dr. Juan Garcia'
+                    ]
+                ]
+            ]);
+
+            // Mock programs
+            $programs = collect([
+                (object)['program_id' => 1, 'program_name' => 'Nursing Review'],
+                (object)['program_id' => 2, 'program_name' => 'Medical Technology Review']
+            ]);
+
+            // Mock professors
+            $professors = collect([
+                (object)['professor_id' => 1, 'firstname' => 'Dr. Maria', 'lastname' => 'Santos'],
+                (object)['professor_id' => 2, 'firstname' => 'Dr. Juan', 'lastname' => 'Garcia']
+            ]);
+
+            $html = view('admin.admin-student-enrollment.batch-enroll', [
+                'batches' => $batchesCollection,
+                'programs' => $programs,
+                'professors' => $professors,
+                'isPreview' => true
+            ])->render();
+
+            
+            
+            // Generate mock data for batch enrollment
+            $students = $this->generateMockData('students');
+            $programs = $this->generateMockData('programs');
+            view()->share('students', $students);
+            view()->share('programs', $programs);
+            view()->share('isPreviewMode', true);
+            
+            return response($html);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Admin batches preview error: ' . $e->getMessage());
+            // Fallback to simple HTML on error
+            return response('
+                <html>
+                    <head><title>Admin Batches Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>Admin Batches Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200);
+        } finally {
+            // Clear session after render
+            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
+        }
     }
 }

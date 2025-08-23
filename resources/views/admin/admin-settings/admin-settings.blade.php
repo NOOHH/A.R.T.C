@@ -817,17 +817,23 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                                     <label class="form-label fw-bold">Whitelisted Professors</label>
                                     <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
                                         @php
-                                            $professors = \App\Models\Professor::where('professor_archived', 0)->get();
-                                            $whitelistedProfessors = explode(',', \App\Models\AdminSetting::getValue('meeting_whitelist_professors', ''));
+                                            // Use mock data in preview mode, real data otherwise
+                                            if (isset($isPreview) && $isPreview && isset($professors)) {
+                                                $professorsData = $professors;
+                                                $whitelistedProfessors = ['1', '2']; // Mock whitelist
+                                            } else {
+                                                $professorsData = \App\Models\Professor::where('professor_archived', 0)->get();
+                                                $whitelistedProfessors = explode(',', \App\Models\AdminSetting::getValue('meeting_whitelist_professors', ''));
+                                            }
                                         @endphp
-                                        @forelse($professors as $professor)
+                                        @forelse($professorsData as $professor)
                                             <div class="form-check mb-2">
                                                 <input class="form-check-input" type="checkbox" 
-                                                       id="professor_{{ $professor->professor_id }}" 
+                                                       id="professor_{{ $professor->id }}" 
                                                        name="whitelist_professors[]" 
-                                                       value="{{ $professor->professor_id }}"
-                                                       {{ in_array($professor->professor_id, $whitelistedProfessors) ? 'checked' : '' }}>
-                                                <label class="form-check-label" for="professor_{{ $professor->professor_id }}">
+                                                       value="{{ $professor->id }}"
+                                                       {{ in_array($professor->id, $whitelistedProfessors) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="professor_{{ $professor->id }}">
                                                     <div class="d-flex align-items-center">
                                                         <div class="me-3">
                                                             <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
@@ -906,10 +912,16 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                                     <label class="form-label fw-bold">Whitelisted Professors</label>
                                     <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
                                         @php
-                                            $professors = \App\Models\Professor::where('professor_archived', 0)->get();
-                                            $whitelistedModuleProfessors = explode(',', \App\Models\AdminSetting::getValue('professor_module_management_whitelist', ''));
+                                            // Use mock data in preview mode, real data otherwise
+                                            if (isset($isPreview) && $isPreview && isset($professors)) {
+                                                $professorsData = $professors;
+                                                $whitelistedModuleProfessors = ['1', '2']; // Mock whitelist
+                                            } else {
+                                                $professorsData = \App\Models\Professor::where('professor_archived', 0)->get();
+                                                $whitelistedModuleProfessors = explode(',', \App\Models\AdminSetting::getValue('professor_module_management_whitelist', ''));
+                                            }
                                         @endphp
-                                        @forelse($professors as $professor)
+                                        @forelse($professorsData as $professor)
                                             <div class="form-check mb-2">
                                                 <input class="form-check-input" type="checkbox" 
                                                        id="module_professor_{{ $professor->professor_id }}" 

@@ -12,9 +12,11 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Models\AdminSetting;
+use App\Http\Controllers\Traits\AdminPreviewCustomization;
 
 class AdminProgramController extends Controller
 {
+    use AdminPreviewCustomization;
     public function __construct()
     {
         $user = \Auth::user();
@@ -569,6 +571,136 @@ class AdminProgramController extends Controller
             Log::error('Program archive error: ' . $e->getMessage());
             
             return redirect()->back()->with('error', 'Error archiving program. Please try again.');
+        }
+    }
+
+    /**
+     * Preview mode for tenant preview system - Programs
+     */
+    public function previewIndex($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Mock data for preview
+            $programs = collect([
+                (object)[
+                    'program_id' => 1,
+                    'program_name' => 'Nursing Review',
+                    'program_description' => 'Comprehensive nursing board exam review',
+                    'is_archived' => false,
+                    'created_at' => now(),
+                    'students_count' => 25,
+                    'modules_count' => 8,
+                    'enrollments' => collect([
+                        (object)['student_name' => 'Juan Dela Cruz'],
+                        (object)['student_name' => 'Maria Santos']
+                    ])
+                ],
+                (object)[
+                    'program_id' => 2,
+                    'program_name' => 'Medical Technology Review',
+                    'program_description' => 'Complete medical technology certification review',
+                    'is_archived' => false,
+                    'created_at' => now()->subDays(30),
+                    'students_count' => 18,
+                    'modules_count' => 6,
+                    'enrollments' => collect([
+                        (object)['student_name' => 'Pedro Garcia']
+                    ])
+                ]
+            ]);
+
+            $html = view('admin.admin-programs.admin-programs', [
+                'programs' => $programs,
+                'totalEnrollments' => 43,
+                'newEnrollmentsThisWeek' => 5,
+                'mostPopularProgram' => (object)['enrollments_count' => 25],
+                'isPreview' => true
+            ])->render();
+
+            // Clear session after render
+            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
+            
+            
+            
+            // Generate mock programs data
+            $programs = $this->generateMockData('programs');
+            view()->share('programs', $programs);
+            view()->share('isPreviewMode', true);
+            
+            return response($html);
+
+        } catch (\Exception $e) {
+            Log::error('Admin programs preview error: ' . $e->getMessage());
+            return response('Preview mode error: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Preview mode for tenant preview system - Enrollments
+     */
+    public function previewEnrollments($tenant)
+    {
+        try {
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Mock data for preview
+            $enrollments = collect([
+                (object)[
+                    'enrollment_id' => 1,
+                    'student_name' => 'Juan Dela Cruz',
+                    'program_name' => 'Nursing Review',
+                    'enrollment_date' => now(),
+                    'status' => 'approved',
+                    'payment_status' => 'paid'
+                ],
+                (object)[
+                    'enrollment_id' => 2,
+                    'student_name' => 'Maria Santos',
+                    'program_name' => 'Medical Technology Review',
+                    'enrollment_date' => now()->subDays(5),
+                    'status' => 'pending',
+                    'payment_status' => 'pending'
+                ]
+            ]);
+
+            $programs = collect([
+                (object)['program_id' => 1, 'program_name' => 'Nursing Review'],
+                (object)['program_id' => 2, 'program_name' => 'Medical Technology Review']
+            ]);
+
+            $html = view('admin.enrollment-management', [
+                'enrollments' => $enrollments,
+                'programs' => $programs,
+                'isPreview' => true
+            ])->render();
+
+            // Clear session after render
+            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
+            
+            return response($html);
+
+        } catch (\Exception $e) {
+            Log::error('Admin enrollments preview error: ' . $e->getMessage());
+            return response('Preview mode error: ' . $e->getMessage(), 500);
         }
     }
 }

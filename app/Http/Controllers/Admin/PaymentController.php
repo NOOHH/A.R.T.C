@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\AdminPreviewCustomization;
 use Illuminate\Http\Request;
 use App\Models\Payment;
 use Carbon\Carbon;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 
 class PaymentController extends Controller
 {
+    use AdminPreviewCustomization;
     /**
      * Display pending payments.
      */
@@ -245,5 +247,53 @@ class PaymentController extends Controller
             'resubmitted' => Payment::where('payment_status', 'resubmitted')->count(),
         ];
         return response()->json($stats);
+    }
+
+    /**
+     * Preview mode for tenant preview system - Payments
+     */
+    public function previewPending($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Generate mock payments data
+            $paymentsCollection = $this->generateMockData('payments');
+            view()->share('payments', $paymentsCollection);
+            view()->share('isPreviewMode', true);
+
+            $html = view('admin.payments.pending', [
+                'payments' => $paymentsCollection,
+                'isPreview' => true
+            ])->render();
+
+            return response($html);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Admin payments preview error: ' . $e->getMessage());
+            return response('
+                <html>
+                    <head><title>Admin Payments Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>Admin Payments Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200);
+        } finally {
+            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
+        }
     }
 }

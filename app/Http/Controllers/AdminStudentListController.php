@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\AdminPreviewCustomization;
 use App\Models\Student;
 use App\Models\Program;
 use App\Models\Package;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 
 class AdminStudentListController extends Controller
 {
+    use AdminPreviewCustomization;
     /**
      * Display a listing of students (non-archived), with filters.
      */
@@ -424,5 +426,174 @@ class AdminStudentListController extends Controller
         return redirect()
             ->route('admin.students.archived')
             ->with('success', 'Student deleted permanently!');
+    }
+
+    /**
+     * Preview mode for tenant preview system
+     */
+    public function previewIndex($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Mock programs
+            $programs = collect([
+                (object)[
+                    'program_id' => 1,
+                    'program_name' => 'Nursing Review',
+                    'is_archived' => false
+                ],
+                (object)[
+                    'program_id' => 2,
+                    'program_name' => 'Medical Technology Review',
+                    'is_archived' => false
+                ]
+            ]);
+
+            // Mock students - simplified structure
+            $studentsCollection = collect([
+                (object)[
+                    'student_id' => 'STU001',
+                    'firstname' => 'Juan',
+                    'lastname' => 'Dela Cruz',
+                    'email' => 'juan.delacruz@example.com',
+                    'date_approved' => now(),
+                    'is_archived' => false,
+                    'created_at' => now(),
+                    'program_id' => 1,
+                    'program' => (object)[
+                        'program_id' => 1,
+                        'program_name' => 'Nursing Review'
+                    ],
+                    'enrollment' => (object)[
+                        'learning_mode' => 'online',
+                        'start_date' => now(),
+                        'end_date' => now()->addMonths(6),
+                        'batch' => (object)[
+                            'batch_name' => 'Batch 2025-A',
+                            'start_date' => now(),
+                            'end_date' => now()->addMonths(6)
+                        ]
+                    ]
+                ],
+                (object)[
+                    'student_id' => 'STU002',
+                    'firstname' => 'Maria',
+                    'lastname' => 'Santos',
+                    'email' => 'maria.santos@example.com',
+                    'date_approved' => null,
+                    'is_archived' => false,
+                    'created_at' => now()->subDays(5),
+                    'program_id' => 2,
+                    'program' => (object)[
+                        'program_id' => 2,
+                        'program_name' => 'Medical Technology Review'
+                    ],
+                    'enrollment' => (object)[
+                        'learning_mode' => 'hybrid',
+                        'start_date' => now()->addDays(7),
+                        'end_date' => now()->addMonths(6)->addDays(7),
+                        'batch' => (object)[
+                            'batch_name' => 'Batch 2025-B',
+                            'start_date' => now()->addDays(7),
+                            'end_date' => now()->addMonths(6)->addDays(7)
+                        ]
+                    ]
+                ],
+                (object)[
+                    'student_id' => 'STU003',
+                    'firstname' => 'Pedro',
+                    'lastname' => 'Garcia',
+                    'email' => 'pedro.garcia@example.com',
+                    'date_approved' => now()->subDays(2),
+                    'is_archived' => false,
+                    'created_at' => now()->subDays(10),
+                    'program_id' => 1,
+                    'program' => (object)[
+                        'program_id' => 1,
+                        'program_name' => 'Nursing Review'
+                    ],
+                    'enrollment' => (object)[
+                        'learning_mode' => 'onsite',
+                        'start_date' => now()->subDays(1),
+                        'end_date' => now()->addMonths(6)->subDays(1),
+                        'batch' => (object)[
+                            'batch_name' => 'Batch 2025-A',
+                            'start_date' => now()->subDays(1),
+                            'end_date' => now()->addMonths(6)->subDays(1)
+                        ]
+                    ]
+                ]
+            ]);
+
+            // Create paginator
+            $students = new \Illuminate\Pagination\LengthAwarePaginator(
+                $studentsCollection,
+                $studentsCollection->count(),
+                10,
+                1,
+                ['path' => request()->url()]
+            );
+
+            $html = view('admin.students.index', [
+                'students' => $students,
+                'programs' => $programs,
+                'currentProgram' => null,
+                'search' => '',
+                'status' => 'all',
+                'isPreview' => true
+            ])->render();
+
+            
+            // Generate mock students data
+            $students = $this->generateMockData('students');
+            $programs = $this->generateMockData('programs');
+            
+            // Add program relationship to each student
+            $students = $students->map(function($student) use ($programs) {
+                $student->program = $programs->first();
+                $student->program_id = $programs->first()->program_id;
+                $student->enrollment = $this->createMockObject([
+                    'learning_mode' => 'online',
+                    'start_date' => now(),
+                    'batch' => null
+                ]);
+                return $student;
+            });
+            
+            view()->share('students', $students);
+            view()->share('programs', $programs);
+            view()->share('isPreviewMode', true);
+            
+            return response($html);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Admin students preview error: ' . $e->getMessage());
+            // Fallback to simple HTML on error
+            return response('
+                <html>
+                    <head><title>Admin Students Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>Admin Students Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200);
+        } finally {
+            // Clear session after render
+            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
+        }
     }
 }

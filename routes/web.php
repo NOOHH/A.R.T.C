@@ -756,31 +756,167 @@ Route::prefix('t')->group(function() {
         return response($html);
     })->name('tenant.admin.dashboard');
     Route::get('/draft/{tenant}/admin-dashboard', function($tenant) {
-        $tenantModel = \App\Models\Tenant::where('slug',$tenant)->firstOrFail();
-        $tenantService = app(\App\Services\TenantService::class);
-        $tenantService->switchToTenant($tenantModel);
         try {
+            // Load tenant customization helper function
+            $loadCustomization = function() {
+                $websiteId = request()->get('website');
+                
+                if ($websiteId) {
+                    try {
+                        $client = \App\Models\Client::find($websiteId);
+                        if ($client) {
+                            $tenantObj = \App\Models\Tenant::where('slug', $client->slug)->first();
+                            if ($tenantObj) {
+                                $tenantService = app(\App\Services\TenantService::class);
+                                $tenantService->switchToTenant($tenantObj);
+                                
+                                // Load tenant-specific settings
+                                $navbarSettings = \App\Models\Setting::getGroup('navbar');
+                                $adminSettings = \App\Models\Setting::getGroup('admin_panel');
+                                
+                                $settings = [
+                                    'navbar' => [
+                                        'brand_name' => $navbarSettings ? $navbarSettings->get('brand_name', 'Ascendo Review and Training Center') : 'Ascendo Review and Training Center',
+                                        'brand_logo' => $navbarSettings ? $navbarSettings->get('brand_logo', null) : null,
+                                    ],
+                                    'admin_panel' => [
+                                        'brand_name' => $adminSettings ? $adminSettings->get('brand_name', 'Ascendo Review and Training Center') : 'Ascendo Review and Training Center',
+                                        'brand_logo' => $adminSettings ? $adminSettings->get('brand_logo', null) : null,
+                                    ],
+                                ];
+                                
+                                $tenantService->switchToMain();
+                                
+                                // Share settings with the view
+                                view()->share('settings', $settings);
+                                view()->share('navbar', $settings['navbar'] ?? []);
+                                
+                                return $settings;
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::warning('Failed to load tenant customization for admin dashboard preview', [
+                            'website_id' => $websiteId,
+                            'error' => $e->getMessage()
+                        ]);
+                        // Continue with default settings
+                    }
+                }
+                
+                return [];
+            };
+            
+            // Load customization
+            $loadCustomization();
+            
+            // Set preview session BEFORE rendering
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Mock analytics data for preview
             $analytics = [
-                'total_students' => \Illuminate\Support\Facades\DB::table('students')->count(),
-                'total_programs' => \Illuminate\Support\Facades\DB::table('programs')->count(),
-                'total_modules' => \Illuminate\Support\Facades\DB::table('modules')->count(),
-                'total_enrollments' => \Illuminate\Support\Facades\DB::table('enrollments')->count(),
-                'pending_registrations' => \Illuminate\Support\Facades\DB::table('registrations')->where('status','pending')->count(),
-                'new_students_this_month' => 0,
-                'modules_this_week' => 0,
-                'archived_programs' => 0,
+                'total_students' => 156,
+                'total_programs' => 8,
+                'total_modules' => 24,
+                'total_enrollments' => 342,
+                'pending_registrations' => 12,
+                'new_students_this_month' => 28,
+                'modules_this_week' => 3,
+                'archived_programs' => 2,
             ];
+            
             $registrations = collect();
             $dbError = null;
-        } catch (\Throwable $e) {
-            $analytics = [];$registrations=collect();$dbError='Tenant DB error: '.$e->getMessage();
+
+            $html = view('admin.admin-dashboard.admin-dashboard', compact('analytics','registrations','dbError'))->render();
+
+            return response($html);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Admin dashboard preview error: ' . $e->getMessage());
+            // Fallback to simple HTML on error
+            return response('
+                <html>
+                    <head><title>Admin Dashboard Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>Admin Dashboard Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin/students">→ Go to Students</a>
+                    </body>
+                </html>
+            ', 200);
+        } finally {
+            // Clear session after render
+            session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
         }
-        $tenantService->switchToMain();
-        session(['user_name'=>'Tenant Admin','user_role'=>'admin','logged_in'=>true,'preview_mode'=>true]);
-        $html = view('admin.admin-dashboard.admin-dashboard', compact('analytics','registrations','dbError'))->render();
-        session()->forget(['user_name','user_role','logged_in','preview_mode']);
-        return response($html);
     })->name('tenant.draft.admin.dashboard');
+
+    // Tenant preview routes for other admin sections
+    Route::get('/draft/{tenant}/admin/students', function($tenant) {
+        return app(\App\Http\Controllers\AdminStudentListController::class)->previewIndex($tenant);
+    })->name('tenant.draft.admin.students');
+
+    Route::get('/draft/{tenant}/admin/professors', function($tenant) {
+        return app(\App\Http\Controllers\AdminProfessorController::class)->previewIndex($tenant);
+    })->name('tenant.draft.admin.professors');
+
+    Route::get('/draft/{tenant}/admin/programs', function($tenant) {
+        return app(\App\Http\Controllers\AdminProgramController::class)->previewIndex($tenant);
+    })->name('tenant.draft.admin.programs');
+
+    Route::get('/draft/{tenant}/admin/modules', function($tenant) {
+        return app(\App\Http\Controllers\AdminModuleController::class)->previewIndex($tenant);
+    })->name('tenant.draft.admin.modules');
+
+    Route::get('/draft/{tenant}/admin/announcements', function($tenant) {
+        return app(\App\Http\Controllers\Admin\AnnouncementController::class)->previewIndex($tenant);
+    })->name('tenant.draft.admin.announcements');
+
+    Route::get('/draft/{tenant}/admin/batches', function($tenant) {
+        return app(\App\Http\Controllers\Admin\BatchEnrollmentController::class)->previewIndex($tenant);
+    })->name('tenant.draft.admin.batches');
+
+    Route::get('/draft/{tenant}/admin/enrollments', function($tenant) {
+        return app(\App\Http\Controllers\AdminProgramController::class)->previewEnrollments($tenant);
+    })->name('tenant.draft.admin.enrollments');
+
+    Route::get('/draft/{tenant}/admin/payments', function($tenant) {
+        return app(\App\Http\Controllers\Admin\PaymentController::class)->previewPending($tenant);
+    })->name('tenant.draft.admin.payments');
+
+    Route::get('/draft/{tenant}/admin-student-registration/payment/pending', function($tenant) {
+        return app(\App\Http\Controllers\AdminController::class)->previewPaymentPending($tenant);
+    })->name('tenant.draft.admin.payment.pending');
+
+    Route::get('/draft/{tenant}/admin-student-registration/payment/history', function($tenant) {
+        return app(\App\Http\Controllers\AdminController::class)->previewPaymentHistory($tenant);
+    })->name('tenant.draft.admin.payment.history');
+
+    Route::get('/draft/{tenant}/admin/analytics', function($tenant) {
+        return app(\App\Http\Controllers\AdminAnalyticsController::class)->previewIndex($tenant);
+    })->name('tenant.draft.admin.analytics');
+
+    Route::get('/draft/{tenant}/admin/settings', function($tenant) {
+        return app(\App\Http\Controllers\AdminSettingsController::class)->previewIndex($tenant);
+    })->name('tenant.draft.admin.settings');
+
+    Route::get('/draft/{tenant}/admin/packages', function($tenant) {
+        return app(\App\Http\Controllers\AdminPackageController::class)->previewIndex($tenant);
+    })->name('tenant.draft.admin.packages');
+
+    Route::get('/draft/{tenant}/admin/directors', function($tenant) {
+        return app(\App\Http\Controllers\AdminDirectorController::class)->previewIndex($tenant);
+    })->name('tenant.draft.admin.directors');
+
+    Route::get('/draft/{tenant}/admin/quiz-generator', function($tenant) {
+        return app(\App\Http\Controllers\Admin\QuizGeneratorController::class)->previewIndex($tenant);
+    })->name('tenant.draft.admin.quiz-generator');
 });
 
 // Legacy root login (fallback) – optionally redirect if tenant query provided
