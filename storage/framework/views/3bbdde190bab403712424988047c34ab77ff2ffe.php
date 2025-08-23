@@ -94,16 +94,30 @@
                 <div class="collapse <?php if(str_starts_with(Route::currentRouteName(), 'admin.student.registration')): ?> show <?php endif; ?>" id="collapseRegistration">
                     <div class="submenu">
                         <?php if($isAdmin || ($isDirector && $directorFeatures['manage_enrollments'])): ?>
-                            <a href="<?php echo e(route('admin.student.registration.pending')); ?>" class="submenu-link <?php if(Route::currentRouteName() === 'admin.student.registration.pending'): ?> active <?php endif; ?>">
+                            <?php
+                                $pendingUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin-student-registration/pending" . $urlParams
+                                    : route('admin.student.registration.pending');
+                                $historyUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin-student-registration/history" . $urlParams
+                                    : route('admin.student.registration.history');
+                                $paymentPendingUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin-student-registration/payment/pending" . $urlParams
+                                    : route('admin.student.registration.payment.pending');
+                                $paymentHistoryUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin-student-registration/payment/history" . $urlParams
+                                    : route('admin.student.registration.payment.history');
+                            ?>
+                            <a href="<?php echo e($pendingUrl); ?>" class="submenu-link <?php if(Route::currentRouteName() === 'admin.student.registration.pending'): ?> active <?php endif; ?>">
                                 <i class="bi bi-clock"></i><span>Pending</span>
                             </a>
-                            <a href="<?php echo e(route('admin.student.registration.history')); ?>" class="submenu-link <?php if(Route::currentRouteName() === 'admin.student.registration.history'): ?> active <?php endif; ?>">
+                            <a href="<?php echo e($historyUrl); ?>" class="submenu-link <?php if(Route::currentRouteName() === 'admin.student.registration.history'): ?> active <?php endif; ?>">
                                 <i class="bi bi-archive"></i><span>History</span>
                             </a>
-                            <a href="<?php echo e(route('admin.student.registration.payment.pending')); ?>" class="submenu-link <?php if(Route::currentRouteName() === 'admin.student.registration.payment.pending'): ?> active <?php endif; ?>">
+                            <a href="<?php echo e($paymentPendingUrl); ?>" class="submenu-link <?php if(Route::currentRouteName() === 'admin.student.registration.payment.pending'): ?> active <?php endif; ?>">
                                 <i class="bi bi-credit-card"></i><span>Payment Pending</span>
                             </a>
-                            <a href="<?php echo e(route('admin.student.registration.payment.history')); ?>" class="submenu-link <?php if(Route::currentRouteName() === 'admin.student.registration.payment.history'): ?> active <?php endif; ?>">
+                            <a href="<?php echo e($paymentHistoryUrl); ?>" class="submenu-link <?php if(Route::currentRouteName() === 'admin.student.registration.payment.history'): ?> active <?php endif; ?>">
                                 <i class="bi bi-receipt"></i><span>Payment History</span>
                             </a>
                         <?php endif; ?>
@@ -220,7 +234,12 @@
                             </a>
                         <?php endif; ?>
                         <?php if($isAdmin): ?>
-                            <a href="<?php echo e(route('admin.submissions')); ?>" class="submenu-link <?php if(str_starts_with(Route::currentRouteName(), 'admin.submissions')): ?> active <?php endif; ?>">
+                            <?php
+                                $submissionsUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin/submissions" . $urlParams
+                                    : route('admin.submissions');
+                            ?>
+                            <a href="<?php echo e($submissionsUrl); ?>" class="submenu-link <?php if(str_starts_with(Route::currentRouteName(), 'admin.submissions')): ?> active <?php endif; ?>">
                                 <i class="bi bi-file-earmark-text"></i><span>Assignment Submissions</span>
                             </a>
                         <?php endif; ?>
@@ -245,7 +264,12 @@
 
             <!-- FAQ Management -->
             <div class="nav-item">
-                <a href="<?php echo e(route('admin.faq.index')); ?>" class="nav-link <?php if(Route::currentRouteName() === 'admin.faq.index'): ?> active <?php endif; ?>">
+                <?php
+                    $faqUrl = $tenantSlug 
+                        ? $basePreviewUrl . "/admin/faq" . $urlParams
+                        : route('admin.faq.index');
+                ?>
+                <a href="<?php echo e($faqUrl); ?>" class="nav-link <?php if(Route::currentRouteName() === 'admin.faq.index'): ?> active <?php endif; ?>">
                     <i class="bi bi-question-circle"></i><span>FAQ Management</span>
                 </a>
             </div>

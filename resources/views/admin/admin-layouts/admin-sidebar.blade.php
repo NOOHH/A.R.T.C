@@ -93,16 +93,30 @@
                 <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'admin.student.registration')) show @endif" id="collapseRegistration">
                     <div class="submenu">
                         @if($isAdmin || ($isDirector && $directorFeatures['manage_enrollments']))
-                            <a href="{{ route('admin.student.registration.pending') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.student.registration.pending') active @endif">
+                            @php
+                                $pendingUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin-student-registration/pending" . $urlParams
+                                    : route('admin.student.registration.pending');
+                                $historyUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin-student-registration/history" . $urlParams
+                                    : route('admin.student.registration.history');
+                                $paymentPendingUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin-student-registration/payment/pending" . $urlParams
+                                    : route('admin.student.registration.payment.pending');
+                                $paymentHistoryUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin-student-registration/payment/history" . $urlParams
+                                    : route('admin.student.registration.payment.history');
+                            @endphp
+                            <a href="{{ $pendingUrl }}" class="submenu-link @if(Route::currentRouteName() === 'admin.student.registration.pending') active @endif">
                                 <i class="bi bi-clock"></i><span>Pending</span>
                             </a>
-                            <a href="{{ route('admin.student.registration.history') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.student.registration.history') active @endif">
+                            <a href="{{ $historyUrl }}" class="submenu-link @if(Route::currentRouteName() === 'admin.student.registration.history') active @endif">
                                 <i class="bi bi-archive"></i><span>History</span>
                             </a>
-                            <a href="{{ route('admin.student.registration.payment.pending') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.student.registration.payment.pending') active @endif">
+                            <a href="{{ $paymentPendingUrl }}" class="submenu-link @if(Route::currentRouteName() === 'admin.student.registration.payment.pending') active @endif">
                                 <i class="bi bi-credit-card"></i><span>Payment Pending</span>
                             </a>
-                            <a href="{{ route('admin.student.registration.payment.history') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.student.registration.payment.history') active @endif">
+                            <a href="{{ $paymentHistoryUrl }}" class="submenu-link @if(Route::currentRouteName() === 'admin.student.registration.payment.history') active @endif">
                                 <i class="bi bi-receipt"></i><span>Payment History</span>
                             </a>
                         @endif
@@ -219,7 +233,12 @@
                             </a>
                         @endif
                         @if($isAdmin)
-                            <a href="{{ route('admin.submissions') }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'admin.submissions')) active @endif">
+                            @php
+                                $submissionsUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin/submissions" . $urlParams
+                                    : route('admin.submissions');
+                            @endphp
+                            <a href="{{ $submissionsUrl }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'admin.submissions')) active @endif">
                                 <i class="bi bi-file-earmark-text"></i><span>Assignment Submissions</span>
                             </a>
                         @endif
@@ -244,7 +263,12 @@
 
             <!-- FAQ Management -->
             <div class="nav-item">
-                <a href="{{ route('admin.faq.index') }}" class="nav-link @if(Route::currentRouteName() === 'admin.faq.index') active @endif">
+                @php
+                    $faqUrl = $tenantSlug 
+                        ? $basePreviewUrl . "/admin/faq" . $urlParams
+                        : route('admin.faq.index');
+                @endphp
+                <a href="{{ $faqUrl }}" class="nav-link @if(Route::currentRouteName() === 'admin.faq.index') active @endif">
                     <i class="bi bi-question-circle"></i><span>FAQ Management</span>
                 </a>
             </div>

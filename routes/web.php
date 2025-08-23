@@ -918,6 +918,14 @@ Route::prefix('t')->group(function() {
         return app(\App\Http\Controllers\Admin\QuizGeneratorController::class)->previewIndex($tenant);
     })->name('tenant.draft.admin.quiz-generator');
 
+    Route::get('/draft/{tenant}/admin/faq', function($tenant) {
+        return app(\App\Http\Controllers\AdminController::class)->previewFaqIndex($tenant);
+    })->name('tenant.draft.admin.faq');
+
+    Route::get('/draft/{tenant}/admin/submissions', function($tenant) {
+        return app(\App\Http\Controllers\AdminController::class)->previewSubmissions($tenant);
+    })->name('tenant.draft.admin.submissions');
+
     // Additional admin preview routes for missing pages
     Route::get('/draft/{tenant}/admin/programs/archived', function($tenant) {
         try {
@@ -993,21 +1001,6 @@ Route::prefix('t')->group(function() {
             return response('<h1>Payment History Preview - Tenant: '.$tenant.'</h1><p>✅ Route working correctly!</p><p>Preview data loaded successfully.</p>');
         }
     })->name('tenant.draft.admin.payments.history');
-
-    Route::get('/draft/{tenant}/admin/faq', function($tenant) {
-        try {
-            session(['preview_tenant' => $tenant, 'user_name' => 'Preview Admin', 'user_role' => 'admin', 'logged_in' => true, 'preview_mode' => true]);
-            
-            $faqs = collect([
-                (object)['id' => 1, 'question' => 'How do I enroll in a program?', 'answer' => 'You can enroll by visiting our enrollment page...', 'category' => 'Enrollment', 'is_active' => true],
-                (object)['id' => 2, 'question' => 'What are the payment options?', 'answer' => 'We accept various payment methods...', 'category' => 'Payments', 'is_active' => true]
-            ]);
-            
-            return view('admin.faq.index', ['faqs' => $faqs, 'isPreview' => true])->render();
-        } catch (\Exception $e) {
-            return response('<h1>FAQ Management Preview - Tenant: '.$tenant.'</h1><p>✅ Route working correctly!</p><p>Preview data loaded successfully.</p>');
-        }
-    })->name('tenant.draft.admin.faq');
 
     Route::get('/draft/{tenant}/admin/announcements/create', function($tenant) {
         try {
