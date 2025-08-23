@@ -3985,7 +3985,7 @@ class AdminController extends Controller
             ]);
             
             // Load tenant customization
-            $this->loadTenantCustomization($tenant);
+            $this->loadAdminPreviewCustomization();
             
             $programId = $request->get('program_id');
             
@@ -4052,7 +4052,7 @@ class AdminController extends Controller
             ]);
             
             // Load tenant customization
-            $this->loadTenantCustomization($tenant);
+            $this->loadAdminPreviewCustomization();
 
             if (!$moduleId) {
                 return response()->json([
@@ -4109,7 +4109,7 @@ class AdminController extends Controller
     {
         try {
             // Load tenant customization
-            $this->loadTenantCustomization($tenant);
+            $this->loadAdminPreviewCustomization();
             
             // Set preview session
             session([
@@ -4120,81 +4120,101 @@ class AdminController extends Controller
                 'preview_mode' => true
             ]);
 
-            return response('
-                <html>
-                    <head>
-                        <title>Student Registration - Pending - TEST11</title>
-                        <style>
-                            body { font-family: Arial; margin: 20px; }
-                            .header { background: #007bff; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-                            .pending-item { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; margin: 10px 0; border-radius: 5px; }
-                            .status-badge { background: #ffc107; color: #212529; padding: 5px 10px; border-radius: 3px; font-size: 12px; }
-                            .nav-links { margin: 20px 0; }
-                            .nav-links a { display: inline-block; padding: 10px 15px; background: #6c757d; color: white; text-decoration: none; margin-right: 10px; border-radius: 3px; }
-                            .nav-links a.active { background: #007bff; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="header">
-                            <h1>TEST11 - Student Registration - Pending Applications</h1>
-                            <p>✅ Tenant: '.$tenant.' | Preview Mode Active</p>
-                        </div>
-                        
-                        <div class="nav-links">
-                            <a href="/t/draft/'.$tenant.'/admin-student-registration/pending" class="active">Pending</a>
-                            <a href="/t/draft/'.$tenant.'/admin-student-registration/history">History</a>
-                            <a href="/t/draft/'.$tenant.'/admin-student-registration">Overview</a>
-                        </div>
-                        
-                        <h2>Pending Registration Applications</h2>
-                        
-                        <div class="pending-item">
-                            <h3>John Doe - TEST11 Nursing Program</h3>
-                            <p><strong>Email:</strong> john.doe@email.com</p>
-                            <p><strong>Phone:</strong> +1-555-0123</p>
-                            <p><strong>Applied:</strong> 2 days ago</p>
-                            <p><strong>Status:</strong> <span class="status-badge">PENDING REVIEW</span></p>
-                            <p><strong>Documents:</strong> ID, Transcript, Medical Certificate</p>
-                        </div>
-                        
-                        <div class="pending-item">
-                            <h3>Jane Smith - TEST11 Medical Technology Program</h3>
-                            <p><strong>Email:</strong> jane.smith@email.com</p>
-                            <p><strong>Phone:</strong> +1-555-0124</p>
-                            <p><strong>Applied:</strong> 1 day ago</p>
-                            <p><strong>Status:</strong> <span class="status-badge">PENDING PAYMENT</span></p>
-                            <p><strong>Documents:</strong> ID, Transcript (Missing: Medical Certificate)</p>
-                        </div>
-                        
-                        <div class="pending-item">
-                            <h3>Mike Johnson - TEST11 Physical Therapy Program</h3>
-                            <p><strong>Email:</strong> mike.johnson@email.com</p>
-                            <p><strong>Phone:</strong> +1-555-0125</p>
-                            <p><strong>Applied:</strong> 3 hours ago</p>
-                            <p><strong>Status:</strong> <span class="status-badge">PENDING DOCUMENTS</span></p>
-                            <p><strong>Documents:</strong> ID Only (Missing: Transcript, Medical Certificate)</p>
-                        </div>
-                        
-                        <p><strong>Total Pending Applications:</strong> 3</p>
-                        
-                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
-                    </body>
-                </html>
-            ', 200, ['Content-Type' => 'text/html']);
+            // Generate mock pending registrations
+            $registrations = collect([
+                $this->createMockObject([
+                    'registration_id' => 1,
+                    'user_firstname' => 'John',
+                    'user_lastname' => 'Doe',
+                    'email' => 'john.doe@email.com',
+                    'status' => 'pending',
+                    'enrollment_type' => 'new',
+                    'created_at' => now()->subDays(2),
+                    'user' => $this->createMockObject([
+                        'user_firstname' => 'John',
+                        'user_lastname' => 'Doe',
+                        'email' => 'john.doe@email.com',
+                        'phone' => '+1-555-0123'
+                    ]),
+                    'package' => $this->createMockObject([
+                        'package_name' => 'TEST11 Nursing Program'
+                    ]),
+                    'program' => $this->createMockObject([
+                        'program_name' => 'TEST11 Nursing Program'
+                    ]),
+                    'plan' => $this->createMockObject([
+                        'plan_name' => 'Standard Plan'
+                    ])
+                ]),
+                $this->createMockObject([
+                    'registration_id' => 2,
+                    'user_firstname' => 'Jane',
+                    'user_lastname' => 'Smith',
+                    'email' => 'jane.smith@email.com',
+                    'status' => 'pending',
+                    'enrollment_type' => 'new',
+                    'created_at' => now()->subDays(1),
+                    'user' => $this->createMockObject([
+                        'user_firstname' => 'Jane',
+                        'user_lastname' => 'Smith',
+                        'email' => 'jane.smith@email.com',
+                        'phone' => '+1-555-0124'
+                    ]),
+                    'package' => $this->createMockObject([
+                        'package_name' => 'TEST11 Medical Technology Program'
+                    ]),
+                    'program' => $this->createMockObject([
+                        'program_name' => 'TEST11 Medical Technology Program'
+                    ]),
+                    'plan' => $this->createMockObject([
+                        'plan_name' => 'Premium Plan'
+                    ])
+                ]),
+                $this->createMockObject([
+                    'registration_id' => 3,
+                    'user_firstname' => 'Mike',
+                    'user_lastname' => 'Johnson',
+                    'email' => 'mike.johnson@email.com',
+                    'status' => 'pending',
+                    'enrollment_type' => 'new',
+                    'created_at' => now()->subHours(3),
+                    'user' => $this->createMockObject([
+                        'user_firstname' => 'Mike',
+                        'user_lastname' => 'Johnson',
+                        'email' => 'mike.johnson@email.com',
+                        'phone' => '+1-555-0125'
+                    ]),
+                    'package' => $this->createMockObject([
+                        'package_name' => 'TEST11 Physical Therapy Program'
+                    ]),
+                    'program' => $this->createMockObject([
+                        'program_name' => 'TEST11 Physical Therapy Program'
+                    ]),
+                    'plan' => $this->createMockObject([
+                        'plan_name' => 'Basic Plan'
+                    ])
+                ])
+            ]);
+
+            return view('admin.admin-student-registration.admin-student-registration', [
+                'registrations' => $registrations,
+                'history' => false,
+                'isPreview' => true
+            ]);
 
         } catch (\Exception $e) {
             Log::error('Student registration pending preview error: ' . $e->getMessage());
             return response('
                 <html>
-                    <head><title>TEST11 - Student Registration Pending</title></head>
+                    <head><title>TEST11 - Student Registration Pending Preview</title></head>
                     <body style="font-family: Arial;">
-                        <h1>TEST11 - Student Registration Pending - Tenant: '.$tenant.'</h1>
-                        <p>❌ Error: '.$e->getMessage().'</p>
+                        <h1>TEST11 - Student Registration Pending Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
                         <p>But route is working correctly!</p>
                         <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
                     </body>
                 </html>
-            ', 200, ['Content-Type' => 'text/html']);
+            ', 200);
         }
     }
 }

@@ -1039,6 +1039,22 @@
 let currentArchiveModuleId = null;
 let currentOverrideModuleId = null;
 
+// Helper to get tenant from URL path
+function getTenantFromPath() {
+    const path = window.location.pathname;
+    const match = path.match(/\/t\/draft\/([^\/]+)\//);
+    return match ? match[1] : null;
+}
+
+// Helper to construct tenant-aware API URL
+function getApiUrl(endpoint) {
+    const tenant = getTenantFromPath();
+    if (tenant) {
+        return `/t/draft/${tenant}/admin/${endpoint}`;
+    }
+    return `/admin/${endpoint}`;
+}
+
 // Module toggle functionality with content viewer
 function toggleModule(moduleId) {
     const content = document.getElementById(`module-content-${moduleId}`);
@@ -1088,7 +1104,7 @@ function loadModuleContentInViewer(moduleId) {
     viewerBody.innerHTML = '<div class="text-center"><i class="bi bi-hourglass-split"></i> Loading...</div>';
     
     // Fetch module content with proper headers
-    fetch(`/admin/modules/${moduleId}/content`, {
+    fetch(getApiUrl(`modules/${moduleId}/content`), {
         method: 'GET',
         headers: {
             'Accept': 'application/json',
@@ -1167,7 +1183,7 @@ function loadCourseContentInViewer(moduleId, courseId) {
     viewerBody.innerHTML = '<div class="text-center"><i class="bi bi-hourglass-split"></i> Loading...</div>';
     
     // Fetch course content with proper headers
-    fetch(`/admin/modules/${moduleId}/courses/${courseId}/content`, {
+    fetch(getApiUrl(`modules/${moduleId}/courses/${courseId}/content`), {
         method: 'GET',
         headers: {
             'Accept': 'application/json',
@@ -1283,7 +1299,7 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
     viewerBody.innerHTML = '<div class="text-center"><i class="bi bi-hourglass-split"></i> Loading...</div>';
     
     // Fetch content details
-    fetch(`/admin/content/${contentId}`, {
+    fetch(getApiUrl(`content/${contentId}`), {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -1917,7 +1933,7 @@ function loadModuleCourses(moduleId) {
     
     container.innerHTML = '<div class="text-center p-3"><i class="bi bi-arrow-clockwise fa-spin"></i> Loading courses...</div>';
     
-    fetch(`/admin/modules/${moduleId}/courses`)
+    fetch(getApiUrl(`modules/${moduleId}/courses`))
         .then(response => response.json())
         .then(data => {
             if (data.success && data.courses) {
@@ -2155,7 +2171,7 @@ function showAddCourseModal(moduleId, moduleName = '') {
         // Pre-fill the module selection if moduleId is provided
         if (moduleId) {
             // Set the program first by finding which program this module belongs to
-            fetch(`/admin/modules/by-program?module_id=${moduleId}`)
+            fetch(getApiUrl(`modules/by-program?module_id=${moduleId}`))
                 .then(response => response.json())
                 .then(data => {
                     if (data.success && data.program_id) {
@@ -3106,7 +3122,7 @@ function setupModalEventListeners() {
         programSelect.addEventListener('change', function() {
             const programId = this.value;
             if (programId) {
-                window.location.href = `/admin/modules?program_id=${programId}`;
+                window.location.href = `${getApiUrl(`modules?program_id=${programId}`)}`;
             } else {
                 document.getElementById('modulesDisplayArea').innerHTML = `
                     <div class="select-program-msg">

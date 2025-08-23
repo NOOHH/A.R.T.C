@@ -250,16 +250,6 @@
                         <?php endif; ?>
                         <?php if($isAdmin): ?>
                             <?php
-                                $courseUploadUrl = $tenantSlug 
-                                    ? $basePreviewUrl . "/admin/courses/upload" . $urlParams
-                                    : route('admin.courses.upload', [], false);
-                            ?>
-                            <a href="<?php echo e($courseUploadUrl); ?>" class="submenu-link">
-                                <i class="bi bi-cloud-upload"></i><span>Course Content Upload</span>
-                            </a>
-                        <?php endif; ?>
-                        <?php if($isAdmin): ?>
-                            <?php
                                 $submissionsUrl = $tenantSlug 
                                     ? $basePreviewUrl . "/admin/submissions" . $urlParams
                                     : route('admin.submissions');

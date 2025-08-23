@@ -2106,28 +2106,8 @@ class AdminModuleController extends Controller
                 ]
             ]);
 
-            $modules = collect([
-                (object)[
-                    'module_id' => 1,
-                    'module_name' => 'Fundamentals of Nursing',
-                    'module_description' => 'Basic nursing principles and practices',
-                    'is_archived' => false,
-                    'program_id' => 1,
-                    'program' => $programs->first(),
-                    'courses_count' => 5,
-                    'content_count' => 12
-                ],
-                (object)[
-                    'module_id' => 2,
-                    'module_name' => 'Clinical Chemistry',
-                    'module_description' => 'Laboratory analysis and chemistry fundamentals',
-                    'is_archived' => false,
-                    'program_id' => 2,
-                    'program' => $programs->last(),
-                    'courses_count' => 4,
-                    'content_count' => 8
-                ]
-            ]);
+            // Generate mock modules data using the trait
+            $modules = $this->generateMockData('modules');
 
             $html = view('admin.admin-modules.admin-modules', [
                 'modules' => $modules,
@@ -2137,13 +2117,6 @@ class AdminModuleController extends Controller
 
             // Clear session after render
             session()->forget(['user_name', 'user_role', 'logged_in', 'preview_mode']);
-            
-            
-            
-            // Generate mock modules data
-            $modules = $this->generateMockData('modules');
-            view()->share('modules', $modules);
-            view()->share('isPreviewMode', true);
             
             return response($html);
 
