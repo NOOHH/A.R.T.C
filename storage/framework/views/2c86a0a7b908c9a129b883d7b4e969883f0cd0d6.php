@@ -1,65 +1,68 @@
-@extends('admin.admin-dashboard.admin-dashboard-layout')
 
-@section('title', 'Archived Students')
 
-@section('content')
+<?php $__env->startSection('title', 'Archived Students'); ?>
+
+<?php $__env->startSection('content'); ?>
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="bi bi-archive"></i> Archived Students</h2>
-                @if(isset($isPreview) && $isPreview && isset($previewTenant))
-                    <a href="/t/draft/{{ $previewTenant }}/admin/students?website={{ request('website') }}" class="btn btn-outline-secondary">
+                <?php if(isset($isPreview) && $isPreview && isset($previewTenant)): ?>
+                    <a href="/t/draft/<?php echo e($previewTenant); ?>/admin/students?website=<?php echo e(request('website')); ?>" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left"></i> Back to Active Students
                     </a>
-                @else
-                    <a href="{{ route('admin.students.index') }}" class="btn btn-outline-secondary">
+                <?php else: ?>
+                    <a href="<?php echo e(route('admin.students.index')); ?>" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left"></i> Back to Active Students
                     </a>
-                @endif
+                <?php endif; ?>
             </div>
 
-            @if(session('success'))
+            <?php if(session('success')): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            @endif
+                    <?php echo e(session('success')); ?>
 
-            @if(session('error'))
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    {{ session('error') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-            @endif
+            <?php endif; ?>
+
+            <?php if(session('error')): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <?php echo e(session('error')); ?>
+
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
 
             <!-- Filters -->
             <div class="card shadow mb-4">
                 <div class="card-body">
-                    @if(isset($isPreview) && $isPreview && isset($previewTenant))
-                        <form method="GET" action="/t/draft/{{ $previewTenant }}/admin/students/archived">
-                            <input type="hidden" name="website" value="{{ request('website') }}">
-                    @else
-                        <form method="GET" action="{{ route('admin.students.archived') }}">
-                    @endif
+                    <?php if(isset($isPreview) && $isPreview && isset($previewTenant)): ?>
+                        <form method="GET" action="/t/draft/<?php echo e($previewTenant); ?>/admin/students/archived">
+                            <input type="hidden" name="website" value="<?php echo e(request('website')); ?>">
+                    <?php else: ?>
+                        <form method="GET" action="<?php echo e(route('admin.students.archived')); ?>">
+                    <?php endif; ?>
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <label for="program_id" class="form-label">Filter by Program</label>
                                 <select name="program_id" id="program_id" class="form-select">
                                     <option value="">All Programs</option>
-                                    @foreach($programs as $program)
-                                        <option value="{{ $program->program_id }}" 
-                                                {{ request('program_id') == $program->program_id ? 'selected' : '' }}>
-                                            {{ $program->program_name }}
+                                    <?php $__currentLoopData = $programs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $program): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <option value="<?php echo e($program->program_id); ?>" 
+                                                <?php echo e(request('program_id') == $program->program_id ? 'selected' : ''); ?>>
+                                            <?php echo e($program->program_name); ?>
+
                                         </option>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </select>
                             </div>
                             
                             <div class="col-md-6">
                                 <label for="search" class="form-label">Search</label>
                                 <input type="text" name="search" id="search" class="form-control" 
-                                       placeholder="Search by name, ID, or email..." value="{{ request('search') }}">
+                                       placeholder="Search by name, ID, or email..." value="<?php echo e(request('search')); ?>">
                             </div>
                             
                             <div class="col-md-2">
@@ -68,15 +71,15 @@
                                     <button type="submit" class="btn btn-primary">
                                         <i class="bi bi-search"></i> Search
                                     </button>
-                                    @if(isset($isPreview) && $isPreview && isset($previewTenant))
-                                        <a href="/t/draft/{{ $previewTenant }}/admin/students/archived?website={{ request('website') }}" class="btn btn-outline-secondary">
+                                    <?php if(isset($isPreview) && $isPreview && isset($previewTenant)): ?>
+                                        <a href="/t/draft/<?php echo e($previewTenant); ?>/admin/students/archived?website=<?php echo e(request('website')); ?>" class="btn btn-outline-secondary">
                                             <i class="bi bi-arrow-clockwise"></i>
                                         </a>
-                                    @else
-                                        <a href="{{ route('admin.students.archived') }}" class="btn btn-outline-secondary">
+                                    <?php else: ?>
+                                        <a href="<?php echo e(route('admin.students.archived')); ?>" class="btn btn-outline-secondary">
                                             <i class="bi bi-arrow-clockwise"></i>
                                         </a>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -86,7 +89,7 @@
 
             <div class="card shadow">
                 <div class="card-body">
-                    @if($students->count() > 0)
+                    <?php if($students->count() > 0): ?>
                         <div class="table-responsive">
                             <table class="table table-hover">
                                 <thead class="table-dark">
@@ -101,38 +104,41 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($students as $student)
+                                    <?php $__currentLoopData = $students; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $student): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <tr>
-                                            <td>{{ $student->student_id }}</td>
-                                            <td>{{ $student->student_first_name }} {{ $student->student_last_name }}</td>
-                                            <td>{{ $student->student_email }}</td>
+                                            <td><?php echo e($student->student_id); ?></td>
+                                            <td><?php echo e($student->student_first_name); ?> <?php echo e($student->student_last_name); ?></td>
+                                            <td><?php echo e($student->student_email); ?></td>
                                             <td>
-                                                @if($student->programs && $student->programs->count() > 0)
-                                                    {{ $student->programs->first()->program_name }}
-                                                    @if($student->programs->count() > 1)
-                                                        <small class="text-muted">(+{{ $student->programs->count() - 1 }} more)</small>
-                                                    @endif
-                                                @else
+                                                <?php if($student->programs && $student->programs->count() > 0): ?>
+                                                    <?php echo e($student->programs->first()->program_name); ?>
+
+                                                    <?php if($student->programs->count() > 1): ?>
+                                                        <small class="text-muted">(+<?php echo e($student->programs->count() - 1); ?> more)</small>
+                                                    <?php endif; ?>
+                                                <?php else: ?>
                                                     <span class="text-muted">No Program</span>
-                                                @endif
+                                                <?php endif; ?>
                                             </td>
                                             <td>
-                                                @if($student->date_approved)
+                                                <?php if($student->date_approved): ?>
                                                     <span class="badge bg-success">Approved</span>
-                                                @else
+                                                <?php else: ?>
                                                     <span class="badge bg-warning">Pending</span>
-                                                @endif
+                                                <?php endif; ?>
                                             </td>
                                             <td>
-                                                @if(isset($isPreview) && $isPreview && is_string($student->updated_at))
-                                                    {{ $student->updated_at }}
-                                                @else
-                                                    {{ $student->updated_at->format('M d, Y') }}
-                                                @endif
+                                                <?php if(isset($isPreview) && $isPreview && is_string($student->updated_at)): ?>
+                                                    <?php echo e($student->updated_at); ?>
+
+                                                <?php else: ?>
+                                                    <?php echo e($student->updated_at->format('M d, Y')); ?>
+
+                                                <?php endif; ?>
                                             </td>
                                             <td class="text-center">
                                                 <div class="btn-group" role="group">
-                                                    @if(isset($isPreview) && $isPreview)
+                                                    <?php if(isset($isPreview) && $isPreview): ?>
                                                         <button type="button" onclick="alert('Preview mode - View not available')"
                                                                 class="btn btn-sm btn-outline-info" title="View (Preview)">
                                                             <i class="bi bi-eye"></i>
@@ -145,57 +151,58 @@
                                                                 class="btn btn-sm btn-outline-danger" title="Delete (Preview)">
                                                             <i class="bi bi-trash"></i>
                                                         </button>
-                                                    @else
-                                                        <a href="{{ route('admin.students.show', $student) }}" 
+                                                    <?php else: ?>
+                                                        <a href="<?php echo e(route('admin.students.show', $student)); ?>" 
                                                            class="btn btn-sm btn-outline-info" title="View Details">
                                                             <i class="bi bi-eye"></i>
                                                         </a>
-                                                        <form method="POST" action="{{ route('admin.students.restore', $student) }}" 
+                                                        <form method="POST" action="<?php echo e(route('admin.students.restore', $student)); ?>" 
                                                               style="display: inline;" onsubmit="return confirm('Restore this student?')">
-                                                            @csrf
+                                                            <?php echo csrf_field(); ?>
                                                             <button type="submit" class="btn btn-sm btn-outline-success" title="Restore Student">
                                                                 <i class="bi bi-arrow-counterclockwise"></i>
                                                             </button>
                                                         </form>
                                                         <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                                title="Delete Permanently" onclick="deleteStudent({{ $student->student_id }})">
+                                                                title="Delete Permanently" onclick="deleteStudent(<?php echo e($student->student_id); ?>)">
                                                             <i class="bi bi-trash"></i>
                                                         </button>
-                                                    @endif
+                                                    <?php endif; ?>
                                                 </div>
                                             </td>
                                         </tr>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>
                             </table>
                         </div>
 
                         <!-- Pagination -->
                         <div class="d-flex justify-content-center mt-4">
-                            {{ $students->appends(request()->query())->links() }}
+                            <?php echo e($students->appends(request()->query())->links()); ?>
+
                         </div>
-                    @else
+                    <?php else: ?>
                         <div class="text-center py-5">
                             <i class="bi bi-archive fs-1 text-muted"></i>
                             <h4 class="text-muted mt-3">No Archived Students</h4>
                             <p class="text-muted">
-                                @if(request()->hasAny(['program_id', 'search']))
+                                <?php if(request()->hasAny(['program_id', 'search'])): ?>
                                     No archived students match your current filters.
-                                @else
+                                <?php else: ?>
                                     There are no archived students at the moment.
-                                @endif
+                                <?php endif; ?>
                             </p>
-                            @if(isset($isPreview) && $isPreview && isset($previewTenant))
-                                <a href="/t/draft/{{ $previewTenant }}/admin/students?website={{ request('website') }}" class="btn btn-primary">
+                            <?php if(isset($isPreview) && $isPreview && isset($previewTenant)): ?>
+                                <a href="/t/draft/<?php echo e($previewTenant); ?>/admin/students?website=<?php echo e(request('website')); ?>" class="btn btn-primary">
                                     <i class="bi bi-arrow-left"></i> Back to Active Students
                                 </a>
-                            @else
-                                <a href="{{ route('admin.students.index') }}" class="btn btn-primary">
+                            <?php else: ?>
+                                <a href="<?php echo e(route('admin.students.index')); ?>" class="btn btn-primary">
                                     <i class="bi bi-arrow-left"></i> Back to Active Students
                                 </a>
-                            @endif
+                            <?php endif; ?>
                         </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -216,8 +223,8 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <form id="deleteStudentForm" method="POST" style="display: inline;">
-                    @csrf
-                    @method('DELETE')
+                    <?php echo csrf_field(); ?>
+                    <?php echo method_field('DELETE'); ?>
                     <button type="submit" class="btn btn-danger">Delete Permanently</button>
                 </form>
             </div>
@@ -234,4 +241,6 @@ function deleteStudent(studentId) {
     modal.show();
 }
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('admin.admin-dashboard.admin-dashboard-layout', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/admin/students/archived.blade.php ENDPATH**/ ?>

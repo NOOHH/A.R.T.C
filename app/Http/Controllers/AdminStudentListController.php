@@ -550,4 +550,125 @@ class AdminStudentListController extends Controller
             ]);
         }
     }
+
+    /**
+     * Preview archived students page for tenant
+     */
+    public function previewArchived($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Generate mock archived students
+            $mockStudents = collect([
+                $this->createMockObject([
+                    'student_id' => 1001,
+                    'firstname' => 'Maria',
+                    'lastname' => 'Rodriguez',
+                    'student_first_name' => 'Maria',
+                    'student_last_name' => 'Rodriguez',
+                    'full_name' => 'Maria Rodriguez',
+                    'email' => 'maria.rodriguez@example.com',
+                    'student_email' => 'maria.rodriguez@example.com',
+                    'date_approved' => '2024-01-15',
+                    'updated_at' => 'Jan 15, 2024',
+                    'is_archived' => true,
+                    'programs' => collect([
+                        $this->createMockObject([
+                            'program_name' => 'Nursing Review',
+                            'program_id' => 1
+                        ])
+                    ]),
+                    'program' => $this->createMockObject([
+                        'program_name' => 'Nursing Review',
+                        'program_id' => 1
+                    ]),
+                    'enrollment' => $this->createMockObject([
+                        'batch' => $this->createMockObject([
+                            'batch_name' => 'Batch 2024-A'
+                        ])
+                    ])
+                ]),
+                $this->createMockObject([
+                    'student_id' => 1002,
+                    'firstname' => 'Carlos',
+                    'lastname' => 'Martinez',
+                    'student_first_name' => 'Carlos',
+                    'student_last_name' => 'Martinez',
+                    'full_name' => 'Carlos Martinez',
+                    'email' => 'carlos.martinez@example.com',
+                    'student_email' => 'carlos.martinez@example.com',
+                    'date_approved' => null,
+                    'updated_at' => 'Feb 10, 2024',
+                    'is_archived' => true,
+                    'programs' => collect([
+                        $this->createMockObject([
+                            'program_name' => 'Medical Review',
+                            'program_id' => 2
+                        ])
+                    ]),
+                    'program' => $this->createMockObject([
+                        'program_name' => 'Medical Review',
+                        'program_id' => 2
+                    ]),
+                    'enrollment' => $this->createMockObject([
+                        'batch' => $this->createMockObject([
+                            'batch_name' => 'Batch 2024-B'
+                        ])
+                    ])
+                ])
+            ]);
+
+            // Generate mock programs for filtering
+            $mockPrograms = collect([
+                $this->createMockObject([
+                    'program_id' => 1,
+                    'program_name' => 'Nursing Review',
+                    'is_archived' => false
+                ]),
+                $this->createMockObject([
+                    'program_id' => 2,
+                    'program_name' => 'Medical Review',
+                    'is_archived' => false
+                ])
+            ]);
+
+            // Create a mock paginated collection
+            $students = new \Illuminate\Pagination\LengthAwarePaginator(
+                $mockStudents,
+                count($mockStudents),
+                10,
+                1,
+                ['path' => request()->url(), 'pageName' => 'page']
+            );
+            $students->withQueryString();
+
+            // Render the view
+            return view('admin.students.archived', [
+                'students' => $students,
+                'programs' => $mockPrograms,
+                'isPreview' => true,
+                'previewTenant' => $tenant
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->view('tenant.preview.error', [
+                'title' => 'Admin Students Archived Preview - Tenant: ' . $tenant,
+                'error' => 'Error rendering archived students view: ' . $e->getMessage(),
+                'details' => 'View: ' . $e->getFile() . ' Line: ' . $e->getLine(),
+                'route_works' => true,
+                'backUrl' => '/t/draft/' . $tenant . '/admin/students?website=' . request('website')
+            ]);
+        }
+    }
 }

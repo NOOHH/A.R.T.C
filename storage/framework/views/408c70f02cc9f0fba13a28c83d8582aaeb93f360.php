@@ -60,60 +60,117 @@
             </div>
             
             <div class="module-actions-grid">
-                <a href="<?php echo e(route('admin.modules.index')); ?>" class="module-action-card">
-                    <span class="icon">📝</span>
-                    <div class="title">Create Module</div>
-                    <div class="description">Add new learning modules</div>
-                </a>
-                
-                <a href="<?php echo e(route('admin.modules.index')); ?>" class="module-action-card">
-                    <span class="icon">📋</span>
-                    <div class="title">Create Quiz</div>
-                    <div class="description">Design interactive quizzes</div>
-                </a>
-                
-                <a href="<?php echo e(route('admin.modules.index')); ?>" class="module-action-card">
-                    <span class="icon">📊</span>
-                    <div class="title">Create Test</div>
-                    <div class="description">Build comprehensive tests</div>
-                </a>
-                
-                <a href="<?php echo e(route('admin.modules.index')); ?>" class="module-action-card">
-                    <span class="icon">🔗</span>
-                    <div class="title">Add Link</div>
-                    <div class="description">Link external resources</div>
-                </a>
-                
-                <a href="<?php echo e(route('admin.modules.index')); ?>" class="module-action-card">
-                    <span class="icon">📤</span>
-                    <div class="title">Batch Upload</div>
-                    <div class="description">Upload multiple XML files</div>
-                </a>
-                
-                <a href="<?php echo e(route('admin.modules.archived')); ?>" class="module-action-card">
-                    <span class="icon">🗃️</span>
-                    <div class="title">Archived Content</div>
-                    <div class="description">Manage archived modules</div>
-                </a>
-                
-                <a href="<?php echo e(route('admin.programs.index')); ?>" class="module-action-card">
-                    <span class="icon">🎓</span>
-                    <div class="title">Manage Programs</div>
-                    <div class="description">Create and edit programs</div>
-                </a>
-                
-                <a href="<?php echo e(route('admin.submissions')); ?>" class="module-action-card">
-                    <span class="icon">📋</span>
-                    <div class="title">Assignment Submissions</div>
-                    <div class="description">Review and grade student work</div>
-                </a>
-                
-                <a href="<?php echo e(route('admin.certificates')); ?>" class="module-action-card">
-                    <span class="icon">🏆</span>
-                    <div class="title">Certificates</div>
-                    <div class="description">Generate student certificates</div>
-                </a>
-                
+                <?php if(session('preview_tenant') && request('website')): ?>
+                    
+                    <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/modules?website=<?php echo e(request('website')); ?>" class="module-action-card">
+                        <span class="icon">📝</span>
+                        <div class="title">Create Module</div>
+                        <div class="description">Add new learning modules</div>
+                    </a>
+                    
+                    <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/modules?website=<?php echo e(request('website')); ?>" class="module-action-card">
+                        <span class="icon">📋</span>
+                        <div class="title">Create Quiz</div>
+                        <div class="description">Design interactive quizzes</div>
+                    </a>
+                    
+                    <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/modules?website=<?php echo e(request('website')); ?>" class="module-action-card">
+                        <span class="icon">📊</span>
+                        <div class="title">Create Test</div>
+                        <div class="description">Build comprehensive tests</div>
+                    </a>
+                    
+                    <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/modules?website=<?php echo e(request('website')); ?>" class="module-action-card">
+                        <span class="icon">🔗</span>
+                        <div class="title">Add Link</div>
+                        <div class="description">Link external resources</div>
+                    </a>
+                    
+                    <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/courses/upload?website=<?php echo e(request('website')); ?>" class="module-action-card">
+                        <span class="icon">📤</span>
+                        <div class="title">Batch Upload</div>
+                        <div class="description">Upload multiple XML files</div>
+                    </a>
+                    
+                    <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/modules/archived?website=<?php echo e(request('website')); ?>" class="module-action-card">
+                        <span class="icon">🗃️</span>
+                        <div class="title">Archived Content</div>
+                        <div class="description">Manage archived modules</div>
+                    </a>
+                    
+                    <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/programs?website=<?php echo e(request('website')); ?>" class="module-action-card">
+                        <span class="icon">🎓</span>
+                        <div class="title">Manage Programs</div>
+                        <div class="description">Create and edit programs</div>
+                    </a>
+                    
+                    <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/submissions?website=<?php echo e(request('website')); ?>" class="module-action-card">
+                        <span class="icon">📋</span>
+                        <div class="title">Assignment Submissions</div>
+                        <div class="description">Review and grade student work</div>
+                    </a>
+                    
+                    <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/certificates?website=<?php echo e(request('website')); ?>" class="module-action-card">
+                        <span class="icon">🏆</span>
+                        <div class="title">Certificates</div>
+                        <div class="description">Generate student certificates</div>
+                    </a>
+                <?php else: ?>
+                    
+                    <a href="<?php echo e(route('admin.modules.index')); ?>" class="module-action-card">
+                        <span class="icon">📝</span>
+                        <div class="title">Create Module</div>
+                        <div class="description">Add new learning modules</div>
+                    </a>
+                    
+                    <a href="<?php echo e(route('admin.modules.index')); ?>" class="module-action-card">
+                        <span class="icon">📋</span>
+                        <div class="title">Create Quiz</div>
+                        <div class="description">Design interactive quizzes</div>
+                    </a>
+                    
+                    <a href="<?php echo e(route('admin.modules.index')); ?>" class="module-action-card">
+                        <span class="icon">📊</span>
+                        <div class="title">Create Test</div>
+                        <div class="description">Build comprehensive tests</div>
+                    </a>
+                    
+                    <a href="<?php echo e(route('admin.modules.index')); ?>" class="module-action-card">
+                        <span class="icon">🔗</span>
+                        <div class="title">Add Link</div>
+                        <div class="description">Link external resources</div>
+                    </a>
+                    
+                    <a href="<?php echo e(route('admin.modules.index')); ?>" class="module-action-card">
+                        <span class="icon">📤</span>
+                        <div class="title">Batch Upload</div>
+                        <div class="description">Upload multiple XML files</div>
+                    </a>
+                    
+                    <a href="<?php echo e(route('admin.modules.archived')); ?>" class="module-action-card">
+                        <span class="icon">🗃️</span>
+                        <div class="title">Archived Content</div>
+                        <div class="description">Manage archived modules</div>
+                    </a>
+                    
+                    <a href="<?php echo e(route('admin.programs.index')); ?>" class="module-action-card">
+                        <span class="icon">🎓</span>
+                        <div class="title">Manage Programs</div>
+                        <div class="description">Create and edit programs</div>
+                    </a>
+                    
+                    <a href="<?php echo e(route('admin.submissions')); ?>" class="module-action-card">
+                        <span class="icon">📋</span>
+                        <div class="title">Assignment Submissions</div>
+                        <div class="description">Review and grade student work</div>
+                    </a>
+                    
+                    <a href="<?php echo e(route('admin.certificates')); ?>" class="module-action-card">
+                        <span class="icon">🏆</span>
+                        <div class="title">Certificates</div>
+                        <div class="description">Generate student certificates</div>
+                    </a>
+                <?php endif; ?>
             </div>
         </div>
 

@@ -1,8 +1,8 @@
-@extends('admin.admin-dashboard.admin-dashboard-layout')
 
-@section('title', 'Archived Professors')
 
-@section('content')
+<?php $__env->startSection('title', 'Archived Professors'); ?>
+
+<?php $__env->startSection('content'); ?>
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
@@ -13,15 +13,15 @@
                     <p class="text-muted">Manage archived professors</p>
                 </div>
                 <div>
-                    @if(isset($isPreview) && $isPreview && isset($previewTenant))
-                        <a href="/t/draft/{{ $previewTenant }}/admin/professors?website={{ request('website') }}" class="btn btn-outline-primary">
+                    <?php if(isset($isPreview) && $isPreview && isset($previewTenant)): ?>
+                        <a href="/t/draft/<?php echo e($previewTenant); ?>/admin/professors?website=<?php echo e(request('website')); ?>" class="btn btn-outline-primary">
                             <i class="bi bi-arrow-left"></i> Back to Active Professors
                         </a>
-                    @else
-                        <a href="{{ route('admin.professors.index') }}" class="btn btn-outline-primary">
+                    <?php else: ?>
+                        <a href="<?php echo e(route('admin.professors.index')); ?>" class="btn btn-outline-primary">
                             <i class="bi bi-arrow-left"></i> Back to Active Professors
                         </a>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -31,7 +31,7 @@
                     <h5 class="mb-0">Archived Professors</h5>
                 </div>
                 <div class="card-body p-0">
-                    @if($professors->count() > 0)
+                    <?php if($professors->count() > 0): ?>
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
@@ -45,7 +45,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($professors as $professor)
+                                    <?php $__currentLoopData = $professors; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $professor): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <tr class="table-warning">
                                         <td>
                                             <div class="d-flex align-items-center">
@@ -54,66 +54,69 @@
                                                     <i class="bi bi-person text-white"></i>
                                                 </div>
                                                 <div>
-                                                    <div class="fw-semibold">{{ $professor->full_name }}</div>
-                                                    <small class="text-muted">{{ $professor->email }}</small>
+                                                    <div class="fw-semibold"><?php echo e($professor->full_name); ?></div>
+                                                    <small class="text-muted"><?php echo e($professor->email); ?></small>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>{{ $professor->email }}</td>
+                                        <td><?php echo e($professor->email); ?></td>
                                         <td>N/A</td>
                                         <td>
-                                            @if($professor->programs->count() > 0)
+                                            <?php if($professor->programs->count() > 0): ?>
                                                 <div class="d-flex flex-wrap gap-1">
-                                                    @foreach($professor->programs as $program)
-                                                        <span class="badge bg-secondary">{{ $program->program_name }}</span>
-                                                    @endforeach
+                                                    <?php $__currentLoopData = $professor->programs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $program): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                        <span class="badge bg-secondary"><?php echo e($program->program_name); ?></span>
+                                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                 </div>
-                                            @else
+                                            <?php else: ?>
                                                 <span class="text-muted">No assignments</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
                                         <td>
-                                            @if(isset($isPreview) && $isPreview && is_string($professor->updated_at))
-                                                {{ $professor->updated_at }}
-                                            @else
-                                                {{ $professor->updated_at->format('M d, Y') }}
-                                            @endif
+                                            <?php if(isset($isPreview) && $isPreview && is_string($professor->updated_at)): ?>
+                                                <?php echo e($professor->updated_at); ?>
+
+                                            <?php else: ?>
+                                                <?php echo e($professor->updated_at->format('M d, Y')); ?>
+
+                                            <?php endif; ?>
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">
                                                 <button type="button" class="btn btn-sm btn-outline-success"
                                                         data-bs-toggle="modal" data-bs-target="#restoreModal"
-                                                        data-professor-id="{{ $professor->id }}"
-                                                        data-professor-name="{{ $professor->full_name }}">
+                                                        data-professor-id="<?php echo e($professor->id); ?>"
+                                                        data-professor-name="<?php echo e($professor->full_name); ?>">
                                                     <i class="bi bi-arrow-clockwise"></i> Restore
                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-outline-danger"
                                                         data-bs-toggle="modal" data-bs-target="#deleteModal"
-                                                        data-professor-id="{{ $professor->id }}"
-                                                        data-professor-name="{{ $professor->full_name }}">
+                                                        data-professor-id="<?php echo e($professor->id); ?>"
+                                                        data-professor-name="<?php echo e($professor->full_name); ?>">
                                                     <i class="bi bi-trash"></i> Delete
                                                 </button>
                                             </div>
                                         </td>
                                     </tr>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>
                             </table>
                         </div>
                         
                         <!-- Pagination -->
-                        @if($professors->hasPages())
+                        <?php if($professors->hasPages()): ?>
                             <div class="p-3">
-                                {{ $professors->links() }}
+                                <?php echo e($professors->links()); ?>
+
                             </div>
-                        @endif
-                    @else
+                        <?php endif; ?>
+                    <?php else: ?>
                         <div class="text-center py-5">
                             <i class="bi bi-archive display-1 text-muted"></i>
                             <h5 class="mt-3">No Archived Professors</h5>
                             <p class="text-muted">No professors have been archived yet.</p>
                         </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -135,8 +138,8 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <form id="restoreForm" method="POST" style="display: inline;">
-                    @csrf
-                    @method('PATCH')
+                    <?php echo csrf_field(); ?>
+                    <?php echo method_field('PATCH'); ?>
                     <button type="submit" class="btn btn-success">Restore</button>
                 </form>
             </div>
@@ -159,17 +162,17 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <form id="deleteForm" method="POST" style="display: inline;">
-                    @csrf
-                    @method('DELETE')
+                    <?php echo csrf_field(); ?>
+                    <?php echo method_field('DELETE'); ?>
                     <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Restore modal
@@ -193,4 +196,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('admin.admin-dashboard.admin-dashboard-layout', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/admin/professors/archived.blade.php ENDPATH**/ ?>

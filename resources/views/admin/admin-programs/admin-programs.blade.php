@@ -87,9 +87,15 @@
             <div class="programs-header">
                 <h1>Programs Management</h1>
                 <div class="header-buttons">
-                    <a href="{{ route('admin.programs.archived') }}" class="view-archived-btn">
-                        📁 View Archived
-                    </a>
+                    @if(session('preview_tenant') && request('website'))
+                        <a href="/t/draft/{{ session('preview_tenant') }}/admin/programs/archived?website={{ request('website') }}" class="view-archived-btn">
+                            📁 View Archived
+                        </a>
+                    @else
+                        <a href="{{ route('admin.programs.archived') }}" class="view-archived-btn">
+                            📁 View Archived
+                        </a>
+                    @endif
                 </div>
             </div>
 

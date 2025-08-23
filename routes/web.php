@@ -866,6 +866,15 @@ Route::prefix('t')->group(function() {
         return app(\App\Http\Controllers\AdminProfessorController::class)->previewIndex($tenant);
     })->name('tenant.draft.admin.professors');
 
+    // Archived routes for tenant preview
+    Route::get('/draft/{tenant}/admin/students/archived', function($tenant) {
+        return app(\App\Http\Controllers\AdminStudentListController::class)->previewArchived($tenant);
+    })->name('tenant.draft.admin.students.archived');
+
+    Route::get('/draft/{tenant}/admin/professors/archived', function($tenant) {
+        return app(\App\Http\Controllers\AdminProfessorController::class)->previewArchived($tenant);
+    })->name('tenant.draft.admin.professors.archived');
+
     Route::get('/draft/{tenant}/admin/programs', function($tenant) {
         return app(\App\Http\Controllers\AdminProgramController::class)->previewIndex($tenant);
     })->name('tenant.draft.admin.programs');

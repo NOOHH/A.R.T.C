@@ -1,56 +1,57 @@
-@extends('admin.admin-dashboard.admin-dashboard-layout')
 
-@push('styles')
-  {{-- Bootstrap Icons --}}
+
+<?php $__env->startPush('styles'); ?>
+  
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('title', 'List of Students')
+<?php $__env->startSection('title', 'List of Students'); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="container-fluid py-4">
-  {{-- Header --}}
+  
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-people"></i> List of Students</h2>
     <div class="d-flex gap-2">
       <button type="button" class="btn btn-success" onclick="exportToCSV()">
         <i class="bi bi-download"></i> Export to CSV
       </button>
-      @if(session('preview_tenant') && request('website'))
-        <a href="/t/draft/{{ session('preview_tenant') }}/admin/students/archived?website={{ request('website') }}" class="btn btn-outline-secondary">
+      <?php if(session('preview_tenant') && request('website')): ?>
+        <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/students/archived?website=<?php echo e(request('website')); ?>" class="btn btn-outline-secondary">
           <i class="bi bi-archive"></i> View Archived
         </a>
-      @else
-        <a href="{{ route('admin.students.archived') }}" class="btn btn-outline-secondary">
+      <?php else: ?>
+        <a href="<?php echo e(route('admin.students.archived')); ?>" class="btn btn-outline-secondary">
           <i class="bi bi-archive"></i> View Archived
         </a>
-      @endif
+      <?php endif; ?>
     </div>
   </div>
 
-  {{-- Filters --}}
+  
   <div class="card shadow mb-4">
     <div class="card-body">
-      <form method="GET" action="{{ route('admin.students.index') }}">
+      <form method="GET" action="<?php echo e(route('admin.students.index')); ?>">
         <div class="row g-3">
           <div class="col-md-3">
             <label for="program_id" class="form-label">Filter by Program</label>
             <select name="program_id" id="program_id" class="form-select">
               <option value="">All Programs</option>
-              @foreach($programs as $program)
-                <option value="{{ $program->program_id }}"
-                  {{ request('program_id') == $program->program_id ? 'selected' : '' }}>
-                  {{ $program->program_name }}
+              <?php $__currentLoopData = $programs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $program): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <option value="<?php echo e($program->program_id); ?>"
+                  <?php echo e(request('program_id') == $program->program_id ? 'selected' : ''); ?>>
+                  <?php echo e($program->program_name); ?>
+
                 </option>
-              @endforeach
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
           </div>
           <div class="col-md-3">
             <label for="status" class="form-label">Filter by Status</label>
             <select name="status" id="status" class="form-select">
               <option value="">All Status</option>
-              <option value="approved" {{ request('status')=='approved'?'selected':'' }}>Approved</option>
-              <option value="pending"  {{ request('status')=='pending'?'selected':''  }}>Pending</option>
+              <option value="approved" <?php echo e(request('status')=='approved'?'selected':''); ?>>Approved</option>
+              <option value="pending"  <?php echo e(request('status')=='pending'?'selected':''); ?>>Pending</option>
             </select>
           </div>
           <div class="col-md-4">
@@ -60,14 +61,14 @@
                    id="search"
                    class="form-control"
                    placeholder="Search by name, ID, or email…"
-                   value="{{ request('search') }}">
+                   value="<?php echo e(request('search')); ?>">
           </div>
           <div class="col-md-2 d-flex align-items-end">
             <div class="w-100 d-flex gap-2">
               <button type="submit" class="btn btn-primary w-50">
                 <i class="bi bi-search"></i>
               </button>
-              <a href="{{ route('admin.students.index') }}"
+              <a href="<?php echo e(route('admin.students.index')); ?>"
                  class="btn btn-outline-secondary w-50">
                 <i class="bi bi-x"></i>
               </a>
@@ -78,18 +79,19 @@
     </div>
   </div>
 
-  {{-- Flash --}}
-  @if(session('success'))
+  
+  <?php if(session('success')): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
-      {{ session('success') }}
+      <?php echo e(session('success')); ?>
+
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-  @endif
+  <?php endif; ?>
 
-  {{-- Table --}}
+  
   <div class="card shadow">
     <div class="card-body">
-      @if($students->count())
+      <?php if($students->count()): ?>
         <div class="table-responsive">
           <table class="table table-hover align-middle">
             <thead class="table-dark">
@@ -108,28 +110,28 @@
               </tr>
             </thead>
             <tbody>
-              @foreach($students as $student)
+              <?php $__currentLoopData = $students; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $student): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <tr>
-                  <td><strong>{{ $student->student_id }}</strong></td>
-                  <td>{{ $student->firstname }} {{ $student->lastname }}</td>
-                  <td>{{ $student->email }}</td>
+                  <td><strong><?php echo e($student->student_id); ?></strong></td>
+                  <td><?php echo e($student->firstname); ?> <?php echo e($student->lastname); ?></td>
+                  <td><?php echo e($student->email); ?></td>
                   <td>
-                    @if($student->program)
-                      <span class="badge bg-info">{{ $student->program->program_name }}</span>
-                    @else
+                    <?php if($student->program): ?>
+                      <span class="badge bg-info"><?php echo e($student->program->program_name); ?></span>
+                    <?php else: ?>
                       <span class="text-muted">No Program</span>
-                    @endif
+                    <?php endif; ?>
                   </td>
                   <td>
-                    @if($student->enrollment && $student->enrollment->batch)
-                      <span class="badge bg-secondary">{{ $student->enrollment->batch->batch_name }}</span>
-                    @else
+                    <?php if($student->enrollment && $student->enrollment->batch): ?>
+                      <span class="badge bg-secondary"><?php echo e($student->enrollment->batch->batch_name); ?></span>
+                    <?php else: ?>
                       <span class="text-muted">-</span>
-                    @endif
+                    <?php endif; ?>
                   </td>
                   <td>
-                    @if($student->enrollment && $student->enrollment->learning_mode)
-                      @php
+                    <?php if($student->enrollment && $student->enrollment->learning_mode): ?>
+                      <?php
                         $mode = strtolower($student->enrollment->learning_mode);
                         $badgeColor = 'secondary';
                         $displayText = 'Unknown';
@@ -141,115 +143,120 @@
                           $badgeColor = 'success';  
                           $displayText = 'Asynchronous';
                         }
-                      @endphp
-                      <span class="badge bg-{{ $badgeColor }}">{{ $displayText }}</span>
-                    @else
+                      ?>
+                      <span class="badge bg-<?php echo e($badgeColor); ?>"><?php echo e($displayText); ?></span>
+                    <?php else: ?>
                       <span class="text-muted">-</span>
-                    @endif
+                    <?php endif; ?>
                   </td>
                   <td>
-                    @if($student->enrollment && $student->enrollment->start_date)
-                      {{ \Carbon\Carbon::parse($student->enrollment->start_date)->format('M d, Y') }}
-                    @elseif($student->enrollment && $student->enrollment->batch && $student->enrollment->batch->start_date)
-                      {{ \Carbon\Carbon::parse($student->enrollment->batch->start_date)->format('M d, Y') }}
-                    @else
+                    <?php if($student->enrollment && $student->enrollment->start_date): ?>
+                      <?php echo e(\Carbon\Carbon::parse($student->enrollment->start_date)->format('M d, Y')); ?>
+
+                    <?php elseif($student->enrollment && $student->enrollment->batch && $student->enrollment->batch->start_date): ?>
+                      <?php echo e(\Carbon\Carbon::parse($student->enrollment->batch->start_date)->format('M d, Y')); ?>
+
+                    <?php else: ?>
                       <span class="text-muted">-</span>
-                    @endif
+                    <?php endif; ?>
                   </td>
                   <td>
-                    @if($student->enrollment && $student->enrollment->end_date)
-                      {{ \Carbon\Carbon::parse($student->enrollment->end_date)->format('M d, Y') }}
-                    @elseif($student->enrollment && $student->enrollment->batch && $student->enrollment->batch->end_date)
-                      {{ \Carbon\Carbon::parse($student->enrollment->batch->end_date)->format('M d, Y') }}
-                    @else
+                    <?php if($student->enrollment && $student->enrollment->end_date): ?>
+                      <?php echo e(\Carbon\Carbon::parse($student->enrollment->end_date)->format('M d, Y')); ?>
+
+                    <?php elseif($student->enrollment && $student->enrollment->batch && $student->enrollment->batch->end_date): ?>
+                      <?php echo e(\Carbon\Carbon::parse($student->enrollment->batch->end_date)->format('M d, Y')); ?>
+
+                    <?php else: ?>
                       <span class="text-muted">-</span>
-                    @endif
+                    <?php endif; ?>
                   </td>
                   <td>
-                    @if($student->date_approved)
+                    <?php if($student->date_approved): ?>
                       <span class="badge bg-success">Approved</span>
-                    @else
+                    <?php else: ?>
                       <span class="badge bg-warning text-dark">Pending</span>
-                    @endif
+                    <?php endif; ?>
                   </td>
-                  <td>{{ $student->created_at->format('M d, Y') }}</td>
+                  <td><?php echo e($student->created_at->format('M d, Y')); ?></td>
                   <td class="text-center">
                     <div class="btn-group">
-                      @if(session('preview_mode'))
+                      <?php if(session('preview_mode')): ?>
                         <a href="#" onclick="alert('Preview mode - View details not available')"
                            class="btn btn-sm btn-outline-info" title="View (Preview)">
                           <i class="bi bi-eye"></i>
                         </a>
-                      @else
-                        <a href="{{ route('admin.students.show', $student) }}"
+                      <?php else: ?>
+                        <a href="<?php echo e(route('admin.students.show', $student)); ?>"
                            class="btn btn-sm btn-outline-info" title="View">
                           <i class="bi bi-eye"></i>
                         </a>
-                      @endif
-                      @unless($student->date_approved)
-                        @if(session('preview_mode'))
+                      <?php endif; ?>
+                      <?php if (! ($student->date_approved)): ?>
+                        <?php if(session('preview_mode')): ?>
                           <button type="button" onclick="alert('Preview mode - Actions not available')"
                                   class="btn btn-sm btn-outline-success" title="Approve (Preview)">
                             <i class="bi bi-check-circle"></i>
                           </button>
-                        @else
+                        <?php else: ?>
                           <form method="POST"
-                                action="{{ route('admin.students.approve', $student) }}"
+                                action="<?php echo e(route('admin.students.approve', $student)); ?>"
                                 class="d-inline"
                                 onsubmit="return confirm('Approve this student?')">
-                            @csrf 
-                            @method('PATCH')
+                            <?php echo csrf_field(); ?> 
+                            <?php echo method_field('PATCH'); ?>
                             <button class="btn btn-sm btn-outline-success" title="Approve">
                               <i class="bi bi-check-circle"></i>
                             </button>
                           </form>
-                        @endif
-                      @endunless
-                      @if(session('preview_mode'))
+                        <?php endif; ?>
+                      <?php endif; ?>
+                      <?php if(session('preview_mode')): ?>
                         <button type="button" onclick="alert('Preview mode - Archive not available')"
                                 class="btn btn-sm btn-outline-secondary" title="Archive (Preview)">
                           <i class="bi bi-archive"></i>
                         </button>
-                      @else
+                      <?php else: ?>
                         <button class="btn btn-sm btn-outline-secondary"
                                 data-bs-toggle="modal"
                                 data-bs-target="#archiveStudentModal"
-                                data-student-id="{{ $student->student_id }}"
-                                data-student-name="{{ $student->firstname.' '.$student->lastname }}"
+                                data-student-id="<?php echo e($student->student_id); ?>"
+                                data-student-name="<?php echo e($student->firstname.' '.$student->lastname); ?>"
                                 title="Archive">
                           <i class="bi bi-archive"></i>
                         </button>
-                      @endif
+                      <?php endif; ?>
                     </div>
                   </td>
                 </tr>
-              @endforeach
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </tbody>
           </table>
         </div>
 
-        {{-- Pagination --}}
+        
         <div class="d-flex justify-content-center mt-4">
-          {{ $students->links('pagination::bootstrap-5') }}
+          <?php echo e($students->links('pagination::bootstrap-5')); ?>
+
         </div>
-      @else
+      <?php else: ?>
         <div class="text-center py-5">
           <i class="bi bi-people fs-1 text-muted"></i>
           <h4 class="text-muted mt-3">No Students Found</h4>
           <p class="text-muted">
-            @if(request()->hasAny(['program_id','status','search']))
+            <?php if(request()->hasAny(['program_id','status','search'])): ?>
               No results match your filters.
-            @else
+            <?php else: ?>
               No students registered yet.
-            @endif
+            <?php endif; ?>
           </p>
         </div>
-      @endif
+      <?php endif; ?>
     </div>
   </div>
 </div>
 
-{{-- Archive Modal --}}
+
 <div class="modal fade" id="archiveStudentModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -267,7 +274,7 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
         <form id="archiveStudentForm" method="POST" style="display:inline;">
-          @csrf @method('PATCH')
+          <?php echo csrf_field(); ?> <?php echo method_field('PATCH'); ?>
           <button class="btn btn-warning">
             <i class="bi bi-archive"></i> Archive
           </button>
@@ -276,10 +283,10 @@
     </div>
   </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
-  {{-- Bootstrap JS --}}
+<?php $__env->startPush('scripts'); ?>
+  
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
@@ -312,7 +319,7 @@
       const search = document.getElementById('search').value;
       
       // Build the export URL with current filters
-      let exportUrl = '{{ route("admin.students.export") }}?';
+      let exportUrl = '<?php echo e(route("admin.students.export")); ?>?';
       const params = new URLSearchParams();
       
       if (programId) params.append('program_id', programId);
@@ -372,5 +379,7 @@
         });
     }
   </script>
-@endpush
+<?php $__env->stopPush(); ?>
 
+
+<?php echo $__env->make('admin.admin-dashboard.admin-dashboard-layout', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/admin/students/index.blade.php ENDPATH**/ ?>

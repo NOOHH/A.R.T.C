@@ -123,13 +123,7 @@
                                                     <span class="badge bg-warning">Pending</span>
                                                 @endif
                                             </td>
-                                            <td>
-                                                @if(isset($isPreview) && $isPreview && is_string($student->updated_at))
-                                                    {{ $student->updated_at }}
-                                                @else
-                                                    {{ $student->updated_at->format('M d, Y') }}
-                                                @endif
-                                            </td>
+                                            <td>{{ $student->updated_at->format('M d, Y') }}</td>
                                             <td class="text-center">
                                                 <div class="btn-group" role="group">
                                                     @if(isset($isPreview) && $isPreview)

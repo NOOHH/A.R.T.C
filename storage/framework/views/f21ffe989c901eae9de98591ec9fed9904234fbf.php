@@ -1,8 +1,8 @@
-@extends('admin.admin-dashboard.admin-dashboard-layout')
 
-@section('title', 'Professor Management')
 
-@section('content')
+<?php $__env->startSection('title', 'Professor Management'); ?>
+
+<?php $__env->startSection('content'); ?>
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
@@ -13,15 +13,15 @@
                     <p class="text-muted">Manage professors and their program assignments</p>
                 </div>
                 <div class="d-flex gap-2">
-                    @if(session('preview_tenant') && request('website'))
-                        <a href="/t/draft/{{ session('preview_tenant') }}/admin/professors/archived?website={{ request('website') }}" class="btn btn-outline-secondary">
+                    <?php if(session('preview_tenant') && request('website')): ?>
+                        <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/professors/archived?website=<?php echo e(request('website')); ?>" class="btn btn-outline-secondary">
                             <i class="bi bi-archive"></i> Archived Professors
                         </a>
-                    @else
-                        <a href="{{ route('admin.professors.archived') }}" class="btn btn-outline-secondary">
+                    <?php else: ?>
+                        <a href="<?php echo e(route('admin.professors.archived')); ?>" class="btn btn-outline-secondary">
                             <i class="bi bi-archive"></i> Archived Professors
                         </a>
-                    @endif
+                    <?php endif; ?>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProfessorModal">
                         <i class="bi bi-plus-circle"></i> Add Professor
                     </button>
@@ -34,7 +34,7 @@
                     <h5 class="mb-0">Active Professors</h5>
                 </div>
                 <div class="card-body p-0">
-                    @if($professors->count() > 0)
+                    <?php if($professors->count() > 0): ?>
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
@@ -46,7 +46,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($professors as $professor)
+                                    <?php $__currentLoopData = $professors; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $professor): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
@@ -55,26 +55,26 @@
                                                     <i class="bi bi-person text-white"></i>
                                                 </div>
                                                 <div>
-                                                    <div class="fw-semibold">{{ $professor->full_name }}</div>
-                                                    <small class="text-muted">{{ $professor->email }}</small>
+                                                    <div class="fw-semibold"><?php echo e($professor->full_name); ?></div>
+                                                    <small class="text-muted"><?php echo e($professor->email); ?></small>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>{{ $professor->email }}</td>
+                                        <td><?php echo e($professor->email); ?></td>
                                         <td>
-                                            @if($professor->programs->count() > 0)
+                                            <?php if($professor->programs->count() > 0): ?>
                                                 <div class="d-flex flex-wrap gap-1">
-                                                    @foreach($professor->programs as $program)
-                                                        <span class="badge bg-success">{{ $program->program_name }}</span>
-                                                    @endforeach
+                                                    <?php $__currentLoopData = $professor->programs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $program): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                        <span class="badge bg-success"><?php echo e($program->program_name); ?></span>
+                                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                 </div>
-                                            @else
+                                            <?php else: ?>
                                                 <span class="text-muted">No assignments</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">
-                                                @if(session('preview_mode'))
+                                                <?php if(session('preview_mode')): ?>
                                                     <button type="button" onclick="alert('Preview mode - Edit not available')"
                                                             class="btn btn-sm btn-outline-primary" title="Edit (Preview)">
                                                         <i class="bi bi-pencil"></i>
@@ -91,57 +91,58 @@
                                                             class="btn btn-sm btn-outline-warning" title="Archive (Preview)">
                                                         <i class="bi bi-archive"></i>
                                                     </button>
-                                                @else
-                                                    <a href="{{ route('admin.professors.edit', $professor->professor_id) }}" 
+                                                <?php else: ?>
+                                                    <a href="<?php echo e(route('admin.professors.edit', $professor->professor_id)); ?>" 
                                                        class="btn btn-sm btn-outline-primary">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
                                                     <button type="button" class="btn btn-sm btn-outline-success"
-                                                            onclick="showSimpleModal('{{ $professor->professor_id }}', '{{ $professor->full_name }}')"
-                                                            data-professor-id="{{ $professor->professor_id }}"
-                                                            data-professor-name="{{ $professor->full_name }}">
+                                                            onclick="showSimpleModal('<?php echo e($professor->professor_id); ?>', '<?php echo e($professor->full_name); ?>')"
+                                                            data-professor-id="<?php echo e($professor->professor_id); ?>"
+                                                            data-professor-name="<?php echo e($professor->full_name); ?>">
                                                         <i class="bi bi-calendar-plus"></i>
                                                     </button>
-                                                    <a href="{{ route('admin.professors.meetings', $professor->professor_id) }}" 
+                                                    <a href="<?php echo e(route('admin.professors.meetings', $professor->professor_id)); ?>" 
                                                        class="btn btn-sm btn-outline-secondary"
                                                        title="View Meetings">
                                                         <i class="bi bi-calendar2-week"></i>
                                                     </a>
                                                     <button type="button" class="btn btn-sm btn-outline-warning"
                                                             data-bs-toggle="modal" data-bs-target="#archiveModal"
-                                                            data-professor-id="{{ $professor->professor_id }}"
-                                                            data-professor-name="{{ $professor->full_name }}">
+                                                            data-professor-id="<?php echo e($professor->professor_id); ?>"
+                                                            data-professor-name="<?php echo e($professor->full_name); ?>">
                                                         <i class="bi bi-archive"></i>
                                                     </button>
-                                                @endif
+                                                <?php endif; ?>
                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-outline-danger"
                                                         data-bs-toggle="modal" data-bs-target="#deleteModal"
-                                                        data-professor-id="{{ $professor->professor_id }}"
-                                                        data-professor-name="{{ $professor->full_name }}">
+                                                        data-professor-id="<?php echo e($professor->professor_id); ?>"
+                                                        data-professor-name="<?php echo e($professor->full_name); ?>">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </div>
                                         </td>
                                     </tr>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>
                             </table>
                         </div>
                         
                         <!-- Pagination -->
-                        @if($professors->hasPages())
+                        <?php if($professors->hasPages()): ?>
                             <div class="p-3">
-                                {{ $professors->links() }}
+                                <?php echo e($professors->links()); ?>
+
                             </div>
-                        @endif
-                    @else
+                        <?php endif; ?>
+                    <?php else: ?>
                         <div class="text-center py-5">
                             <i class="bi bi-person-workspace display-1 text-muted"></i>
                             <h5 class="mt-3">No Professors Found</h5>
                             <p class="text-muted">Start by adding your first professor.</p>
                         </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -152,8 +153,8 @@
 <div class="modal fade" id="addProfessorModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form action="{{ route('admin.professors.store') }}" method="POST" enctype="multipart/form-data">
-                @csrf
+            <form action="<?php echo e(route('admin.professors.store')); ?>" method="POST" enctype="multipart/form-data">
+                <?php echo csrf_field(); ?>
                 <div class="modal-header">
                     <h5 class="modal-title">Add New Professor</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -208,18 +209,19 @@
                     <div class="mb-3">
                         <label class="form-label">Assign to Programs</label>
                         <div class="row">
-                            @foreach($programs as $program)
+                            <?php $__currentLoopData = $programs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $program): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <div class="col-md-6">
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" 
-                                               name="programs[]" value="{{ $program->program_id }}" 
-                                               id="program_{{ $program->program_id }}">
-                                        <label class="form-check-label" for="program_{{ $program->program_id }}">
-                                            {{ $program->program_name }}
+                                               name="programs[]" value="<?php echo e($program->program_id); ?>" 
+                                               id="program_<?php echo e($program->program_id); ?>">
+                                        <label class="form-check-label" for="program_<?php echo e($program->program_id); ?>">
+                                            <?php echo e($program->program_name); ?>
+
                                         </label>
                                     </div>
                                 </div>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </div>
                     </div>
                 </div>
@@ -248,9 +250,9 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form id="archiveForm" action="{{ route('admin.professors.index') }}" method="POST" style="display: inline;">
-                    @csrf
-                    @method('PATCH')
+                <form id="archiveForm" action="<?php echo e(route('admin.professors.index')); ?>" method="POST" style="display: inline;">
+                    <?php echo csrf_field(); ?>
+                    <?php echo method_field('PATCH'); ?>
                     <button type="submit" class="btn btn-warning">Archive</button>
                 </form>
             </div>
@@ -272,20 +274,20 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form id="deleteForm" action="{{ route('admin.professors.index') }}" method="POST" style="display: inline;">
-                    @csrf
-                    @method('DELETE')
+                <form id="deleteForm" action="<?php echo e(route('admin.professors.index')); ?>" method="POST" style="display: inline;">
+                    <?php echo csrf_field(); ?>
+                    <?php echo method_field('DELETE'); ?>
                     <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@include('admin.professors.partials.create-meeting-modal')
+<?php echo $__env->make('admin.professors.partials.create-meeting-modal', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Archive modal
@@ -347,4 +349,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (lastNameField) lastNameField.addEventListener('input', autoGenerateCode);
 });
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('admin.admin-dashboard.admin-dashboard-layout', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/admin/professors/index.blade.php ENDPATH**/ ?>

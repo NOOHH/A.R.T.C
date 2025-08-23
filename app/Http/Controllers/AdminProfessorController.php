@@ -40,14 +40,22 @@ class AdminProfessorController extends Controller
 
     public function archived()
     {
-        // Check if this is a preview request
-        if (request()->has('preview') && request('preview') === 'true') {
-            return $this->previewArchived(request()->segment(3) ?? 'test1');
+        try {
+            // Check if this is a preview request
+            if (request()->has('preview') && request('preview') === 'true') {
+                return $this->previewArchived(request()->segment(3) ?? 'test1');
+            }
+            
+            $professors = Professor::with('programs')->archived()->paginate(10);
+            
+            return view('admin.professors.archived', compact('professors'));
+        } catch (\Exception $e) {
+            \Log::error('Archived professors error: ' . $e->getMessage());
+            return view('admin.professors.archived', [
+                'professors' => collect(),
+                'error' => 'Unable to load archived professors data.'
+            ]);
         }
-        
-        $professors = Professor::with('programs')->archived()->paginate(10);
-        
-        return view('admin.professors.archived', compact('professors'));
     }
 
     public function store(Request $request)
@@ -648,10 +656,13 @@ class AdminProfessorController extends Controller
             $mockProfessors = [
                 $this->createMockObject([
                     'professor_id' => 1,
+                    'id' => 1,
                     'professor_first_name' => 'Dr. Maria',
                     'professor_last_name' => 'Rodriguez',
                     'full_name' => 'Dr. Maria Rodriguez',
                     'professor_email' => 'maria.rodriguez@example.com',
+                    'email' => 'maria.rodriguez@example.com',
+                    'updated_at' => 'Jan 20, 2024',
                     'professor_archived' => true,
                     'programs' => collect([
                         $this->createMockObject([
@@ -662,10 +673,13 @@ class AdminProfessorController extends Controller
                 ]),
                 $this->createMockObject([
                     'professor_id' => 2,
+                    'id' => 2,
                     'professor_first_name' => 'Dr. Carlos',
                     'professor_last_name' => 'Martinez',
                     'full_name' => 'Dr. Carlos Martinez',
                     'professor_email' => 'carlos.martinez@example.com',
+                    'email' => 'carlos.martinez@example.com',
+                    'updated_at' => 'Feb 15, 2024',
                     'professor_archived' => true,
                     'programs' => collect([
                         $this->createMockObject([
@@ -686,7 +700,10 @@ class AdminProfessorController extends Controller
             );
             $professors->withQueryString();
 
-            return view('admin.professors.archived', compact('professors'));
+            return view('admin.professors.archived', compact('professors'))->with([
+                'isPreview' => true,
+                'previewTenant' => $tenant
+            ]);
 
         } catch (\Exception $e) {
             Log::error('Archived professors preview error: ' . $e->getMessage());

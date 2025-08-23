@@ -87,9 +87,15 @@
             <div class="programs-header">
                 <h1>Programs Management</h1>
                 <div class="header-buttons">
-                    <a href="<?php echo e(route('admin.programs.archived')); ?>" class="view-archived-btn">
-                        📁 View Archived
-                    </a>
+                    <?php if(session('preview_tenant') && request('website')): ?>
+                        <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/programs/archived?website=<?php echo e(request('website')); ?>" class="view-archived-btn">
+                            📁 View Archived
+                        </a>
+                    <?php else: ?>
+                        <a href="<?php echo e(route('admin.programs.archived')); ?>" class="view-archived-btn">
+                            📁 View Archived
+                        </a>
+                    <?php endif; ?>
                 </div>
             </div>
 
