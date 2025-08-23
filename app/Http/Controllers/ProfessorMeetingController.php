@@ -14,6 +14,12 @@ use Illuminate\Support\Facades\Log;
 
 class ProfessorMeetingController extends Controller
 {
+    public function __construct()
+    {
+        // Apply middleware conditionally - skip for preview requests
+        $this->middleware('professor.auth')->except(['previewIndex']);
+    }
+    
     /**
      * Check if professor can create meetings
      */
@@ -391,5 +397,237 @@ class ProfessorMeetingController extends Controller
                 'message' => 'Failed to get meeting stats: ' . $e->getMessage()
             ], 500);
         }
+    }
+    
+    /**
+     * Preview meetings page for tenant customization
+     */
+    public function previewIndex($tenantSlug = null)
+    {
+        $this->setupTenantPreviewContext($tenantSlug);
+        
+        // Create mock meetings data
+        $meetings = collect([
+            (object) [
+                'meeting_id' => 1,
+                'title' => 'Nursing Fundamentals Review',
+                'description' => 'Comprehensive review of nursing fundamentals and core concepts',
+                'scheduled_date' => now()->addDays(2)->format('Y-m-d'),
+                'scheduled_time' => '10:00:00',
+                'meeting_date' => now()->addDays(2),
+                'duration' => 120,
+                'status' => 'scheduled',
+                'batch' => (object) [
+                    'batch_name' => 'Batch A - Morning',
+                    'program' => (object) ['program_name' => 'Nursing Board Review']
+                ],
+                'students_count' => 25,
+                'meeting_link' => 'https://meet.example.com/nursing-review',
+                'meeting_url' => 'https://meet.example.com/nursing-review',
+                'created_at' => now()->subDays(5),
+                'actual_start_time' => null,
+                'actual_end_time' => null,
+                'attendance_count' => null
+            ],
+            (object) [
+                'meeting_id' => 2,
+                'title' => 'Pharmacology Deep Dive',
+                'description' => 'Detailed discussion on drug interactions and dosage calculations',
+                'scheduled_date' => now()->addDays(5)->format('Y-m-d'),
+                'scheduled_time' => '14:00:00',
+                'meeting_date' => now()->addDays(5),
+                'duration' => 90,
+                'status' => 'scheduled',
+                'batch' => (object) [
+                    'batch_name' => 'Batch B - Evening',
+                    'program' => (object) ['program_name' => 'Nursing Board Review']
+                ],
+                'students_count' => 18,
+                'meeting_link' => 'https://meet.example.com/pharmacology',
+                'meeting_url' => 'https://meet.example.com/pharmacology',
+                'created_at' => now()->subDays(3),
+                'actual_start_time' => null,
+                'actual_end_time' => null,
+                'attendance_count' => null
+            ],
+            (object) [
+                'meeting_id' => 3,
+                'title' => 'Lab Techniques Workshop',
+                'description' => 'Hands-on workshop for advanced laboratory procedures',
+                'scheduled_date' => now()->subDays(2)->format('Y-m-d'),
+                'scheduled_time' => '09:00:00',
+                'meeting_date' => now()->subDays(2),
+                'duration' => 180,
+                'status' => 'completed',
+                'batch' => (object) [
+                    'batch_name' => 'Med Tech Batch 1',
+                    'program' => (object) ['program_name' => 'Medical Technology Review']
+                ],
+                'students_count' => 15,
+                'meeting_link' => 'https://meet.example.com/lab-workshop',
+                'meeting_url' => 'https://meet.example.com/lab-workshop',
+                'created_at' => now()->subDays(7),
+                'actual_start_time' => now()->subDays(2)->addHours(9),
+                'actual_end_time' => now()->subDays(2)->addHours(12),
+                'attendance_count' => 14
+            ]
+        ]);
+        
+        // Create mock programs and batches for meeting creation
+        $programs = collect([
+            (object) [
+                'program_id' => 1,
+                'program_name' => 'Nursing Board Review'
+            ],
+            (object) [
+                'program_id' => 2,
+                'program_name' => 'Medical Technology Review'
+            ]
+        ]);
+        
+        $programsWithBatches = collect([
+            (object) [
+                'program_id' => 1,
+                'program_name' => 'Nursing Board Review',
+                'batches' => collect([
+                    (object) ['batch_id' => 1, 'batch_name' => 'Batch A - Morning'],
+                    (object) ['batch_id' => 2, 'batch_name' => 'Batch B - Evening']
+                ])
+            ],
+            (object) [
+                'program_id' => 2,
+                'program_name' => 'Medical Technology Review',
+                'batches' => collect([
+                    (object) ['batch_id' => 3, 'batch_name' => 'Med Tech Batch 1']
+                ])
+            ]
+        ]);
+        
+        // Create separate batches collection for the view
+        $batches = collect([
+            (object) [
+                'batch_id' => 1, 
+                'batch_name' => 'Batch A - Morning', 
+                'program_id' => 1,
+                'program' => (object) ['program_name' => 'Nursing Board Review']
+            ],
+            (object) [
+                'batch_id' => 2, 
+                'batch_name' => 'Batch B - Evening', 
+                'program_id' => 1,
+                'program' => (object) ['program_name' => 'Nursing Board Review']
+            ],
+            (object) [
+                'batch_id' => 3, 
+                'batch_name' => 'Med Tech Batch 1', 
+                'program_id' => 2,
+                'program' => (object) ['program_name' => 'Medical Technology Review']
+            ]
+        ]);
+        
+        // Create professor programs for detailed view
+        $professorPrograms = collect([
+            (object) [
+                'program_id' => 1,
+                'program_name' => 'Nursing Board Review',
+                'description' => 'Comprehensive nursing board review program',
+                'batches' => collect([
+                    (object) [
+                        'batch_id' => 1, 
+                        'batch_name' => 'Batch A - Morning',
+                        'students_count' => 25,
+                        'meetings_count' => 8
+                    ],
+                    (object) [
+                        'batch_id' => 2, 
+                        'batch_name' => 'Batch B - Evening',
+                        'students_count' => 18,
+                        'meetings_count' => 6
+                    ]
+                ])
+            ],
+            (object) [
+                'program_id' => 2,
+                'program_name' => 'Medical Technology Review',
+                'description' => 'Advanced medical technology certification preparation',
+                'batches' => collect([
+                    (object) [
+                        'batch_id' => 3, 
+                        'batch_name' => 'Med Tech Batch 1',
+                        'students_count' => 15,
+                        'meetings_count' => 12
+                    ]
+                ])
+            ]
+        ]);
+        
+        // Calculate statistics
+        $upcomingMeetings = $meetings->where('status', 'scheduled')->count();
+        $completedMeetings = $meetings->where('status', 'completed')->count();
+        $totalStudents = $meetings->sum('students_count');
+        
+        // Mock feature settings
+        $canCreateMeetings = true;
+        $meetingCreationEnabled = true;
+        
+        return view('professor.meetings.index', compact(
+            'meetings', 'programs', 'programsWithBatches', 'batches', 'professorPrograms',
+            'upcomingMeetings', 'completedMeetings', 'totalStudents', 'canCreateMeetings', 'meetingCreationEnabled'
+        ));
+    }
+    
+    /**
+     * Setup tenant preview context (common method for all preview methods)
+     */
+    private function setupTenantPreviewContext($tenantSlug = null)
+    {
+        // Load tenant settings if provided
+        if ($tenantSlug) {
+            $tenantService = app(\App\Services\TenantService::class);
+            $tenantService->switchToMain();
+            
+            $tenant = \App\Models\Tenant::where('slug', $tenantSlug)->first();
+            
+            if ($tenant) {
+                try {
+                    $tenantService->switchToTenant($tenant);
+                    
+                    // Load settings from tenant database
+                    $settings = [
+                        'navbar' => [
+                            'brand_name' => \App\Models\Setting::get('navbar', 'brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => \App\Models\Setting::get('navbar', 'brand_logo', null),
+                        ],
+                        'professor_panel' => [
+                            'brand_name' => \App\Models\Setting::get('professor_panel', 'brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => \App\Models\Setting::get('professor_panel', 'brand_logo', null),
+                        ],
+                    ];
+                    
+                    $tenantService->switchToMain();
+                    
+                    // Share settings with the view
+                    view()->share('settings', $settings);
+                    view()->share('navbar', $settings['navbar'] ?? []);
+                    
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Failed to load tenant settings for professor meeting preview', [
+                        'tenant' => $tenant->slug,
+                        'error' => $e->getMessage()
+                    ]);
+                    $tenantService->switchToMain();
+                }
+            }
+        }
+        
+        // Set up session data for preview mode
+        session([
+            'user_id' => 'preview-professor',
+            'user_name' => 'Dr. Jane Professor',
+            'user_role' => 'professor',
+            'user_type' => 'professor',
+            'professor_id' => 'preview-professor',
+            'logged_in' => true
+        ]);
     }
 }

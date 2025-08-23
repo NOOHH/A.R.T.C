@@ -19,7 +19,7 @@ class GradingController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('professor.auth');
+        $this->middleware('professor.auth')->except(['previewIndex']);
     }
 
     public function index(Request $request)
@@ -828,5 +828,325 @@ class GradingController extends Controller
         if ($percentage >= 80) return 'easy';
         elseif ($percentage >= 60) return 'medium';
         else return 'hard';
+    }
+    
+    /**
+     * Preview grading page for tenant customization
+     */
+    public function previewIndex($tenantSlug = null)
+    {
+        $this->setupTenantPreviewContext($tenantSlug);
+        
+        // Create mock programs data
+        $assignedPrograms = collect([
+            (object) [
+                'program_id' => 1,
+                'program_name' => 'Nursing Board Review',
+                'program_description' => 'Comprehensive nursing board examination review program.'
+            ],
+            (object) [
+                'program_id' => 2,
+                'program_name' => 'Medical Technology Review',
+                'program_description' => 'Advanced medical technology certification review.'
+            ]
+        ]);
+        
+        // Create mock students with grades
+        $students = collect([
+            (object) [
+                'student_id' => 1,
+                'firstname' => 'John',
+                'lastname' => 'Doe',
+                'full_name' => 'John Doe',
+                'email' => 'john.doe@example.com',
+                'overall_grade' => 85.5,
+                'assignment_average' => 88.0,
+                'quiz_average' => 83.0,
+                'activity_average' => 86.0,
+                'grades' => collect([
+                    (object) ['grade_type' => 'assignment', 'score' => 90, 'max_score' => 100],
+                    (object) ['grade_type' => 'assignment', 'score' => 86, 'max_score' => 100],
+                    (object) ['grade_type' => 'quiz', 'score' => 85, 'max_score' => 100],
+                    (object) ['grade_type' => 'quiz', 'score' => 81, 'max_score' => 100]
+                ]),
+                'pending_grades' => 2
+            ],
+            (object) [
+                'student_id' => 2,
+                'firstname' => 'Jane',
+                'lastname' => 'Smith',
+                'full_name' => 'Jane Smith',
+                'email' => 'jane.smith@example.com',
+                'overall_grade' => 92.3,
+                'assignment_average' => 94.0,
+                'quiz_average' => 90.5,
+                'activity_average' => 92.0,
+                'grades' => collect([
+                    (object) ['grade_type' => 'assignment', 'score' => 95, 'max_score' => 100],
+                    (object) ['grade_type' => 'assignment', 'score' => 93, 'max_score' => 100],
+                    (object) ['grade_type' => 'quiz', 'score' => 91, 'max_score' => 100],
+                    (object) ['grade_type' => 'quiz', 'score' => 90, 'max_score' => 100]
+                ]),
+                'pending_grades' => 1
+            ],
+            (object) [
+                'student_id' => 3,
+                'firstname' => 'Mike',
+                'lastname' => 'Johnson',
+                'full_name' => 'Mike Johnson',
+                'email' => 'mike.johnson@example.com',
+                'overall_grade' => 78.2,
+                'assignment_average' => 80.0,
+                'quiz_average' => 76.0,
+                'activity_average' => 79.0,
+                'grades' => collect([
+                    (object) ['grade_type' => 'assignment', 'score' => 82, 'max_score' => 100],
+                    (object) ['grade_type' => 'assignment', 'score' => 78, 'max_score' => 100],
+                    (object) ['grade_type' => 'quiz', 'score' => 76, 'max_score' => 100],
+                    (object) ['grade_type' => 'quiz', 'score' => 76, 'max_score' => 100]
+                ]),
+                'pending_grades' => 3
+            ]
+        ]);
+        
+        // Mock program analytics
+        $programAnalytics = [
+            'total_students' => 28,
+            'average_grade' => 85.3,
+            'average_quiz_score' => 82.7,
+            'completion_rate' => 89.5,
+            'class_average' => 85.3,
+            'total_assignments' => 12,
+            'total_quizzes' => 8,
+            'total_activities' => 15,
+            'graded_items' => 28,
+            'pending_items' => 7,
+            'quiz_performance' => [
+                [
+                    'quiz_title' => 'Nursing Fundamentals Assessment',
+                    'total_submissions' => 15,
+                    'average_score' => 85.2,
+                    'completion_rate' => 93.8
+                ],
+                [
+                    'quiz_title' => 'Pharmacology Basics Quiz', 
+                    'total_submissions' => 12,
+                    'average_score' => 78.8,
+                    'completion_rate' => 87.5
+                ],
+                [
+                    'quiz_title' => 'Patient Care Evaluation',
+                    'total_submissions' => 18,
+                    'average_score' => 91.3,
+                    'completion_rate' => 100.0
+                ]
+            ],
+            'low_performers' => collect([
+                [
+                    'student' => (object) [
+                        'student_id' => 'STU001',
+                        'user' => (object) [
+                            'user_firstname' => 'Mike',
+                            'user_lastname' => 'Johnson'
+                        ]
+                    ],
+                    'average' => 65.2
+                ],
+                [
+                    'student' => (object) [
+                        'student_id' => 'STU002', 
+                        'user' => (object) [
+                            'user_firstname' => 'Sarah',
+                            'user_lastname' => 'Wilson'
+                        ]
+                    ],
+                    'average' => 68.9
+                ]
+            ]),
+            'top_performers' => collect([
+                [
+                    'student' => (object) [
+                        'student_id' => 'STU003',
+                        'user' => (object) [
+                            'user_firstname' => 'Jane',
+                            'user_lastname' => 'Smith'
+                        ]
+                    ],
+                    'average' => 92.3
+                ],
+                [
+                    'student' => (object) [
+                        'student_id' => 'STU004',
+                        'user' => (object) [
+                            'user_firstname' => 'David',
+                            'user_lastname' => 'Brown'
+                        ]
+                    ],
+                    'average' => 89.7
+                ]
+            ]),
+            'grade_distribution' => [
+                'A' => 8,
+                'B' => 12,
+                'C' => 5,
+                'D' => 2,
+                'F' => 1
+            ]
+        ];
+        
+        $selectedProgramId = 1; // Default to first program for preview
+        
+        // Create mock grades collection keyed by student_id
+        $grades = collect([
+            1 => collect([
+                (object) [
+                    'grade' => 90, 
+                    'max_points' => 100,
+                    'grade_type' => 'assignment', 
+                    'assignment_name' => 'Nursing Fundamentals Quiz',
+                    'created_at' => now()->subDays(5)
+                ],
+                (object) [
+                    'grade' => 86, 
+                    'max_points' => 100,
+                    'grade_type' => 'assignment', 
+                    'assignment_name' => 'Patient Care Assignment',
+                    'created_at' => now()->subDays(3)
+                ],
+                (object) [
+                    'grade' => 85, 
+                    'max_points' => 100,
+                    'grade_type' => 'quiz', 
+                    'assignment_name' => 'Pharmacology Quiz',
+                    'created_at' => now()->subDays(2)
+                ],
+                (object) [
+                    'grade' => 81, 
+                    'max_points' => 100,
+                    'grade_type' => 'quiz', 
+                    'assignment_name' => 'Ethics Quiz',
+                    'created_at' => now()->subDays(1)
+                ]
+            ]),
+            2 => collect([
+                (object) [
+                    'grade' => 95, 
+                    'max_points' => 100,
+                    'grade_type' => 'assignment', 
+                    'assignment_name' => 'Nursing Fundamentals Quiz',
+                    'created_at' => now()->subDays(5)
+                ],
+                (object) [
+                    'grade' => 93, 
+                    'max_points' => 100,
+                    'grade_type' => 'assignment', 
+                    'assignment_name' => 'Patient Care Assignment',
+                    'created_at' => now()->subDays(3)
+                ],
+                (object) [
+                    'grade' => 91, 
+                    'max_points' => 100,
+                    'grade_type' => 'quiz', 
+                    'assignment_name' => 'Pharmacology Quiz',
+                    'created_at' => now()->subDays(2)
+                ],
+                (object) [
+                    'grade' => 90, 
+                    'max_points' => 100,
+                    'grade_type' => 'quiz', 
+                    'assignment_name' => 'Ethics Quiz',
+                    'created_at' => now()->subDays(1)
+                ]
+            ]),
+            3 => collect([
+                (object) [
+                    'grade' => 82, 
+                    'max_points' => 100,
+                    'grade_type' => 'assignment', 
+                    'assignment_name' => 'Nursing Fundamentals Quiz',
+                    'created_at' => now()->subDays(5)
+                ],
+                (object) [
+                    'grade' => 78, 
+                    'max_points' => 100,
+                    'grade_type' => 'assignment', 
+                    'assignment_name' => 'Patient Care Assignment',
+                    'created_at' => now()->subDays(3)
+                ],
+                (object) [
+                    'grade' => 76, 
+                    'max_points' => 100,
+                    'grade_type' => 'quiz', 
+                    'assignment_name' => 'Pharmacology Quiz',
+                    'created_at' => now()->subDays(2)
+                ],
+                (object) [
+                    'grade' => 76, 
+                    'max_points' => 100,
+                    'grade_type' => 'quiz', 
+                    'assignment_name' => 'Ethics Quiz',
+                    'created_at' => now()->subDays(1)
+                ]
+            ])
+        ]);
+        
+        return view('professor.grading.index', compact(
+            'assignedPrograms', 'students', 'programAnalytics', 'selectedProgramId', 'grades'
+        ));
+    }
+    
+    /**
+     * Setup tenant preview context (common method for all preview methods)
+     */
+    private function setupTenantPreviewContext($tenantSlug = null)
+    {
+        // Load tenant settings if provided
+        if ($tenantSlug) {
+            $tenantService = app(\App\Services\TenantService::class);
+            $tenantService->switchToMain();
+            
+            $tenant = \App\Models\Tenant::where('slug', $tenantSlug)->first();
+            
+            if ($tenant) {
+                try {
+                    $tenantService->switchToTenant($tenant);
+                    
+                    // Load settings from tenant database
+                    $settings = [
+                        'navbar' => [
+                            'brand_name' => \App\Models\Setting::get('navbar', 'brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => \App\Models\Setting::get('navbar', 'brand_logo', null),
+                        ],
+                        'professor_panel' => [
+                            'brand_name' => \App\Models\Setting::get('professor_panel', 'brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => \App\Models\Setting::get('professor_panel', 'brand_logo', null),
+                        ],
+                    ];
+                    
+                    $tenantService->switchToMain();
+                    
+                    // Share settings with the view
+                    view()->share('settings', $settings);
+                    view()->share('navbar', $settings['navbar'] ?? []);
+                    
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Failed to load tenant settings for professor grading preview', [
+                        'tenant' => $tenant->slug,
+                        'error' => $e->getMessage()
+                    ]);
+                    $tenantService->switchToMain();
+                }
+            }
+        }
+        
+        // Set up session data for preview mode
+        session([
+            'user_id' => 'preview-professor',
+            'user_name' => 'Dr. Jane Professor',
+            'user_role' => 'professor',
+            'user_type' => 'professor',
+            'professor_id' => 'preview-professor',
+            'logged_in' => true
+        ]);
     }
 }

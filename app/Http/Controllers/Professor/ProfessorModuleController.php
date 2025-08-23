@@ -17,6 +17,12 @@ use Illuminate\Support\Facades\Log;
 
 class ProfessorModuleController extends Controller
 {
+    public function __construct()
+    {
+        // Apply middleware conditionally - skip for preview requests
+        $this->middleware('professor.auth')->except(['previewIndex']);
+    }
+    
     /**
      * Check if professor module management is enabled and if professor is whitelisted
      */
@@ -1849,5 +1855,144 @@ class ProfessorModuleController extends Controller
                 'message' => 'An error occurred while archiving course: ' . $e->getMessage()
             ], 500);
         }
+    }
+    
+    /**
+     * Preview modules page for tenant customization
+     */
+    public function previewIndex($tenantSlug = null)
+    {
+        $this->setupTenantPreviewContext($tenantSlug);
+        
+        // Create mock programs data
+        $assignedPrograms = collect([
+            (object) [
+                'program_id' => 1,
+                'program_name' => 'Nursing Board Review',
+                'program_description' => 'Comprehensive nursing board examination review program.',
+                'modules' => collect([
+                    (object) [
+                        'module_id' => 1,
+                        'module_name' => 'Fundamentals of Nursing',
+                        'module_description' => 'Basic nursing principles and practices',
+                        'courses_count' => 8,
+                        'is_archived' => false,
+                        'created_at' => now()->subDays(30)
+                    ],
+                    (object) [
+                        'module_id' => 2,
+                        'module_name' => 'Pharmacology',
+                        'module_description' => 'Drug interactions and administration protocols',
+                        'courses_count' => 12,
+                        'is_archived' => false,
+                        'created_at' => now()->subDays(25)
+                    ],
+                    (object) [
+                        'module_id' => 3,
+                        'module_name' => 'Clinical Practice',
+                        'module_description' => 'Hands-on clinical skills and procedures',
+                        'courses_count' => 6,
+                        'is_archived' => false,
+                        'created_at' => now()->subDays(20)
+                    ]
+                ])
+            ],
+            (object) [
+                'program_id' => 2,
+                'program_name' => 'Medical Technology Review',
+                'program_description' => 'Advanced medical technology certification review.',
+                'modules' => collect([
+                    (object) [
+                        'module_id' => 4,
+                        'module_name' => 'Laboratory Techniques',
+                        'module_description' => 'Advanced laboratory procedures and protocols',
+                        'courses_count' => 10,
+                        'is_archived' => false,
+                        'created_at' => now()->subDays(15)
+                    ],
+                    (object) [
+                        'module_id' => 5,
+                        'module_name' => 'Diagnostics',
+                        'module_description' => 'Diagnostic procedures and result analysis',
+                        'courses_count' => 8,
+                        'is_archived' => false,
+                        'created_at' => now()->subDays(10)
+                    ]
+                ])
+            ]
+        ]);
+        
+        // Calculate statistics
+        $totalModules = $assignedPrograms->sum(function($program) {
+            return $program->modules->count();
+        });
+        $totalCourses = $assignedPrograms->sum(function($program) {
+            return $program->modules->sum('courses_count');
+        });
+        
+        // Mock feature settings
+        $moduleManagementEnabled = true;
+        $canCreateModules = true;
+        $canEditModules = true;
+        
+        return view('professor.modules.index', compact(
+            'assignedPrograms', 'totalModules', 'totalCourses', 
+            'moduleManagementEnabled', 'canCreateModules', 'canEditModules'
+        ))->with('programs', $assignedPrograms);
+    }
+    
+    /**
+     * Setup tenant preview context (common method for all preview methods)
+     */
+    private function setupTenantPreviewContext($tenantSlug = null)
+    {
+        // Load tenant settings if provided
+        if ($tenantSlug) {
+            $tenantService = app(\App\Services\TenantService::class);
+            $tenantService->switchToMain();
+            
+            $tenant = \App\Models\Tenant::where('slug', $tenantSlug)->first();
+            
+            if ($tenant) {
+                try {
+                    $tenantService->switchToTenant($tenant);
+                    
+                    // Load settings from tenant database
+                    $settings = [
+                        'navbar' => [
+                            'brand_name' => \App\Models\Setting::get('navbar', 'brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => \App\Models\Setting::get('navbar', 'brand_logo', null),
+                        ],
+                        'professor_panel' => [
+                            'brand_name' => \App\Models\Setting::get('professor_panel', 'brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => \App\Models\Setting::get('professor_panel', 'brand_logo', null),
+                        ],
+                    ];
+                    
+                    $tenantService->switchToMain();
+                    
+                    // Share settings with the view
+                    view()->share('settings', $settings);
+                    view()->share('navbar', $settings['navbar'] ?? []);
+                    
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Failed to load tenant settings for professor module preview', [
+                        'tenant' => $tenant->slug,
+                        'error' => $e->getMessage()
+                    ]);
+                    $tenantService->switchToMain();
+                }
+            }
+        }
+        
+        // Set up session data for preview mode
+        session([
+            'user_id' => 'preview-professor',
+            'user_name' => 'Dr. Jane Professor',
+            'user_role' => 'professor',
+            'user_type' => 'professor',
+            'professor_id' => 'preview-professor',
+            'logged_in' => true
+        ]);
     }
 }

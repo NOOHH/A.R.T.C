@@ -15,6 +15,33 @@ use Carbon\Carbon;
 
 class AnnouncementController extends Controller
 {
+    public function __construct()
+    {
+        // Apply middleware conditionally - skip for preview requests
+        $this->middleware('professor.auth')->except(['previewIndex']);
+    }
+    
+    /**
+     * Safely get professor with preview mode handling
+     */
+    private function getProfessorSafely()
+    {
+        // Check if this is preview mode
+        if (session('professor_id') === 'preview-professor') {
+            return null; // Signal that this is preview mode
+        }
+        
+        try {
+            return Professor::where('professor_id', session('professor_id'))->first();
+        } catch (\Exception $e) {
+            Log::error('AnnouncementController: Failed to query professor', [
+                'professor_id' => session('professor_id'),
+                'error' => $e->getMessage()
+            ]);
+            throw new \Exception('Unable to access professor data. Please try again.');
+        }
+    }
+    
     /**
      * Check if professor announcement management is enabled and if professor is whitelisted
      */
@@ -114,8 +141,36 @@ class AnnouncementController extends Controller
 
     public function index()
     {
+        // Check if this is a preview request
+        if (request()->has('preview') && request('preview') === 'true') {
+            // Extract tenant slug from referrer or current path if available
+            $tenantSlug = null;
+            $referer = request()->header('referer');
+            if ($referer && preg_match('/\/t\/draft\/([^\/]+)\//', $referer, $matches)) {
+                $tenantSlug = $matches[1];
+            }
+            return $this->previewIndex($tenantSlug);
+        }
+        
+        // Check if this is a preview context (session has preview professor)
+        if (session('professor_id') === 'preview-professor') {
+            // Extract tenant slug from URL path or session
+            $tenantSlug = null;
+            $path = request()->path();
+            if (preg_match('/\/t\/draft\/([^\/]+)\//', $path, $matches)) {
+                $tenantSlug = $matches[1];
+            }
+            return $this->previewIndex($tenantSlug);
+        }
+
         $this->checkAnnouncementViewPermission(); // Allow viewing if authenticated
-        $professor = Professor::where('professor_id', session('professor_id'))->first();
+        
+        // Get professor safely with preview mode handling
+        try {
+            $professor = $this->getProfessorSafely();
+        } catch (\Exception $e) {
+            return redirect()->route('professor.dashboard')->with('error', $e->getMessage());
+        }
         
         if (!$professor) {
             return redirect()->route('professor.dashboard')->with('error', 'Professor not found.');
@@ -148,7 +203,13 @@ class AnnouncementController extends Controller
     public function create()
     {
         $this->checkAnnouncementCreationPermission(); // Use stricter check for creation
-        $professor = Professor::where('professor_id', session('professor_id'))->first();
+        
+        // Get professor safely with preview mode handling
+        try {
+            $professor = $this->getProfessorSafely();
+        } catch (\Exception $e) {
+            return redirect()->route('professor.dashboard')->with('error', $e->getMessage());
+        }
         
         if (!$professor) {
             return redirect()->route('professor.dashboard')->with('error', 'Professor not found.');
@@ -170,7 +231,13 @@ class AnnouncementController extends Controller
     public function store(Request $request)
     {
         $this->checkAnnouncementCreationPermission(); // Use stricter check for creation
-        $professor = Professor::where('professor_id', session('professor_id'))->first();
+        
+        // Get professor safely with preview mode handling
+        try {
+            $professor = $this->getProfessorSafely();
+        } catch (\Exception $e) {
+            return redirect()->route('professor.dashboard')->with('error', $e->getMessage());
+        }
         
         if (!$professor) {
             return redirect()->route('professor.dashboard')->with('error', 'Professor not found.');
@@ -265,7 +332,12 @@ class AnnouncementController extends Controller
     public function show(Announcement $announcement)
     {
         $this->checkAnnouncementViewPermission(); // Use lenient check for viewing
-        $professor = Professor::where('professor_id', session('professor_id'))->first();
+        // Get professor safely with preview mode handling
+        try {
+            $professor = $this->getProfessorSafely();
+        } catch (\Exception $e) {
+            return redirect()->route('professor.dashboard')->with('error', $e->getMessage());
+        }
         
         // Check if this professor owns the announcement
         if ($announcement->professor_id !== $professor->professor_id) {
@@ -278,7 +350,12 @@ class AnnouncementController extends Controller
     public function edit(Announcement $announcement)
     {
         $this->checkAnnouncementCreationPermission(); // Use stricter check for editing
-        $professor = Professor::where('professor_id', session('professor_id'))->first();
+        // Get professor safely with preview mode handling
+        try {
+            $professor = $this->getProfessorSafely();
+        } catch (\Exception $e) {
+            return redirect()->route('professor.dashboard')->with('error', $e->getMessage());
+        }
         
         // Check if this professor owns the announcement
         if ($announcement->professor_id !== $professor->professor_id) {
@@ -301,7 +378,12 @@ class AnnouncementController extends Controller
     public function update(Request $request, Announcement $announcement)
     {
         $this->checkAnnouncementCreationPermission(); // Use stricter check for updating
-        $professor = Professor::where('professor_id', session('professor_id'))->first();
+        // Get professor safely with preview mode handling
+        try {
+            $professor = $this->getProfessorSafely();
+        } catch (\Exception $e) {
+            return redirect()->route('professor.dashboard')->with('error', $e->getMessage());
+        }
         
         // Check if this professor owns the announcement
         if ($announcement->professor_id !== $professor->professor_id) {
@@ -388,7 +470,12 @@ class AnnouncementController extends Controller
     public function destroy(Announcement $announcement)
     {
         $this->checkAnnouncementCreationPermission(); // Use stricter check for deletion
-        $professor = Professor::where('professor_id', session('professor_id'))->first();
+        // Get professor safely with preview mode handling
+        try {
+            $professor = $this->getProfessorSafely();
+        } catch (\Exception $e) {
+            return redirect()->route('professor.dashboard')->with('error', $e->getMessage());
+        }
         
         // Check if this professor owns the announcement
         if ($announcement->professor_id !== $professor->professor_id) {
@@ -399,5 +486,256 @@ class AnnouncementController extends Controller
 
         return redirect()->route('professor.announcements.index')
             ->with('success', 'Announcement deleted successfully!');
+    }
+    
+    /**
+     * Preview announcements page for tenant customization
+     */
+    public function previewIndex($tenantSlug = null)
+    {
+        $this->setupTenantPreviewContext($tenantSlug);
+        
+        // Create mock announcements data with required methods
+        $mockAnnouncements = [
+            new class {
+                public $id = 1;
+                public $announcement_id = 1;
+                public $title = 'Welcome to the New Semester';
+                public $content = 'Welcome everyone to the new semester! We have exciting updates and new course materials ready for you.';
+                public $description = 'Welcome announcement for new semester';
+                public $announcement_type = 'general';
+                public $type = 'general';
+                public $priority = 'high';
+                public $target_scope = 'general';
+                public $target_program_id = null;
+                public $target_batch_id = null;
+                public $professor_id = 'preview-professor';
+                public $is_expired = false;
+                public $target_users = [];
+                public $target_programs = [];
+                public $expire_date;
+                public $created_at;
+                public $professor;
+                public $program;
+                public $batch;
+                
+                public function __construct() {
+                    $this->expire_date = now()->addDays(30);
+                    $this->created_at = now()->subDays(2);
+                    $this->professor = (object) [
+                        'professor_first_name' => 'Dr. Jane',
+                        'professor_last_name' => 'Professor'
+                    ];
+                    $this->program = null;
+                    $this->batch = null;
+                }
+                
+                public function getCreator() {
+                    return $this->professor;
+                }
+                
+                public function getCreatorName() {
+                    return 'Dr. Jane Professor';
+                }
+                
+                public function getCreatorAvatar() {
+                    return null;
+                }
+            },
+            new class {
+                public $id = 2;
+                public $announcement_id = 2;
+                public $title = 'Nursing Board Review Schedule Update';
+                public $content = 'The nursing board review sessions have been updated. Please check the new schedule in your dashboard.';
+                public $description = 'Update on nursing board review schedule';
+                public $announcement_type = 'schedule';
+                public $type = 'schedule';
+                public $priority = 'medium';
+                public $target_scope = 'program';
+                public $target_program_id = 1;
+                public $target_batch_id = null;
+                public $professor_id = 'preview-professor';
+                public $is_expired = false;
+                public $target_users = [];
+                public $target_programs = [1];
+                public $expire_date;
+                public $created_at;
+                public $professor;
+                public $program;
+                public $batch;
+                
+                public function __construct() {
+                    $this->expire_date = now()->addDays(7);
+                    $this->created_at = now()->subDays(1);
+                    $this->professor = (object) [
+                        'professor_first_name' => 'Dr. Jane',
+                        'professor_last_name' => 'Professor'
+                    ];
+                    $this->program = (object) ['program_name' => 'Nursing Board Review'];
+                    $this->batch = null;
+                }
+                
+                public function getCreator() {
+                    return $this->professor;
+                }
+                
+                public function getCreatorName() {
+                    return 'Dr. Jane Professor';
+                }
+                
+                public function getCreatorAvatar() {
+                    return null;
+                }
+            },
+            new class {
+                public $id = 3;
+                public $announcement_id = 3;
+                public $title = 'Batch A Meeting Tomorrow';
+                public $content = 'Reminder: Batch A has a meeting scheduled for tomorrow at 10:00 AM. Please be on time.';
+                public $description = 'Meeting reminder for Batch A';
+                public $announcement_type = 'meeting';
+                public $type = 'meeting';
+                public $priority = 'high';
+                public $target_scope = 'batch';
+                public $target_program_id = 1;
+                public $target_batch_id = 1;
+                public $professor_id = 'preview-professor';
+                public $is_expired = false;
+                public $target_users = [];
+                public $target_programs = [1];
+                public $expire_date;
+                public $created_at;
+                public $professor;
+                public $program;
+                public $batch;
+                
+                public function __construct() {
+                    $this->expire_date = now()->addDays(1);
+                    $this->created_at = now()->subHours(6);
+                    $this->professor = (object) [
+                        'professor_first_name' => 'Dr. Jane',
+                        'professor_last_name' => 'Professor'
+                    ];
+                    $this->program = (object) ['program_name' => 'Nursing Board Review'];
+                    $this->batch = (object) ['batch_name' => 'Batch A - Morning'];
+                }
+                
+                public function getCreator() {
+                    return $this->professor;
+                }
+                
+                public function getCreatorName() {
+                    return 'Dr. Jane Professor';
+                }
+                
+                public function getCreatorAvatar() {
+                    return null;
+                }
+            }
+        ];
+        
+        $announcements = collect($mockAnnouncements);
+        
+        // Create mock programs and batches for announcement creation
+        $assignedPrograms = collect([
+            (object) [
+                'program_id' => 1,
+                'program_name' => 'Nursing Board Review',
+                'batches' => collect([
+                    (object) ['batch_id' => 1, 'batch_name' => 'Batch A - Morning'],
+                    (object) ['batch_id' => 2, 'batch_name' => 'Batch B - Evening']
+                ])
+            ],
+            (object) [
+                'program_id' => 2,
+                'program_name' => 'Medical Technology Review',
+                'batches' => collect([
+                    (object) ['batch_id' => 3, 'batch_name' => 'Med Tech Batch 1']
+                ])
+            ]
+        ]);
+        
+        // Calculate statistics
+        $totalAnnouncements = $announcements->count();
+        $activeAnnouncements = $announcements->where('is_expired', false)->count();
+        $highPriorityAnnouncements = $announcements->where('priority', 'high')->count();
+        
+        // Mock feature settings
+        $canCreateAnnouncements = true;
+        $announcementManagementEnabled = true;
+        
+        // Convert to paginated collection to match view expectations
+        $perPage = 10;
+        $currentPage = 1;
+        $total = $announcements->count();
+        
+        $announcements = new \Illuminate\Pagination\LengthAwarePaginator(
+            $announcements->forPage($currentPage, $perPage),
+            $total,
+            $perPage,
+            $currentPage,
+            ['path' => request()->url(), 'pageName' => 'page']
+        );
+        
+        return view('professor.announcements.index', compact(
+            'announcements', 'assignedPrograms', 'totalAnnouncements',
+            'activeAnnouncements', 'highPriorityAnnouncements', 
+            'canCreateAnnouncements', 'announcementManagementEnabled'
+        ));
+    }
+    
+    /**
+     * Setup tenant preview context (common method for all preview methods)
+     */
+    private function setupTenantPreviewContext($tenantSlug = null)
+    {
+        // Load tenant settings if provided
+        if ($tenantSlug) {
+            $tenantService = app(\App\Services\TenantService::class);
+            $tenantService->switchToMain();
+            
+            $tenant = \App\Models\Tenant::where('slug', $tenantSlug)->first();
+            
+            if ($tenant) {
+                try {
+                    $tenantService->switchToTenant($tenant);
+                    
+                    // Load settings from tenant database
+                    $settings = [
+                        'navbar' => [
+                            'brand_name' => \App\Models\Setting::get('navbar', 'brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => \App\Models\Setting::get('navbar', 'brand_logo', null),
+                        ],
+                        'professor_panel' => [
+                            'brand_name' => \App\Models\Setting::get('professor_panel', 'brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => \App\Models\Setting::get('professor_panel', 'brand_logo', null),
+                        ],
+                    ];
+                    
+                    $tenantService->switchToMain();
+                    
+                    // Share settings with the view
+                    view()->share('settings', $settings);
+                    view()->share('navbar', $settings['navbar'] ?? []);
+                    
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Failed to load tenant settings for professor announcement preview', [
+                        'tenant' => $tenant->slug,
+                        'error' => $e->getMessage()
+                    ]);
+                    $tenantService->switchToMain();
+                }
+            }
+        }
+        
+        // Set up session data for preview mode
+        session([
+            'user_id' => 'preview-professor',
+            'user_name' => 'Dr. Jane Professor',
+            'user_role' => 'professor',
+            'user_type' => 'professor',
+            'professor_id' => 'preview-professor',
+            'logged_in' => true
+        ]);
     }
 }

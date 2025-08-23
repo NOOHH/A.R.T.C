@@ -18,7 +18,13 @@ class CheckProfessorAuth
     public function handle(Request $request, Closure $next)
     {
         // Allow preview mode to bypass authentication completely
-        if ($request->boolean('preview', false)) {
+        $isPreview = $request->boolean('preview', false) ||
+                    $request->query('preview') === 'true' ||
+                    str_contains($request->path(), '/t/draft/') ||
+                    str_contains($request->path(), '/t/preview/') ||
+                    session('professor_id') === 'preview-professor';
+                    
+        if ($isPreview) {
             return $next($request);
         }
 

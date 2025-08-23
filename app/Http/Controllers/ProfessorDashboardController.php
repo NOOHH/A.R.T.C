@@ -18,7 +18,10 @@ class ProfessorDashboardController extends Controller
     public function __construct()
     {
         // Apply middleware conditionally - skip for preview requests
-        $this->middleware('professor.auth')->except(['showPreviewDashboard']);
+        $this->middleware('professor.auth')->except([
+            'showPreviewDashboard', 'previewPrograms', 'previewStudentList', 
+            'previewProfile', 'previewSettings'
+        ]);
     }
 
     /**
@@ -651,5 +654,303 @@ class ProfessorDashboardController extends Controller
             'aiQuizEnabled', 'announcementManagementEnabled', 'moduleManagementEnabled', 
             'upcomingMeetings', 'pendingAssignments', 'announcements'
         ));
+    }
+    
+    /**
+     * Preview programs page for tenant customization
+     */
+    public function previewPrograms($tenantSlug = null)
+    {
+        $this->setupTenantPreviewContext($tenantSlug);
+        
+        // Create mock programs data
+        $assignedPrograms = collect([
+            (object) [
+                'program_id' => 1,
+                'program_name' => 'Nursing Board Review',
+                'program_description' => 'Comprehensive nursing board examination review program.',
+                'pivot' => (object) ['video_link' => 'https://example.com/nursing-video'],
+                'modules' => collect([
+                    (object) ['module_id' => 1, 'module_name' => 'Fundamentals', 'module_description' => 'Basic nursing principles'],
+                    (object) ['module_id' => 2, 'module_name' => 'Pharmacology', 'module_description' => 'Drug interactions and administration'],
+                    (object) ['module_id' => 3, 'module_name' => 'Clinical Practice', 'module_description' => 'Hands-on clinical skills']
+                ]),
+                'students' => collect(array_fill(0, 25, (object)['student_id' => 1, 'name' => 'Test Student'])),
+                'students_count' => 25
+            ],
+            (object) [
+                'program_id' => 2,
+                'program_name' => 'Medical Technology Review',
+                'program_description' => 'Advanced medical technology certification review.',
+                'pivot' => (object) ['video_link' => null],
+                'modules' => collect([
+                    (object) ['module_id' => 4, 'module_name' => 'Laboratory Techniques', 'module_description' => 'Advanced lab procedures'],
+                    (object) ['module_id' => 5, 'module_name' => 'Diagnostics', 'module_description' => 'Diagnostic procedures and analysis']
+                ]),
+                'students' => collect(array_fill(0, 18, (object)['student_id' => 1, 'name' => 'Test Student'])),
+                'students_count' => 18
+            ]
+        ]);
+        
+        return view('professor.programs', compact('assignedPrograms'));
+    }
+    
+    /**
+     * Preview student list for tenant customization
+     */
+    public function previewStudentList($tenantSlug = null)
+    {
+        $this->setupTenantPreviewContext($tenantSlug);
+        
+        // Create mock student data
+        $students = collect([
+            (object) [
+                'student_id' => 1,
+                'firstname' => 'John',
+                'middlename' => 'M.',
+                'lastname' => 'Doe',
+                'email' => 'john.doe@example.com',
+                'program' => 'Nursing Board Review',
+                'enrollment_date' => now()->subDays(30)->format('M d, Y'),
+                'status' => 'active',
+                'progress' => 85,
+                'enrollments' => collect([
+                    (object) [
+                        'program_id' => 1,
+                        'enrollment_status' => 'active',
+                        'program' => (object) ['program_name' => 'Nursing Board Review'],
+                        'enrollment_date' => now()->subDays(30)
+                    ]
+                ])
+            ],
+            (object) [
+                'student_id' => 2,
+                'firstname' => 'Jane',
+                'middlename' => 'A.',
+                'lastname' => 'Smith',
+                'email' => 'jane.smith@example.com',
+                'program' => 'Nursing Board Review',
+                'enrollment_date' => now()->subDays(25)->format('M d, Y'),
+                'status' => 'active',
+                'progress' => 72,
+                'enrollments' => collect([
+                    (object) [
+                        'program_id' => 1,
+                        'enrollment_status' => 'active',
+                        'program' => (object) ['program_name' => 'Nursing Board Review'],
+                        'enrollment_date' => now()->subDays(25)
+                    ]
+                ])
+            ],
+            (object) [
+                'student_id' => 3,
+                'firstname' => 'Mike',
+                'middlename' => 'R.',
+                'lastname' => 'Johnson',
+                'email' => 'mike.johnson@example.com',
+                'program' => 'Medical Technology Review',
+                'enrollment_date' => now()->subDays(20)->format('M d, Y'),
+                'status' => 'active',
+                'progress' => 90,
+                'enrollments' => collect([
+                    (object) [
+                        'program_id' => 2,
+                        'enrollment_status' => 'active',
+                        'program' => (object) ['program_name' => 'Medical Technology Review'],
+                        'enrollment_date' => now()->subDays(20)
+                    ]
+                ])
+            ]
+        ]);
+        
+        // Create batches data
+        $studentBatches = collect([
+            (object) [
+                'batch_name' => 'Batch A - Morning',
+                'program_name' => 'Nursing Board Review',
+                'students_count' => 15,
+                'start_date' => now()->subDays(30)->format('M d, Y')
+            ],
+            (object) [
+                'batch_name' => 'Batch B - Evening',
+                'program_name' => 'Medical Technology Review',
+                'students_count' => 12,
+                'start_date' => now()->subDays(20)->format('M d, Y')
+            ]
+        ]);
+        
+        // Create mock assigned programs data
+        $assignedPrograms = collect([
+            (object) [
+                'program_id' => 1,
+                'program_name' => 'Nursing Board Review',
+                'students_count' => 15
+            ],
+            (object) [
+                'program_id' => 2,
+                'program_name' => 'Medical Technology Review',
+                'students_count' => 12
+            ]
+        ]);
+        
+        return view('professor.students', compact('students', 'studentBatches', 'assignedPrograms'));
+    }
+    
+    /**
+     * Preview profile page for tenant customization
+     */
+    public function previewProfile($tenantSlug = null)
+    {
+        $this->setupTenantPreviewContext($tenantSlug);
+        
+        // Create mock professor profile data
+        $professor = (object) [
+            'professor_id' => 'preview-professor',
+            'user_firstname' => 'Dr. Jane',
+            'user_lastname' => 'Professor',
+            'professor_first_name' => 'Jane',
+            'professor_last_name' => 'Professor',
+            'professor_email' => 'jane.professor@example.com',
+            'professor_phone' => '+1 (555) 123-4567',
+            'professor_address' => '123 Academic Lane, Education City, EC 12345',
+            'professor_bio' => 'Dr. Jane Professor is a dedicated educator with over 10 years of experience in nursing education and board review preparation.',
+            'specialization' => 'Nursing Education, Clinical Practice',
+            'qualifications' => 'PhD in Nursing, MSN, RN',
+            'profile_picture' => null,
+            'profile_photo' => null,
+            'created_at' => now()->subYears(2),
+            'joined_date' => now()->subYears(2)->format('M d, Y')
+        ];
+        
+        // Create mock dynamic fields for additional profile information
+        $dynamicFields = collect([
+            (object) [
+                'field_name' => 'years_experience',
+                'field_label' => 'Years of Experience',
+                'field_value' => '10',
+                'field_type' => 'number',
+                'is_required' => false
+            ],
+            (object) [
+                'field_name' => 'certifications',
+                'field_label' => 'Certifications',
+                'field_value' => 'NCLEX-RN, CCRN, BLS',
+                'field_type' => 'text',
+                'is_required' => false
+            ],
+            (object) [
+                'field_name' => 'research_interests',
+                'field_label' => 'Research Interests',
+                'field_value' => 'Clinical nursing, patient education, healthcare technology',
+                'field_type' => 'textarea',
+                'is_required' => false
+            ]
+        ]);
+        
+        return view('professor.profile', compact('professor', 'dynamicFields'));
+    }
+    
+    /**
+     * Preview settings page for tenant customization
+     */
+    public function previewSettings($tenantSlug = null)
+    {
+        $this->setupTenantPreviewContext($tenantSlug);
+        
+        // Create mock settings data
+        $settings = [
+            'notifications' => [
+                'email_notifications' => true,
+                'sms_notifications' => false,
+                'announcement_alerts' => true,
+                'student_submission_alerts' => true
+            ],
+            'preferences' => [
+                'dashboard_layout' => 'grid',
+                'items_per_page' => 20,
+                'default_grading_scale' => 'percentage',
+                'auto_grade_quizzes' => true
+            ],
+            'security' => [
+                'two_factor_enabled' => false,
+                'session_timeout' => 60,
+                'login_notifications' => true
+            ]
+        ];
+        
+        // Create mock professor data for settings page
+        $professor = (object) [
+            'professor_id' => 'preview-professor',
+            'user_firstname' => 'Dr. Jane',
+            'user_lastname' => 'Professor',
+            'professor_first_name' => 'Jane',
+            'professor_last_name' => 'Professor',
+            'professor_name' => 'Dr. Jane Professor',
+            'professor_email' => 'jane.professor@example.com'
+        ];
+        
+        return view('professor.settings', compact('settings', 'professor'));
+    }
+    
+    /**
+     * Setup tenant preview context (common method for all preview methods)
+     */
+    private function setupTenantPreviewContext($tenantSlug = null)
+    {
+        // Load tenant settings if provided
+        if ($tenantSlug) {
+            $tenantService = app(\App\Services\TenantService::class);
+            $tenantService->switchToMain();
+            
+            $tenant = \App\Models\Tenant::where('slug', $tenantSlug)->first();
+            
+            if ($tenant) {
+                try {
+                    $tenantService->switchToTenant($tenant);
+                    
+                    // Load settings from tenant database
+                    $settings = [
+                        'navbar' => [
+                            'brand_name' => \App\Models\Setting::get('navbar', 'brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => \App\Models\Setting::get('navbar', 'brand_logo', null),
+                        ],
+                        'professor_panel' => [
+                            'brand_name' => \App\Models\Setting::get('professor_panel', 'brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => \App\Models\Setting::get('professor_panel', 'brand_logo', null),
+                        ],
+                        'professor_sidebar' => [
+                            'primary_color' => \App\Models\Setting::get('professor_sidebar', 'primary_color', '#1e293b'),
+                            'secondary_color' => \App\Models\Setting::get('professor_sidebar', 'secondary_color', '#334155'),
+                            'accent_color' => \App\Models\Setting::get('professor_sidebar', 'accent_color', '#10b981'),
+                            'text_color' => \App\Models\Setting::get('professor_sidebar', 'text_color', '#f1f5f9'),
+                            'hover_color' => \App\Models\Setting::get('professor_sidebar', 'hover_color', '#475569'),
+                        ],
+                    ];
+                    
+                    $tenantService->switchToMain();
+                    
+                    // Share settings with the view
+                    view()->share('settings', $settings);
+                    view()->share('navbar', $settings['navbar'] ?? []);
+                    
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Failed to load tenant settings for professor preview', [
+                        'tenant' => $tenant->slug,
+                        'error' => $e->getMessage()
+                    ]);
+                    $tenantService->switchToMain();
+                }
+            }
+        }
+        
+        // Set up session data for preview mode
+        session([
+            'user_id' => 'preview-professor',
+            'user_name' => 'Dr. Jane Professor',
+            'user_role' => 'professor',
+            'user_type' => 'professor',
+            'professor_id' => 'preview-professor',
+            'logged_in' => true
+        ]);
     }
 }

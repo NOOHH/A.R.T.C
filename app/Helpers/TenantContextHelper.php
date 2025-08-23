@@ -59,6 +59,20 @@ class TenantContextHelper
     public static function detectProfessorTenant($userId)
     {
         try {
+            // Check if this is a preview context
+            $request = request();
+            $isPreview = $request->has('preview') || 
+                        $request->query('preview') === 'true' ||
+                        str_contains($request->path(), '/t/draft/') ||
+                        str_contains($request->path(), '/t/preview/') ||
+                        $userId === 'preview-professor' ||
+                        session('professor_id') === 'preview-professor';
+            
+            if ($isPreview) {
+                // For preview mode, return default tenant without database query
+                return self::getDefaultTenant();
+            }
+
             // Find the professor
             $professor = Professor::where('user_id', $userId)->first();
             if (!$professor) {

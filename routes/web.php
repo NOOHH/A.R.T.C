@@ -74,9 +74,69 @@ Route::get('/search-now', function(\Illuminate\Http\Request $request) {
             ]);
         }
         
+        // Check if this is a preview request
+        $isPreview = $request->has('preview') && $request->get('preview') === 'true';
+        
+        // Also check for preview context from session or URL path
+        if (!$isPreview) {
+            $isPreview = session('professor_id') === 'preview-professor' ||
+                        session('student_id') === 'preview-student' ||
+                        str_contains($request->path(), '/t/draft/') ||
+                        str_contains($request->path(), '/t/preview/');
+        }
+        
+        if ($isPreview) {
+            // Return mock search results for preview mode
+            $results = [];
+            
+            if ($type === 'all' || $type === 'students') {
+                $results[] = [
+                    'type' => 'student',
+                    'id' => 'preview-student-1',
+                    'name' => 'John Doe',
+                    'email' => 'john.doe@example.com',
+                    'url' => '#'
+                ];
+                $results[] = [
+                    'type' => 'student',
+                    'id' => 'preview-student-2',
+                    'name' => 'Jane Smith',
+                    'email' => 'jane.smith@example.com',
+                    'url' => '#'
+                ];
+            }
+            
+            if ($type === 'all' || $type === 'professors') {
+                $results[] = [
+                    'type' => 'professor',
+                    'id' => 'preview-professor-1',
+                    'name' => 'Dr. Sarah Wilson',
+                    'email' => 'sarah.wilson@example.com',
+                    'url' => '#'
+                ];
+            }
+            
+            if ($type === 'all' || $type === 'programs') {
+                $results[] = [
+                    'type' => 'program',
+                    'id' => 'preview-program-1',
+                    'name' => 'Nursing Board Review',
+                    'description' => 'Comprehensive nursing board examination review program.',
+                    'url' => '#'
+                ];
+            }
+            
+            return response()->json([
+                'success' => true,
+                'results' => $results,
+                'total' => count($results),
+                'message' => count($results) > 0 ? 'Preview search completed successfully' : 'No preview results found'
+            ]);
+        }
+        
         $results = [];
         
-        // Direct database queries
+        // Direct database queries for non-preview requests
         if ($type === 'all' || $type === 'students') {
             $students = \Illuminate\Support\Facades\DB::table('students')
                 ->select('student_id as id', 'firstname', 'lastname', 'email')
@@ -553,13 +613,79 @@ Route::prefix('t')->group(function() {
         return app(\App\Http\Controllers\StudentController::class)->previewSettings($tenant);
     })->name('tenant.draft.student.settings');
     
-    // PROFESSOR ROUTES
+    // PROFESSOR ROUTES - Active Tenant
     Route::get('/{tenant}/professor/dashboard', function($tenant) {
         return app(\App\Http\Controllers\ProfessorDashboardController::class)->showPreviewDashboard($tenant);
     })->name('tenant.professor.dashboard');
+    
+    Route::get('/{tenant}/professor/programs', function($tenant) {
+        return app(\App\Http\Controllers\ProfessorDashboardController::class)->previewPrograms($tenant);
+    })->name('tenant.professor.programs');
+    
+    Route::get('/{tenant}/professor/modules', function($tenant) {
+        return app(\App\Http\Controllers\Professor\ProfessorModuleController::class)->previewIndex($tenant);
+    })->name('tenant.professor.modules');
+    
+    Route::get('/{tenant}/professor/meetings', function($tenant) {
+        return app(\App\Http\Controllers\ProfessorMeetingController::class)->previewIndex($tenant);
+    })->name('tenant.professor.meetings');
+    
+    Route::get('/{tenant}/professor/grading', function($tenant) {
+        return app(\App\Http\Controllers\Professor\GradingController::class)->previewIndex($tenant);
+    })->name('tenant.professor.grading');
+    
+    Route::get('/{tenant}/professor/announcements', function($tenant) {
+        return app(\App\Http\Controllers\Professor\AnnouncementController::class)->previewIndex($tenant);
+    })->name('tenant.professor.announcements');
+    
+    Route::get('/{tenant}/professor/students', function($tenant) {
+        return app(\App\Http\Controllers\ProfessorDashboardController::class)->previewStudentList($tenant);
+    })->name('tenant.professor.students');
+    
+    Route::get('/{tenant}/professor/profile', function($tenant) {
+        return app(\App\Http\Controllers\ProfessorDashboardController::class)->previewProfile($tenant);
+    })->name('tenant.professor.profile');
+    
+    Route::get('/{tenant}/professor/settings', function($tenant) {
+        return app(\App\Http\Controllers\ProfessorDashboardController::class)->previewSettings($tenant);
+    })->name('tenant.professor.settings');
+    
+    // PROFESSOR ROUTES - Draft Tenant
     Route::get('/draft/{tenant}/professor/dashboard', function($tenant) {
         return app(\App\Http\Controllers\ProfessorDashboardController::class)->showPreviewDashboard($tenant);
     })->name('tenant.draft.professor.dashboard');
+    
+    Route::get('/draft/{tenant}/professor/programs', function($tenant) {
+        return app(\App\Http\Controllers\ProfessorDashboardController::class)->previewPrograms($tenant);
+    })->name('tenant.draft.professor.programs');
+    
+    Route::get('/draft/{tenant}/professor/modules', function($tenant) {
+        return app(\App\Http\Controllers\Professor\ProfessorModuleController::class)->previewIndex($tenant);
+    })->name('tenant.draft.professor.modules');
+    
+    Route::get('/draft/{tenant}/professor/meetings', function($tenant) {
+        return app(\App\Http\Controllers\ProfessorMeetingController::class)->previewIndex($tenant);
+    })->name('tenant.draft.professor.meetings');
+    
+    Route::get('/draft/{tenant}/professor/grading', function($tenant) {
+        return app(\App\Http\Controllers\Professor\GradingController::class)->previewIndex($tenant);
+    })->name('tenant.draft.professor.grading');
+    
+    Route::get('/draft/{tenant}/professor/announcements', function($tenant) {
+        return app(\App\Http\Controllers\Professor\AnnouncementController::class)->previewIndex($tenant);
+    })->name('tenant.draft.professor.announcements');
+    
+    Route::get('/draft/{tenant}/professor/students', function($tenant) {
+        return app(\App\Http\Controllers\ProfessorDashboardController::class)->previewStudentList($tenant);
+    })->name('tenant.draft.professor.students');
+    
+    Route::get('/draft/{tenant}/professor/profile', function($tenant) {
+        return app(\App\Http\Controllers\ProfessorDashboardController::class)->previewProfile($tenant);
+    })->name('tenant.draft.professor.profile');
+    
+    Route::get('/draft/{tenant}/professor/settings', function($tenant) {
+        return app(\App\Http\Controllers\ProfessorDashboardController::class)->previewSettings($tenant);
+    })->name('tenant.draft.professor.settings');
     
     // ADMIN ROUTES
     Route::get('/{tenant}/admin-dashboard', function($tenant) {
