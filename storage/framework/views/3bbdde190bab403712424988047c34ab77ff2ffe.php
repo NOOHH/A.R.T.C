@@ -229,8 +229,33 @@
                             </a>
                         <?php endif; ?>
                         <?php if($isAdmin): ?>
-                            <a href="<?php echo e(route('admin.certificates')); ?>" class="submenu-link <?php if(Route::currentRouteName() === 'admin.certificates'): ?> active <?php endif; ?>">
+                            <?php
+                                $certificatesUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin/certificates" . $urlParams
+                                    : route('admin.certificates');
+                            ?>
+                            <a href="<?php echo e($certificatesUrl); ?>" class="submenu-link <?php if(Route::currentRouteName() === 'admin.certificates'): ?> active <?php endif; ?>">
                                 <i class="bi bi-award"></i><span>Certificates</span>
+                            </a>
+                        <?php endif; ?>
+                        <?php if($isAdmin): ?>
+                            <?php
+                                $archivedUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin/archived" . $urlParams
+                                    : route('admin.archived', [], false);
+                            ?>
+                            <a href="<?php echo e($archivedUrl); ?>" class="submenu-link">
+                                <i class="bi bi-archive"></i><span>Archived Content</span>
+                            </a>
+                        <?php endif; ?>
+                        <?php if($isAdmin): ?>
+                            <?php
+                                $courseUploadUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin/courses/upload" . $urlParams
+                                    : route('admin.courses.upload', [], false);
+                            ?>
+                            <a href="<?php echo e($courseUploadUrl); ?>" class="submenu-link">
+                                <i class="bi bi-cloud-upload"></i><span>Course Content Upload</span>
                             </a>
                         <?php endif; ?>
                         <?php if($isAdmin): ?>

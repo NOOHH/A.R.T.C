@@ -228,8 +228,33 @@
                             </a>
                         @endif
                         @if($isAdmin)
-                            <a href="{{ route('admin.certificates') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.certificates') active @endif">
+                            @php
+                                $certificatesUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin/certificates" . $urlParams
+                                    : route('admin.certificates');
+                            @endphp
+                            <a href="{{ $certificatesUrl }}" class="submenu-link @if(Route::currentRouteName() === 'admin.certificates') active @endif">
                                 <i class="bi bi-award"></i><span>Certificates</span>
+                            </a>
+                        @endif
+                        @if($isAdmin)
+                            @php
+                                $archivedUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin/archived" . $urlParams
+                                    : route('admin.archived', [], false);
+                            @endphp
+                            <a href="{{ $archivedUrl }}" class="submenu-link">
+                                <i class="bi bi-archive"></i><span>Archived Content</span>
+                            </a>
+                        @endif
+                        @if($isAdmin)
+                            @php
+                                $courseUploadUrl = $tenantSlug 
+                                    ? $basePreviewUrl . "/admin/courses/upload" . $urlParams
+                                    : route('admin.courses.upload', [], false);
+                            @endphp
+                            <a href="{{ $courseUploadUrl }}" class="submenu-link">
+                                <i class="bi bi-cloud-upload"></i><span>Course Content Upload</span>
                             </a>
                         @endif
                         @if($isAdmin)
