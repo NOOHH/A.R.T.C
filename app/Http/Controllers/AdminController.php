@@ -3525,29 +3525,24 @@ class AdminController extends Controller
                     'issued_date' => now()->subDays(15),
                     'status' => 'pending',
                     'certificate_number' => 'CERT-2025-002'
+                ]),
+                $this->createMockObject([
+                    'id' => 3,
+                    'student_name' => 'Ana Rodriguez',
+                    'program_name' => 'Pharmacy Review Program',
+                    'certificate_type' => 'Honor Certificate',
+                    'issued_date' => now()->subDays(5),
+                    'status' => 'issued',
+                    'certificate_number' => 'CERT-2025-003'
                 ])
             ]);
 
-            return response('
-                <html>
-                    <head>
-                        <title>Certificates Preview - TEST11</title>
-                        <style>body { font-family: Arial; margin: 20px; }</style>
-                    </head>
-                    <body>
-                        <h1>TEST11 - Certificates Management</h1>
-                        <p>✅ Tenant: '.$tenant.' | Preview Mode Active</p>
-                        <div>
-                            <h3>Certificate Records:</h3>
-                            <ul>
-                                <li>Maria Santos - Nursing Review Program (CERT-2025-001)</li>
-                                <li>Carlos Garcia - Medical Technology Review (CERT-2025-002)</li>
-                            </ul>
-                        </div>
-                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
-                    </body>
-                </html>
-            ', 200, ['Content-Type' => 'text/html']);
+            $html = view('admin.certificates.certificates', [
+                'certificates' => $certificates,
+                'isPreview' => true
+            ])->render();
+
+            return response($html);
 
         } catch (\Exception $e) {
             Log::error('Certificates preview error: ' . $e->getMessage());
@@ -3556,12 +3551,12 @@ class AdminController extends Controller
                     <head><title>TEST11 - Certificates Preview</title></head>
                     <body style="font-family: Arial;">
                         <h1>TEST11 - Certificates Preview - Tenant: '.$tenant.'</h1>
-                        <p>❌ Error: '.$e->getMessage().'</p>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
                         <p>But route is working correctly!</p>
                         <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
                     </body>
                 </html>
-            ', 200, ['Content-Type' => 'text/html']);
+            ', 200);
         }
     }
 
@@ -3583,27 +3578,52 @@ class AdminController extends Controller
                 'preview_mode' => true
             ]);
 
-            return response('
-                <html>
-                    <head>
-                        <title>Archived Content Preview - TEST11</title>
-                        <style>body { font-family: Arial; margin: 20px; }</style>
-                    </head>
-                    <body>
-                        <h1>TEST11 - Archived Content Management</h1>
-                        <p>✅ Tenant: '.$tenant.' | Preview Mode Active</p>
-                        <div>
-                            <h3>Archived Items:</h3>
-                            <ul>
-                                <li>Nursing Program 2024-A (Archived: 30 days ago)</li>
-                                <li>MedTech Batch 2024-B (Archived: 15 days ago)</li>
-                                <li>Pharmacy Review 2024-C (Archived: 7 days ago)</li>
-                            </ul>
-                        </div>
-                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
-                    </body>
-                </html>
-            ', 200, ['Content-Type' => 'text/html']);
+            // Generate mock archived data
+            $archivedPrograms = collect([
+                $this->createMockObject([
+                    'id' => 1,
+                    'program_name' => 'TEST11 Nursing Program 2024-A',
+                    'archived_at' => now()->subDays(30),
+                    'status' => 'archived'
+                ]),
+                $this->createMockObject([
+                    'id' => 2,
+                    'program_name' => 'TEST11 MedTech Batch 2024-B',
+                    'archived_at' => now()->subDays(15),
+                    'status' => 'archived'
+                ]),
+                $this->createMockObject([
+                    'id' => 3,
+                    'program_name' => 'TEST11 Pharmacy Review 2024-C',
+                    'archived_at' => now()->subDays(7),
+                    'status' => 'archived'
+                ])
+            ]);
+
+            $archivedCourses = collect([
+                $this->createMockObject([
+                    'id' => 1,
+                    'course_name' => 'Advanced Nursing Procedures',
+                    'program_name' => 'TEST11 Nursing Program',
+                    'archived_at' => now()->subDays(20),
+                    'status' => 'archived'
+                ]),
+                $this->createMockObject([
+                    'id' => 2,
+                    'course_name' => 'Clinical Chemistry Lab',
+                    'program_name' => 'TEST11 Medical Technology',
+                    'archived_at' => now()->subDays(10),
+                    'status' => 'archived'
+                ])
+            ]);
+
+            $html = view('admin.archived.index', [
+                'archivedPrograms' => $archivedPrograms,
+                'archivedCourses' => $archivedCourses,
+                'isPreview' => true
+            ])->render();
+
+            return response($html);
 
         } catch (\Exception $e) {
             Log::error('Archived content preview error: ' . $e->getMessage());
@@ -3612,12 +3632,12 @@ class AdminController extends Controller
                     <head><title>TEST11 - Archived Content Preview</title></head>
                     <body style="font-family: Arial;">
                         <h1>TEST11 - Archived Content Preview - Tenant: '.$tenant.'</h1>
-                        <p>❌ Error: '.$e->getMessage().'</p>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
                         <p>But route is working correctly!</p>
                         <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
                     </body>
                 </html>
-            ', 200, ['Content-Type' => 'text/html']);
+            ', 200);
         }
     }
 
@@ -3639,130 +3659,57 @@ class AdminController extends Controller
                 'preview_mode' => true
             ]);
 
-            return response('
-                <html>
-                    <head>
-                        <title>Course Content Upload Preview - TEST11</title>
-                        <style>
-                            body { font-family: Arial; margin: 20px; }
-                            .form-group { margin: 15px 0; }
-                            select, input { padding: 8px; margin: 5px; min-width: 200px; }
-                            button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-                            .status { padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin: 10px 0; }
-                        </style>
-                    </head>
-                    <body>
-                        <h1>TEST11 - Course Content Upload - Module Selection</h1>
-                        <p>✅ Tenant: '.$tenant.' | Preview Mode Active</p>
-                        
-                        <div class="status">
-                            ✅ Module Redirect Fix: JavaScript now uses tenant-aware URLs<br>
-                            ✅ API endpoints will maintain /t/draft/'.$tenant.'/ context<br>
-                            ✅ No more redirects to ARTC main site
-                        </div>
-                        
-                        <div>
-                            <h3>Select Program to View/Manage Modules:</h3>
-                            <div class="form-group">
-                                <label>Program:</label>
-                                <select id="programSelect" onchange="handleProgramChange()">
-                                    <option value="">-- Select Program --</option>
-                                    <option value="1">TEST11 Nursing Review Program</option>
-                                    <option value="2">TEST11 Medical Technology Program</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Module:</label>
-                                <select id="moduleSelect" disabled>
-                                    <option value="">-- Select Module --</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Course:</label>
-                                <select id="courseSelect" disabled>
-                                    <option value="">-- Select Course --</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Content Type:</label>
-                                <select>
-                                    <option>Video</option>
-                                    <option>PDF</option>
-                                    <option>Quiz</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>File Upload:</label>
-                                <input type="file">
-                                <button type="button">Upload Content</button>
-                            </div>
-                        </div>
-                        
-                        <script>
-                            // Tenant-aware JavaScript functions
-                            function getTenantFromPath() {
-                                const path = window.location.pathname;
-                                const match = path.match(/\/t\/draft\/([^\/]+)\//);
-                                return match ? match[1] : null;
-                            }
-                            
-                            function getApiUrl(endpoint) {
-                                const tenant = getTenantFromPath();
-                                if (tenant) {
-                                    return `/t/draft/${tenant}/admin/${endpoint}`;
-                                }
-                                return `/admin/${endpoint}`;
-                            }
-                            
-                            function handleProgramChange() {
-                                const programSelect = document.getElementById("programSelect");
-                                const moduleSelect = document.getElementById("moduleSelect");
-                                const courseSelect = document.getElementById("courseSelect");
-                                
-                                const programId = programSelect.value;
-                                
-                                if (programId) {
-                                    // Show that tenant-aware URL is being used
-                                    const apiUrl = getApiUrl("modules/by-program") + "?program_id=" + programId;
-                                    console.log("Using tenant-aware API URL:", apiUrl);
-                                    
-                                    // Simulate API call
-                                    moduleSelect.innerHTML = "<option value=\"\">Loading...</option>";
-                                    
-                                    setTimeout(() => {
-                                        moduleSelect.innerHTML = `
-                                            <option value="">-- Select Module --</option>
-                                            <option value="1">TEST11 Module 1 - Introduction</option>
-                                            <option value="2">TEST11 Module 2 - Advanced Topics</option>
-                                            <option value="3">TEST11 Module 3 - Final Project</option>
-                                        `;
-                                        moduleSelect.disabled = false;
-                                        
-                                        // Show success message
-                                        const status = document.createElement("div");
-                                        status.className = "status";
-                                        status.innerHTML = "✅ SUCCESS: Module selection used tenant URL: " + apiUrl;
-                                        moduleSelect.parentNode.appendChild(status);
-                                        
-                                        setTimeout(() => status.remove(), 3000);
-                                    }, 500);
-                                } else {
-                                    moduleSelect.innerHTML = "<option value=\"\">-- Select Module --</option>";
-                                    moduleSelect.disabled = true;
-                                    courseSelect.innerHTML = "<option value=\"\">-- Select Course --</option>";
-                                    courseSelect.disabled = true;
-                                }
-                            }
-                        </script>
-                        
-                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
-                    </body>
-                </html>
-            ', 200, ['Content-Type' => 'text/html']);
+            // Generate mock data for the form
+            $mockData = [
+                'programs' => collect([
+                    $this->createMockObject([
+                        'id' => 1,
+                        'program_name' => 'TEST11 Nursing Review Program',
+                        'status' => 'active'
+                    ]),
+                    $this->createMockObject([
+                        'id' => 2,
+                        'program_name' => 'TEST11 Medical Technology Program', 
+                        'status' => 'active'
+                    ])
+                ]),
+                'modules' => collect([
+                    $this->createMockObject([
+                        'id' => 1,
+                        'modules_id' => 1,
+                        'module_name' => 'TEST11 Module 1 - Introduction',
+                        'program_id' => 1
+                    ]),
+                    $this->createMockObject([
+                        'id' => 2,
+                        'modules_id' => 2,
+                        'module_name' => 'TEST11 Module 2 - Advanced Topics',
+                        'program_id' => 1
+                    ])
+                ]),
+                'courses' => collect([
+                    $this->createMockObject([
+                        'id' => 1,
+                        'course_name' => 'Introduction to Nursing',
+                        'module_id' => 1
+                    ]),
+                    $this->createMockObject([
+                        'id' => 2,
+                        'course_name' => 'Advanced Nursing Procedures',
+                        'module_id' => 2
+                    ])
+                ])
+            ];
+
+            $html = view('admin.admin-modules.course-content-upload', [
+                'programs' => $mockData['programs'],
+                'modules' => $mockData['modules'],
+                'courses' => $mockData['courses'],
+                'isPreview' => true,
+                'previewData' => $mockData
+            ])->render();
+
+            return response($html);
 
         } catch (\Exception $e) {
             Log::error('Course content upload preview error: ' . $e->getMessage());
@@ -3771,12 +3718,12 @@ class AdminController extends Controller
                     <head><title>TEST11 - Course Content Upload Preview</title></head>
                     <body style="font-family: Arial;">
                         <h1>TEST11 - Course Content Upload Preview - Tenant: '.$tenant.'</h1>
-                        <p>❌ Error: '.$e->getMessage().'</p>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
                         <p>But route is working correctly!</p>
                         <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
                     </body>
                 </html>
-            ', 200, ['Content-Type' => 'text/html']);
+            ', 200);
         }
     }
 
