@@ -1105,7 +1105,26 @@ function openMeetingModal(meetingId, meetingTitle, meetingLink) {
 }
 
 function fetchMeetingStats(meetingId) {
-    fetch(`/professor/meetings/${meetingId}/stats`, {
+    // Build the correct URL based on current context
+    let baseUrl = window.location.pathname;
+    let statsUrl = '';
+
+    // Check if we're in preview mode (tenant context)
+    if (baseUrl.includes('/t/')) {
+        // Extract tenant path from current URL
+        const pathParts = baseUrl.split('/');
+        const tenantIndex = pathParts.findIndex(part => part === 't') + 1;
+        if (tenantIndex < pathParts.length) {
+            const tenantSlug = pathParts[tenantIndex];
+            const draftPrefix = pathParts[tenantIndex + 1] === 'draft' ? '/draft' : '';
+            statsUrl = `/t${draftPrefix}/${tenantSlug}/professor/meetings/${meetingId}/stats`;
+        }
+    } else {
+        // Regular professor route
+        statsUrl = `/professor/meetings/${meetingId}/stats`;
+    }
+
+    fetch(statsUrl, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -1150,8 +1169,27 @@ function startMeeting() {
     startTime = new Date();
     meetingTimer = setInterval(updateTimer, 1000);
     
+    // Build the correct URL based on current context
+    let baseUrl = window.location.pathname;
+    let startUrl = '';
+
+    // Check if we're in preview mode (tenant context)
+    if (baseUrl.includes('/t/')) {
+        // Extract tenant path from current URL
+        const pathParts = baseUrl.split('/');
+        const tenantIndex = pathParts.findIndex(part => part === 't') + 1;
+        if (tenantIndex < pathParts.length) {
+            const tenantSlug = pathParts[tenantIndex];
+            const draftPrefix = pathParts[tenantIndex + 1] === 'draft' ? '/draft' : '';
+            startUrl = `/t${draftPrefix}/${tenantSlug}/professor/meetings/${currentMeetingId}/start`;
+        }
+    } else {
+        // Regular professor route
+        startUrl = `/professor/meetings/${currentMeetingId}/start`;
+    }
+
     // Update meeting status on server
-    fetch(`/professor/meetings/${currentMeetingId}/start`, {
+    fetch(startUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -1173,8 +1211,27 @@ function finishMeeting() {
         clearInterval(meetingTimer);
     }
     
+    // Build the correct URL based on current context
+    let baseUrl = window.location.pathname;
+    let finishUrl = '';
+
+    // Check if we're in preview mode (tenant context)
+    if (baseUrl.includes('/t/')) {
+        // Extract tenant path from current URL
+        const pathParts = baseUrl.split('/');
+        const tenantIndex = pathParts.findIndex(part => part === 't') + 1;
+        if (tenantIndex < pathParts.length) {
+            const tenantSlug = pathParts[tenantIndex];
+            const draftPrefix = pathParts[tenantIndex + 1] === 'draft' ? '/draft' : '';
+            finishUrl = `/t${draftPrefix}/${tenantSlug}/professor/meetings/${currentMeetingId}/finish`;
+        }
+    } else {
+        // Regular professor route
+        finishUrl = `/professor/meetings/${currentMeetingId}/finish`;
+    }
+
     // Update meeting status on server
-    fetch(`/professor/meetings/${currentMeetingId}/finish`, {
+    fetch(finishUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

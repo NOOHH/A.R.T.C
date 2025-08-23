@@ -649,6 +649,26 @@ Route::prefix('t')->group(function() {
     Route::get('/{tenant}/professor/settings', function($tenant) {
         return app(\App\Http\Controllers\ProfessorDashboardController::class)->previewSettings($tenant);
     })->name('tenant.professor.settings');
+
+    // Professor meeting management routes for preview
+    Route::post('/{tenant}/professor/meetings/{meeting}/start', function($tenant, $meeting) {
+        return response()->json(['success' => true, 'message' => 'Preview mode: Meeting start simulated']);
+    })->name('tenant.professor.meetings.start');
+    Route::post('/{tenant}/professor/meetings/{meeting}/finish', function($tenant, $meeting) {
+        return response()->json(['success' => true, 'message' => 'Preview mode: Meeting finish simulated']);
+    })->name('tenant.professor.meetings.finish');
+    Route::get('/{tenant}/professor/meetings/{meeting}/stats', function($tenant, $meeting) {
+        return response()->json([
+            'success' => true,
+            'total_students' => rand(10, 30),
+            'joined_students' => rand(5, 25),
+            'meeting' => [
+                'status' => 'scheduled',
+                'actual_start_time' => null,
+                'actual_end_time' => null
+            ]
+        ]);
+    })->name('tenant.professor.meetings.stats');
     
     // PROFESSOR ROUTES - Draft Tenant
     Route::get('/draft/{tenant}/professor/dashboard', function($tenant) {
@@ -686,6 +706,26 @@ Route::prefix('t')->group(function() {
     Route::get('/draft/{tenant}/professor/settings', function($tenant) {
         return app(\App\Http\Controllers\ProfessorDashboardController::class)->previewSettings($tenant);
     })->name('tenant.draft.professor.settings');
+
+    // Professor meeting management routes for draft preview
+    Route::post('/draft/{tenant}/professor/meetings/{meeting}/start', function($tenant, $meeting) {
+        return response()->json(['success' => true, 'message' => 'Preview mode: Meeting start simulated']);
+    })->name('tenant.draft.professor.meetings.start');
+    Route::post('/draft/{tenant}/professor/meetings/{meeting}/finish', function($tenant, $meeting) {
+        return response()->json(['success' => true, 'message' => 'Preview mode: Meeting finish simulated']);
+    })->name('tenant.draft.professor.meetings.finish');
+    Route::get('/draft/{tenant}/professor/meetings/{meeting}/stats', function($tenant, $meeting) {
+        return response()->json([
+            'success' => true,
+            'total_students' => rand(10, 30),
+            'joined_students' => rand(5, 25),
+            'meeting' => [
+                'status' => 'scheduled',
+                'actual_start_time' => null,
+                'actual_end_time' => null
+            ]
+        ]);
+    })->name('tenant.draft.professor.meetings.stats');
     
     // ADMIN ROUTES
     Route::get('/{tenant}/admin-dashboard', function($tenant) {
@@ -2478,6 +2518,8 @@ Route::middleware(['professor.auth'])
          ->name('attendance'); // Legacy route for backward compatibility
     Route::get('/meetings', [\App\Http\Controllers\ProfessorMeetingController::class, 'index'])
          ->name('meetings');
+    Route::get('/professor/meetings', [\App\Http\Controllers\ProfessorMeetingController::class, 'index'])
+         ->name('professor.meetings');
     Route::post('/meetings', [\App\Http\Controllers\ProfessorMeetingController::class, 'store'])
          ->name('meetings.store');
     Route::get('/meetings/{meeting}', [\App\Http\Controllers\ProfessorMeetingController::class, 'show'])
@@ -2486,18 +2528,15 @@ Route::middleware(['professor.auth'])
          ->name('meetings.update');
     Route::delete('/meetings/{meeting}', [\App\Http\Controllers\ProfessorMeetingController::class, 'destroy'])
          ->name('meetings.destroy');
-    Route::post('/meetings/{meeting}/start', [\App\Http\Controllers\ProfessorMeetingController::class, 'start'])
-         ->name('meetings.start');
-    Route::post('/meetings/{meeting}/finish', [\App\Http\Controllers\ProfessorMeetingController::class, 'finish'])
-         ->name('meetings.finish');
-    Route::get('/meetings/{meeting}/stats', [\App\Http\Controllers\ProfessorMeetingController::class, 'stats'])
-         ->name('meetings.stats');
-    Route::get('/meetings/reports', [\App\Http\Controllers\ProfessorMeetingController::class, 'reports'])
-         ->name('meetings.reports');
-    Route::post('/meetings/{meeting}/start', [\App\Http\Controllers\ProfessorMeetingController::class, 'start'])
-         ->name('meetings.start');
-    Route::post('/meetings/{meeting}/finish', [\App\Http\Controllers\ProfessorMeetingController::class, 'finish'])
-         ->name('meetings.finish');
+    // Professor meeting management routes
+    Route::post('/professor/meetings/{meeting}/start', [\App\Http\Controllers\ProfessorMeetingController::class, 'start'])
+         ->name('professor.meetings.start');
+    Route::post('/professor/meetings/{meeting}/finish', [\App\Http\Controllers\ProfessorMeetingController::class, 'finish'])
+         ->name('professor.meetings.finish');
+    Route::get('/professor/meetings/{meeting}/stats', [\App\Http\Controllers\ProfessorMeetingController::class, 'stats'])
+         ->name('professor.meetings.stats');
+    Route::get('/professor/meetings/reports', [\App\Http\Controllers\ProfessorMeetingController::class, 'reports'])
+         ->name('professor.meetings.reports');
     
     // Additional professor routes for meetings/settings
     Route::get('/settings', [ProfessorDashboardController::class, 'settings'])

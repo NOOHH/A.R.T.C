@@ -37,10 +37,31 @@ class ProfessorMeetingController extends Controller
 
     public function index()
     {
+        // Check if this is a preview request - handle before any other logic
+        if (request()->has('preview') && request('preview') === 'true') {
+            return $this->previewIndex();
+        }
+        
+        // Check if this is a tenant preview context
+        if (request()->route() && str_contains(request()->route()->getName() ?? '', 'tenant.')) {
+            return $this->previewIndex();
+        }
+        
         $professorId = session('professor_id');
         if (!$professorId) {
             return redirect()->route('professor.login')->withErrors('Session expired. Please log in again.');
         }
+
+        // Check if this is preview mode
+        if ($professorId === 'preview-professor') {
+            return $this->previewIndex();
+        }
+        
+        // Check for additional preview contexts
+        if (request()->has('website') || session('preview_mode')) {
+            return $this->previewIndex();
+        }
+
         $professor = Professor::with(['programs'])->findOrFail($professorId);
 
         // Get batches assigned to this professor
@@ -306,6 +327,11 @@ class ProfessorMeetingController extends Controller
     {
         $professorId = session('professor_id');
 
+        // Handle preview mode
+        if ($professorId === 'preview-professor') {
+            return response()->json(['success' => true, 'message' => 'Preview mode: Meeting start simulated']);
+        }
+
         // Verify professor owns this meeting
         if ($meeting->professor_id != $professorId) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
@@ -335,6 +361,11 @@ class ProfessorMeetingController extends Controller
     {
         $professorId = session('professor_id');
 
+        // Handle preview mode
+        if ($professorId === 'preview-professor') {
+            return response()->json(['success' => true, 'message' => 'Preview mode: Meeting finish simulated']);
+        }
+
         // Verify professor owns this meeting
         if ($meeting->professor_id != $professorId) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
@@ -363,6 +394,20 @@ class ProfessorMeetingController extends Controller
     public function stats(ClassMeeting $meeting)
     {
         $professorId = session('professor_id'); // Consistent with rest of controller
+
+        // Handle preview mode
+        if ($professorId === 'preview-professor') {
+            return response()->json([
+                'success' => true,
+                'total_students' => rand(10, 30),
+                'joined_students' => rand(5, 25),
+                'meeting' => [
+                    'status' => 'scheduled',
+                    'actual_start_time' => null,
+                    'actual_end_time' => null
+                ]
+            ]);
+        }
 
         // Verify professor owns this meeting
         if ($meeting->professor_id != $professorId) {
@@ -400,11 +445,24 @@ class ProfessorMeetingController extends Controller
     }
     
     /**
-     * Preview meetings page for tenant customization
+     * Preview meetings page for both tenant customization and regular preview mode
      */
     public function previewIndex($tenantSlug = null)
     {
-        $this->setupTenantPreviewContext($tenantSlug);
+        // Only setup tenant context if we have a tenant slug
+        if ($tenantSlug) {
+            $this->setupTenantPreviewContext($tenantSlug);
+        } else {
+            // Regular preview mode - setup session data
+            session([
+                'user_id' => 'preview-professor',
+                'user_name' => 'Dr. Jane Professor',
+                'user_role' => 'professor',
+                'user_type' => 'professor',
+                'professor_id' => 'preview-professor',
+                'logged_in' => true
+            ]);
+        }
         
         // Create mock meetings data
         $meetings = collect([

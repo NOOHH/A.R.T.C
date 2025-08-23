@@ -203,7 +203,14 @@
                     </div>
                 </div>
             </div>
-            <a href="{{ route('professor.programs') }}" class="btn btn-light btn-modern">
+            @php
+                // Check if we're in tenant preview mode
+                $tenantSlug = request()->route('tenant') ?? session('preview_tenant');
+                $routePrefix = $tenantSlug ? 'tenant.draft.' : '';
+                $routeParams = $tenantSlug ? ['tenant' => $tenantSlug] : [];
+                $programsRoute = $tenantSlug ? $routePrefix . 'professor.programs' : 'professor.programs';
+            @endphp
+            <a href="{{ route($programsRoute, $routeParams) }}" class="btn btn-light btn-modern">
                 <i class="bi bi-arrow-left me-1"></i>Back to Programs
             </a>
         </div>

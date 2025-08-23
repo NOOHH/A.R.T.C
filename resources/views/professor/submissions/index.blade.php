@@ -330,7 +330,14 @@
 <div class="submissions-container">
     <div class="d-flex justify-content-between align-items-center mb-4 px-2">
         <h1 class="display-4 fw-bold text-uppercase text-dark mb-0" style="letter-spacing: 2px;">Assignment Submissions</h1>
-        <a href="{{ route('professor.modules.index') }}" class="btn btn-lg text-white fw-semibold px-4 py-2 rounded-pill shadow back-to-modules-btn">
+        @php
+            // Check if we're in tenant preview mode
+            $tenantSlug = request()->route('tenant') ?? session('preview_tenant');
+            $routePrefix = $tenantSlug ? 'tenant.draft.' : '';
+            $routeParams = $tenantSlug ? ['tenant' => $tenantSlug] : [];
+            $modulesRoute = $tenantSlug ? $routePrefix . 'professor.modules' : 'professor.modules.index';
+        @endphp
+        <a href="{{ route($modulesRoute, $routeParams) }}" class="btn btn-lg text-white fw-semibold px-4 py-2 rounded-pill shadow back-to-modules-btn">
             <i class="fas fa-arrow-left me-2"></i>Back to Modules
         </a>
     </div>

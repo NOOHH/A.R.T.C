@@ -290,7 +290,14 @@
                             <!-- Action Buttons -->
                             <div class="row g-2 mt-4">
                                 <div class="col-12">
-                                    <a href="{{ route('professor.program.details', $program->program_id) }}" 
+                                    @php
+                                        // Check if we're in tenant preview mode
+                                        $tenantSlug = request()->route('tenant') ?? session('preview_tenant');
+                                        $routePrefix = $tenantSlug ? 'tenant.draft.' : '';
+                                        $routeParams = $tenantSlug ? ['tenant' => $tenantSlug, 'program' => $program->program_id] : ['program' => $program->program_id];
+                                        $programDetailsRoute = $tenantSlug ? $routePrefix . 'professor.programs' : 'professor.program.details';
+                                    @endphp
+                                    <a href="{{ route($programDetailsRoute, $routeParams) }}" 
                                        class="btn btn-primary-modern action-button w-100">
                                         <i class="bi bi-eye me-2"></i>View Program Details
                                     </a>

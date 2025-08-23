@@ -13,12 +13,21 @@
                     <p class="text-muted">{{ $meeting->meeting_title }}</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <a href="{{ route('professor.meetings') }}" class="btn btn-outline-secondary">
+                    @php
+                        // Check if we're in tenant preview mode
+                        $tenantSlug = request()->route('tenant') ?? session('preview_tenant');
+                        $routePrefix = $tenantSlug ? 'tenant.draft.' : '';
+                        $routeParams = $tenantSlug ? ['tenant' => $tenantSlug] : [];
+                        $meetingsRoute = $tenantSlug ? $routePrefix . 'professor.meetings' : 'professor.meetings';
+                    @endphp
+                    <a href="{{ route($meetingsRoute, $routeParams) }}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-2"></i>Back to Meetings
                     </a>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editMeetingModal">
-                        <i class="bi bi-pencil me-2"></i>Edit Meeting
-                    </button>
+                    @if(!$tenantSlug)
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editMeetingModal">
+                            <i class="bi bi-pencil me-2"></i>Edit Meeting
+                        </button>
+                    @endif
                 </div>
             </div>
 
@@ -213,7 +222,15 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('professor.meetings.update', $meeting->meeting_id) }}" method="POST">
+            @if(!$tenantSlug)
+                <form action="{{ route('professor.meetings.update', $meeting->meeting_id) }}" method="POST">
+            @else
+                <div class="alert alert-info m-3">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Meeting editing is disabled in preview mode.
+                </div>
+                <form disabled>
+            @endif
                 @csrf
                 @method('PUT')
                 <div class="modal-body">

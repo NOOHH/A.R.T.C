@@ -26,5 +26,12 @@ class VerifyCsrfToken extends Middleware
         '/modular/registration/validate-file',
         '/modular/registration/user-prefill',
         'smartprep/logout', // Temporarily exclude for testing
+        // Professor preview routes - bypass CSRF for preview mode
+        't/*/professor/meetings/*/start',
+        't/*/professor/meetings/*/finish',
+        't/*/professor/meetings/*/stats',
+        't/draft/*/professor/meetings/*/start',
+        't/draft/*/professor/meetings/*/finish',
+        't/draft/*/professor/meetings/*/stats',
     ];
 }

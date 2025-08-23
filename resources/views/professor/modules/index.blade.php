@@ -991,10 +991,18 @@
         <a href="http://127.0.0.1:8000/professor/modules/course-content-upload?program_id=40&module_id=86&course_id=60" class="btn add-course-content-btn">
             <i class="bi bi-plus-circle"></i> Add Course Content
         </a>
-        <a href="{{ route('professor.modules.archived') }}" class="btn view-archived-btn">
+        @php
+            // Check if we're in tenant preview mode
+            $tenantSlug = request()->route('tenant') ?? session('preview_tenant');
+            $routePrefix = $tenantSlug ? 'tenant.draft.' : '';
+            $routeParams = $tenantSlug ? ['tenant' => $tenantSlug] : [];
+            $archivedRoute = $tenantSlug ? $routePrefix . 'professor.modules' : 'professor.modules.archived';
+            $quizRoute = $tenantSlug ? $routePrefix . 'professor.dashboard' : 'professor.quiz-generator'; // Quiz generator may not exist in preview
+        @endphp
+        <a href="{{ route($archivedRoute, $routeParams) }}" class="btn view-archived-btn">
             <i class="bi bi-archive"></i> View Archived
         </a>
-        <a href="{{ route('professor.quiz-generator') }}" class="btn quiz-generator-btn">
+        <a href="{{ route($quizRoute, $routeParams) }}" class="btn quiz-generator-btn">
             <i class="bi bi-robot"></i> AI Quiz Generator
         </a>
     </div>
@@ -1615,10 +1623,14 @@ const programSelectElement = document.getElementById('programSelect');
 if (programSelectElement) {
     programSelectElement.addEventListener('change', function() {
         const programId = this.value;
+        @php
+            $modulesBaseRoute = $tenantSlug ? route($routePrefix . 'professor.modules', ['tenant' => $tenantSlug]) : route('professor.modules.index');
+        @endphp
+        const baseUrl = '{{ $modulesBaseRoute }}';
         if (programId) {
-            window.location.href = `{{ route('professor.modules.index') }}?program_id=${programId}`;
+            window.location.href = `${baseUrl}?program_id=${programId}`;
         } else {
-            window.location.href = `{{ route('professor.modules.index') }}`;
+            window.location.href = baseUrl;
         }
     });
 }

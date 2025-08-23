@@ -16,9 +16,24 @@
                 </button>
             </div>
             <div class="card-body">
-                <form method="POST" action="<?php echo e(route('professor.profile.update')); ?>" id="profileForm">
-                    <?php echo csrf_field(); ?>
-                    <?php echo method_field('PUT'); ?>
+                <?php
+                    // Check if we're in tenant preview mode
+                    $tenantSlug = request()->route('tenant') ?? session('preview_tenant');
+                    $isPreviewMode = !empty($tenantSlug);
+                ?>
+                
+                <?php if($isPreviewMode): ?>
+                    <!-- In preview mode, show a disabled form -->
+                    <div class="alert alert-info mb-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        This is preview mode. Profile editing is disabled during preview.
+                    </div>
+                    <form id="profileForm" disabled>
+                <?php else: ?>
+                    <form method="POST" action="<?php echo e(route('professor.profile.update')); ?>" id="profileForm">
+                        <?php echo csrf_field(); ?>
+                        <?php echo method_field('PUT'); ?>
+                <?php endif; ?>
                     
                     <!-- Personal Information -->
                     <h6 class="text-primary border-bottom pb-2 mb-3">
@@ -238,8 +253,12 @@ unset($__errorArgs, $__bag); ?>
                         </div>
                     <?php endif; ?>
                 </div>
-                <form method="POST" action="<?php echo e(route('professor.profile.photo.update')); ?>" enctype="multipart/form-data" id="photoForm">
-                    <?php echo csrf_field(); ?>
+                <?php if($isPreviewMode): ?>
+                    <form id="photoForm" disabled>
+                <?php else: ?>
+                    <form method="POST" action="<?php echo e(route('professor.profile.photo.update')); ?>" enctype="multipart/form-data" id="photoForm">
+                        <?php echo csrf_field(); ?>
+                <?php endif; ?>
                     <div class="mb-3">
                         <input type="file" 
                                class="form-control <?php $__errorArgs = ['profile_photo'];
@@ -380,6 +399,11 @@ function previewPhoto(input) {
 }
 
 function removePhoto() {
+    <?php if($isPreviewMode): ?>
+        alert('Profile editing is disabled in preview mode.');
+        return;
+    <?php endif; ?>
+    
     if (confirm('Are you sure you want to remove your profile photo?')) {
         fetch('<?php echo e(route("professor.profile.photo.remove")); ?>', {
             method: 'DELETE',
@@ -402,6 +426,26 @@ function removePhoto() {
         });
     }
 }
+
+// Handle preview mode restrictions
+<?php if($isPreviewMode): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    // Disable all form inputs in preview mode
+    const forms = document.querySelectorAll('#profileForm, #photoForm');
+    forms.forEach(form => {
+        const inputs = form.querySelectorAll('input, textarea, select, button[type="submit"]');
+        inputs.forEach(input => {
+            input.disabled = true;
+        });
+    });
+    
+    // Hide edit button in preview mode
+    const editBtn = document.getElementById('edit-btn');
+    if (editBtn) {
+        editBtn.style.display = 'none';
+    }
+});
+<?php endif; ?>
 </script>
 <?php $__env->stopPush(); ?>
 

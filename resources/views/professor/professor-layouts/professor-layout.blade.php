@@ -20,7 +20,7 @@
                 $user = $sessionUser;
             }
         }
-        
+
         // For professors, ensure we use the professor_id from session
         if (session('user_role') === 'professor' && session('professor_id')) {
             // Use professor_id as the primary ID for professors
@@ -29,7 +29,7 @@
                 'name' => session('user_name') ?? 'Professor',
                 'role' => 'professor'
             ];
-            
+
             // Ensure session variables are consistent
             session([
                 'user_id' => session('professor_id'),
@@ -37,19 +37,86 @@
                 'user_type' => 'professor'
             ]);
         }
-        
+
         // Force professor role for professor pages
-        if ($user && (session('user_role') === 'professor' || session('user_type') === 'professor' || 
+        if ($user && (session('user_role') === 'professor' || session('user_type') === 'professor' ||
             (isset($user->role) && $user->role === 'professor'))) {
             $user->role = 'professor';
             session(['user_role' => 'professor', 'user_type' => 'professor']);
         }
-        
+
+        // Detect tenant context for proper branding (like student sidebar does)
+        $tenantSlug = null;
+        $isDraft = false;
+        $settings = [];
+        $navbarBrandName = null;
+
+        // Check if we're in tenant preview mode
+        if (request()->is('t/*')) {
+            $segments = request()->segments();
+            if (count($segments) >= 2 && $segments[0] === 't') {
+                if ($segments[1] === 'draft' && count($segments) >= 3) {
+                    $tenantSlug = $segments[2];
+                    $isDraft = true;
+                } else {
+                    $tenantSlug = $segments[1];
+                }
+            }
+        }
+
+        // Load tenant settings if we have a tenant context
+        if ($tenantSlug) {
+            try {
+                $tenantService = app(\App\Services\TenantService::class);
+                $tenantService->switchToMain();
+
+                $tenant = \App\Models\Tenant::where('slug', $tenantSlug)->first();
+
+                if ($tenant) {
+                    $tenantService->switchToTenant($tenant);
+
+                    // Load navbar settings from tenant database
+                    $navbarSettings = \App\Models\Setting::getGroup('navbar');
+                    if ($navbarSettings) {
+                        $settings['navbar'] = [
+                            'brand_name' => $navbarSettings->get('brand_name', 'Ascendo Review & Training Center'),
+                            'brand_logo' => $navbarSettings->get('brand_logo', null),
+                        ];
+                        $navbarBrandName = $navbarSettings->get('brand_name', 'Ascendo Review & Training Center');
+                    }
+
+                    // Load professor panel settings if available
+                    $professorPanelSettings = \App\Models\Setting::getGroup('professor_panel');
+                    if ($professorPanelSettings) {
+                        $settings['professor_panel'] = [
+                            'brand_name' => $professorPanelSettings->get('brand_name', $navbarBrandName),
+                            'brand_logo' => $professorPanelSettings->get('brand_logo', $settings['navbar']['brand_logo'] ?? null),
+                        ];
+                    }
+
+                    $tenantService->switchToMain();
+                }
+            } catch (\Exception $e) {
+                // If tenant loading fails, fall back to default settings
+                $settings = [];
+                $navbarBrandName = 'Ascendo Review & Training Center';
+            }
+        } else {
+            // No tenant context, use default settings
+            $settings = [
+                'navbar' => [
+                    'brand_name' => 'Ascendo Review & Training Center',
+                    'brand_logo' => null,
+                ]
+            ];
+            $navbarBrandName = 'Ascendo Review & Training Center';
+        }
+
         // Ensure moduleManagementEnabled is always available
         if (!isset($moduleManagementEnabled)) {
             $moduleManagementEnabled = \App\Models\AdminSetting::where('setting_key', 'professor_module_management_enabled')->value('setting_value') === '1';
         }
-        
+
         // Ensure announcementManagementEnabled is always available
         if (!isset($announcementManagementEnabled)) {
             $announcementManagementEnabled = \App\Models\AdminSetting::where('setting_key', 'professor_announcement_management_enabled')->value('setting_value') === '1';
@@ -927,12 +994,18 @@
 <body>
 <div class="professor-container">
     <!-- Include Sidebar Component -->
-    @include('professor.professor-layouts.professor-sidebar')
+    @include('professor.professor-layouts.professor-sidebar', [
+        'settings' => $settings,
+        'navbarBrandName' => $navbarBrandName
+    ])
 
     <!-- Main Content Area -->
     <div class="main-content-area" id="mainContentArea">
         <!-- Include Header Component -->
-        @include('professor.professor-layouts.professor-header')
+        @include('professor.professor-layouts.professor-header', [
+            'settings' => $settings,
+            'navbarBrandName' => $navbarBrandName
+        ])
 
         <!-- Page Content -->
         <div class="content-wrapper">

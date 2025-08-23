@@ -560,7 +560,14 @@ html, body {
                     <a href="#" class="action-btn primary">
                         <i class="fas fa-envelope me-1"></i>Send Message
                     </a>
-                    <a href="{{ route('professor.students.index') }}" class="action-btn info">
+                    @php
+                        // Check if we're in tenant preview mode
+                        $tenantSlug = request()->route('tenant') ?? session('preview_tenant');
+                        $routePrefix = $tenantSlug ? 'tenant.draft.' : '';
+                        $routeParams = $tenantSlug ? ['tenant' => $tenantSlug] : [];
+                        $studentsRoute = $tenantSlug ? $routePrefix . 'professor.students' : 'professor.students.index';
+                    @endphp
+                    <a href="{{ route($studentsRoute, $routeParams) }}" class="action-btn info">
                         <i class="fas fa-list me-1"></i>View All Students
                     </a>
                 </div>

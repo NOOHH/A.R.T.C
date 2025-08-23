@@ -100,6 +100,26 @@ class ProfessorModuleController extends Controller
      */
     public function index(Request $request)
     {
+        // Check if this is a preview request - handle before any other logic
+        if (request()->has('preview') && request('preview') === 'true') {
+            return $this->previewIndex();
+        }
+        
+        // Check if this is a tenant preview context
+        if (request()->route() && str_contains(request()->route()->getName() ?? '', 'tenant.')) {
+            return $this->previewIndex();
+        }
+        
+        // Check if this is preview mode
+        if (session('professor_id') === 'preview-professor') {
+            return $this->previewIndex();
+        }
+        
+        // Check for additional preview contexts
+        if (request()->has('website') || session('preview_mode')) {
+            return $this->previewIndex();
+        }
+
         try {
             $this->checkModulePermission();
 

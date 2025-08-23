@@ -565,7 +565,14 @@
                                                             <span class="status-badge active">Active</span>
                                                         </td>
                                                         <td>
-                                                            <a href="{{ route('professor.grading.student', $student->student_id) }}?program_id={{ $batch->program_id }}" 
+                                                            @php
+                                                                // Check if we're in tenant preview mode
+                                                                $tenantSlug = request()->route('tenant') ?? session('preview_tenant');
+                                                                $routePrefix = $tenantSlug ? 'tenant.preview.' : '';
+                                                                $routeParams = $tenantSlug ? ['tenant' => $tenantSlug, 'student' => $student->student_id] : ['student' => $student->student_id];
+                                                                $gradingRoute = $tenantSlug ? $routePrefix . 'professor.grading' : 'professor.grading.student';
+                                                            @endphp
+                                                            <a href="{{ route($gradingRoute, $routeParams) }}?program_id={{ $batch->program_id }}" 
                                                                class="btn-view-student">
                                                                 <i class="bi bi-eye"></i>
                                                                 View Details

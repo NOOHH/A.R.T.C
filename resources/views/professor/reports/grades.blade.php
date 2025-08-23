@@ -45,7 +45,14 @@
                                                                     <span class="badge bg-info">{{ ucfirst($enrollment->status ?? 'enrolled') }}</span>
                                                                 </td>
                                                                 <td>
-                                                                    <a href="{{ route('professor.grading.student-details', $enrollment->student->student_id ?? '#') }}?program_id={{ $program->program_id }}" 
+                                                                    @php
+                                                                        // Check if we're in tenant preview mode
+                                                                        $tenantSlug = request()->route('tenant') ?? session('preview_tenant');
+                                                                        $routePrefix = $tenantSlug ? 'tenant.draft.' : '';
+                                                                        $routeParams = $tenantSlug ? ['tenant' => $tenantSlug, 'student' => $enrollment->student->student_id ?? '#'] : ['student' => $enrollment->student->student_id ?? '#'];
+                                                                        $gradingRoute = $tenantSlug ? $routePrefix . 'professor.grading' : 'professor.grading.student-details';
+                                                                    @endphp
+                                                                    <a href="{{ route($gradingRoute, $routeParams) }}?program_id={{ $program->program_id }}" 
                                                                        class="btn btn-sm btn-outline-primary">
                                                                         View Details
                                                                     </a>

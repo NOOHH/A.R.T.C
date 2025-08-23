@@ -16,9 +16,24 @@
                 </button>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ route('professor.profile.update') }}" id="profileForm">
-                    @csrf
-                    @method('PUT')
+                @php
+                    // Check if we're in tenant preview mode
+                    $tenantSlug = request()->route('tenant') ?? session('preview_tenant');
+                    $isPreviewMode = !empty($tenantSlug);
+                @endphp
+                
+                @if($isPreviewMode)
+                    <!-- In preview mode, show a disabled form -->
+                    <div class="alert alert-info mb-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        This is preview mode. Profile editing is disabled during preview.
+                    </div>
+                    <form id="profileForm" disabled>
+                @else
+                    <form method="POST" action="{{ route('professor.profile.update') }}" id="profileForm">
+                        @csrf
+                        @method('PUT')
+                @endif
                     
                     <!-- Personal Information -->
                     <h6 class="text-primary border-bottom pb-2 mb-3">
@@ -166,8 +181,12 @@
                         </div>
                     @endif
                 </div>
-                <form method="POST" action="{{ route('professor.profile.photo.update') }}" enctype="multipart/form-data" id="photoForm">
-                    @csrf
+                @if($isPreviewMode)
+                    <form id="photoForm" disabled>
+                @else
+                    <form method="POST" action="{{ route('professor.profile.photo.update') }}" enctype="multipart/form-data" id="photoForm">
+                        @csrf
+                @endif
                     <div class="mb-3">
                         <input type="file" 
                                class="form-control @error('profile_photo') is-invalid @enderror" 
@@ -294,6 +313,11 @@ function previewPhoto(input) {
 }
 
 function removePhoto() {
+    @if($isPreviewMode)
+        alert('Profile editing is disabled in preview mode.');
+        return;
+    @endif
+    
     if (confirm('Are you sure you want to remove your profile photo?')) {
         fetch('{{ route("professor.profile.photo.remove") }}', {
             method: 'DELETE',
@@ -316,5 +340,25 @@ function removePhoto() {
         });
     }
 }
+
+// Handle preview mode restrictions
+@if($isPreviewMode)
+document.addEventListener('DOMContentLoaded', function() {
+    // Disable all form inputs in preview mode
+    const forms = document.querySelectorAll('#profileForm, #photoForm');
+    forms.forEach(form => {
+        const inputs = form.querySelectorAll('input, textarea, select, button[type="submit"]');
+        inputs.forEach(input => {
+            input.disabled = true;
+        });
+    });
+    
+    // Hide edit button in preview mode
+    const editBtn = document.getElementById('edit-btn');
+    if (editBtn) {
+        editBtn.style.display = 'none';
+    }
+});
+@endif
 </script>
 @endpush
