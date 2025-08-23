@@ -494,19 +494,74 @@ Route::prefix('t')->group(function() {
     Route::get('/{tenant}', [\App\Http\Controllers\Tenant\PreviewController::class, 'homepage'])->name('tenant.home');
     // Draft homepage
     Route::get('/draft/{tenant}', [\App\Http\Controllers\Tenant\PreviewController::class, 'homepage'])->name('tenant.draft.home');
-    // Dashboards (use original ARTC format preview methods)
+    
+    // STUDENT ROUTES - Active Tenant
     Route::get('/{tenant}/student/dashboard', function($tenant) {
         return app(\App\Http\Controllers\StudentDashboardController::class)->showPreviewDashboard($tenant);
     })->name('tenant.student.dashboard');
+    
+    Route::get('/{tenant}/student/calendar', function($tenant) {
+        return app(\App\Http\Controllers\StudentCalendarController::class)->previewIndex($tenant);
+    })->name('tenant.student.calendar');
+    
+    Route::get('/{tenant}/student/enrolled-courses', function($tenant) {
+        return app(\App\Http\Controllers\StudentDashboardController::class)->previewEnrolledCourses($tenant);
+    })->name('tenant.student.enrolled-courses');
+    
+    Route::get('/{tenant}/student/course/{courseId}', function($tenant, $courseId) {
+        return app(\App\Http\Controllers\StudentDashboardController::class)->previewCourse($tenant, $courseId);
+    })->name('tenant.student.course');
+    
+    Route::get('/{tenant}/student/content/{contentId}/view', function($tenant, $contentId) {
+        return app(\App\Http\Controllers\StudentDashboardController::class)->previewContent($tenant, $contentId);
+    })->name('tenant.student.content.view');
+    
+    Route::get('/{tenant}/student/meetings', function($tenant) {
+        return app(\App\Http\Controllers\ClassMeetingController::class)->previewStudentMeetings($tenant);
+    })->name('tenant.student.meetings');
+    
+    Route::get('/{tenant}/student/settings', function($tenant) {
+        return app(\App\Http\Controllers\StudentController::class)->previewSettings($tenant);
+    })->name('tenant.student.settings');
+    
+    // STUDENT ROUTES - Draft Tenant  
     Route::get('/draft/{tenant}/student/dashboard', function($tenant) {
         return app(\App\Http\Controllers\StudentDashboardController::class)->showPreviewDashboard($tenant);
     })->name('tenant.draft.student.dashboard');
+    
+    Route::get('/draft/{tenant}/student/calendar', function($tenant) {
+        return app(\App\Http\Controllers\StudentCalendarController::class)->previewIndex($tenant);
+    })->name('tenant.draft.student.calendar');
+    
+    Route::get('/draft/{tenant}/student/enrolled-courses', function($tenant) {
+        return app(\App\Http\Controllers\StudentDashboardController::class)->previewEnrolledCourses($tenant);
+    })->name('tenant.draft.student.enrolled-courses');
+    
+    Route::get('/draft/{tenant}/student/course/{courseId}', function($tenant, $courseId) {
+        return app(\App\Http\Controllers\StudentDashboardController::class)->previewCourse($tenant, $courseId);
+    })->name('tenant.draft.student.course');
+    
+    Route::get('/draft/{tenant}/student/content/{contentId}/view', function($tenant, $contentId) {
+        return app(\App\Http\Controllers\StudentDashboardController::class)->previewContent($tenant, $contentId);
+    })->name('tenant.draft.student.content.view');
+    
+    Route::get('/draft/{tenant}/student/meetings', function($tenant) {
+        return app(\App\Http\Controllers\ClassMeetingController::class)->previewStudentMeetings($tenant);
+    })->name('tenant.draft.student.meetings');
+    
+    Route::get('/draft/{tenant}/student/settings', function($tenant) {
+        return app(\App\Http\Controllers\StudentController::class)->previewSettings($tenant);
+    })->name('tenant.draft.student.settings');
+    
+    // PROFESSOR ROUTES
     Route::get('/{tenant}/professor/dashboard', function($tenant) {
         return app(\App\Http\Controllers\ProfessorDashboardController::class)->showPreviewDashboard($tenant);
     })->name('tenant.professor.dashboard');
     Route::get('/draft/{tenant}/professor/dashboard', function($tenant) {
         return app(\App\Http\Controllers\ProfessorDashboardController::class)->showPreviewDashboard($tenant);
     })->name('tenant.draft.professor.dashboard');
+    
+    // ADMIN ROUTES
     Route::get('/{tenant}/admin-dashboard', function($tenant) {
         $tenantModel = \App\Models\Tenant::where('slug',$tenant)->firstOrFail();
         $tenantService = app(\App\Services\TenantService::class);

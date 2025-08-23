@@ -1282,4 +1282,77 @@ class StudentController extends Controller
             ], 500);
         }
     }
+    
+    // ======================== PREVIEW METHODS FOR TENANT SYSTEM ========================
+    
+    /**
+     * Preview settings page for tenant customization
+     */
+    public function previewSettings($tenant)
+    {
+        // Set up tenant context
+        $tenantModel = \App\Models\Tenant::where('slug', $tenant)->firstOrFail();
+        $tenantService = app(\App\Services\TenantService::class);
+        
+        try {
+            $tenantService->switchToTenant($tenantModel);
+            
+            // Load tenant settings
+            $this->loadTenantSettings($tenantModel);
+            
+            // Set preview mode session temporarily
+            session(['preview_mode' => true, 'user_id' => 'preview-user', 'user_role' => 'student', 'user_name' => 'Preview Student', 'logged_in' => true]);
+            
+            // Create mock student data
+            $user = (object) [
+                'user_id' => 'preview-user',
+                'user_firstname' => 'Preview',
+                'user_lastname' => 'Student',
+                'role' => 'student',
+                'email' => 'preview@example.com'
+            ];
+            
+            // Create mock student model
+            $student = (object) [
+                'student_id' => 'PREVIEW-001',
+                'user_id' => 'preview-user',
+                'student_firstname' => 'Preview',
+                'student_lastname' => 'Student',
+                'school' => 'Sample University',
+                'contact_number' => '123-456-7890',
+                'emergency_contact' => '098-765-4321'
+            ];
+            
+            // Get form requirements for display
+            $formRequirements = \App\Models\FormRequirement::where('is_active', true)->get();
+            
+            return view('student.student-settings.settings', compact('user', 'student', 'formRequirements'));
+            
+        } finally {
+            $tenantService->switchToMain();
+        }
+    }
+    
+    /**
+     * Load tenant-specific settings for preview
+     */
+    private function loadTenantSettings($tenant)
+    {
+        try {
+            $settings = [
+                'navbar' => \App\Models\Setting::getGroup('navbar')->toArray(),
+                'student_sidebar' => \App\Models\Setting::getGroup('student_sidebar')->toArray(),
+            ];
+            
+            // Share settings with views
+            view()->share('settings', $settings);
+            view()->share('navbar', $settings['navbar'] ?? []);
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to load tenant settings in preview', [
+                'tenant' => $tenant->slug,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
 }

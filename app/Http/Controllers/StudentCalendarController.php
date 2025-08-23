@@ -13,6 +13,100 @@ use Carbon\Carbon;
 
 class StudentCalendarController extends Controller
 {
+    public function __construct()
+    {
+        // Apply middleware conditionally - skip for preview requests
+        $this->middleware('student.auth')->except(['previewIndex']);
+    }
+    
+    /**
+     * Preview calendar for tenant customization
+     */
+    public function previewIndex($tenant)
+    {
+        // Set up tenant context
+        $tenantModel = \App\Models\Tenant::where('slug', $tenant)->firstOrFail();
+        $tenantService = app(\App\Services\TenantService::class);
+        
+        try {
+            $tenantService->switchToTenant($tenantModel);
+            
+            // Create preview user data
+            $user = (object) [
+                'user_id' => 'preview-user',
+                'user_firstname' => 'Preview',
+                'user_lastname' => 'Student',
+                'role' => 'student'
+            ];
+
+            // Create mock data for preview
+            $upcomingMeetings = collect([
+                (object) [
+                    'meeting_id' => 1,
+                    'title' => 'Sample Class Meeting',
+                    'meeting_date' => \Carbon\Carbon::now()->addDays(2),
+                    'description' => 'This is a preview meeting',
+                    'duration_minutes' => 60,
+                    'status' => 'scheduled',
+                    'batch' => (object) [
+                        'program' => (object) [
+                            'program_name' => 'Sample Program'
+                        ]
+                    ],
+                    'professor' => (object) [
+                        'professor_name' => 'Dr. Sample Professor'
+                    ]
+                ]
+            ]);
+            
+            $todaysMeetings = collect();
+            $allMeetings = $upcomingMeetings;
+            
+            $studentPrograms = collect([
+                [
+                    'program_id' => 1,
+                    'program_name' => 'Sample Program',
+                    'package_name' => 'Sample Package',
+                    'enrollment_type' => 'regular',
+                    'enrollment_status' => 'enrolled'
+                ]
+            ]);
+            
+            // Load tenant settings for the view
+            $this->loadTenantSettings($tenantModel);
+            
+            // Set preview mode session temporarily
+            session(['preview_mode' => true, 'user_id' => 'preview-user', 'user_role' => 'student', 'user_name' => 'Preview Student', 'logged_in' => true]);
+            
+            return view('student.student-calendar.student-calendar', compact('user', 'upcomingMeetings', 'todaysMeetings', 'allMeetings', 'studentPrograms'));
+            
+        } finally {
+            $tenantService->switchToMain();
+        }
+    }
+    
+    /**
+     * Load tenant-specific settings
+     */
+    private function loadTenantSettings($tenant)
+    {
+        try {
+            $settings = [
+                'navbar' => \App\Models\Setting::getGroup('navbar')->toArray(),
+                'student_sidebar' => \App\Models\Setting::getGroup('student_sidebar')->toArray(),
+            ];
+            
+            // Share settings with views
+            view()->share('settings', $settings);
+            view()->share('navbar', $settings['navbar'] ?? []);
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to load tenant settings in preview', [
+                'tenant' => $tenant->slug,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
     public function index()
     {
         // Get user data from session

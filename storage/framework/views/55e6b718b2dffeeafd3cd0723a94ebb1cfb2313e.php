@@ -51,14 +51,46 @@
     </button>
   </div>
 
+  <?php
+    // Detect tenant context for proper routing
+    $tenantSlug = null;
+    $routePrefix = '';
+    $isDraft = false;
+    
+    // Check if we're in tenant preview mode
+    if (request()->is('t/*')) {
+        $segments = request()->segments();
+        if (count($segments) >= 2 && $segments[0] === 't') {
+            if ($segments[1] === 'draft' && count($segments) >= 3) {
+                $tenantSlug = $segments[2];
+                $routePrefix = 'tenant.draft.';
+                $isDraft = true;
+            } else {
+                $tenantSlug = $segments[1];
+                $routePrefix = 'tenant.';
+            }
+        }
+    }
+    
+    // Determine route names based on context
+    $dashboardRoute = $tenantSlug ? $routePrefix . 'student.dashboard' : 'student.dashboard';
+    $calendarRoute = $tenantSlug ? $routePrefix . 'student.calendar' : 'student.calendar';
+    $coursesRoute = $tenantSlug ? $routePrefix . 'student.enrolled-courses' : 'student.enrolled-courses';
+    $meetingsRoute = $tenantSlug ? $routePrefix . 'student.meetings' : 'student.meetings';
+    $settingsRoute = $tenantSlug ? $routePrefix . 'student.settings' : 'student.settings';
+    
+    // Route parameters for tenant routes
+    $routeParams = $tenantSlug ? ['tenant' => $tenantSlug] : [];
+  ?>
+
   <!-- Navigation Menu -->
   <nav class="sidebar-navigation">
     <div class="nav-section">
       <div class="nav-section-title">Main</div>
       
       <!-- Dashboard -->
-      <a href="<?php echo e(route('student.dashboard')); ?>" 
-         class="nav-item <?php if(Route::currentRouteName()==='student.dashboard'): ?> active <?php endif; ?>">
+      <a href="<?php echo e(route($dashboardRoute, $routeParams)); ?>" 
+         class="nav-item <?php if(str_contains(Route::currentRouteName(), 'student.dashboard')): ?> active <?php endif; ?>">
         <div class="nav-icon">
           <i class="bi bi-speedometer2"></i>
         </div>
@@ -66,8 +98,8 @@
       </a>
 
       <!-- Calendar -->
-      <a href="<?php echo e(route('student.calendar')); ?>" 
-         class="nav-item <?php if(Route::currentRouteName()==='student.calendar'): ?> active <?php endif; ?>">
+      <a href="<?php echo e(route($calendarRoute, $routeParams)); ?>" 
+         class="nav-item <?php if(str_contains(Route::currentRouteName(), 'student.calendar')): ?> active <?php endif; ?>">
         <div class="nav-icon">
           <i class="bi bi-calendar-week"></i>
         </div>
@@ -75,8 +107,8 @@
       </a>
 
       <!-- Enrolled Courses -->
-      <a href="<?php echo e(route('student.enrolled-courses')); ?>" 
-         class="nav-item <?php if(Route::currentRouteName()==='student.enrolled-courses'): ?> active <?php endif; ?>">
+      <a href="<?php echo e(route($coursesRoute, $routeParams)); ?>" 
+         class="nav-item <?php if(str_contains(Route::currentRouteName(), 'student.enrolled-courses')): ?> active <?php endif; ?>">
         <div class="nav-icon">
           <i class="bi bi-journal-bookmark"></i>
         </div>
@@ -84,8 +116,8 @@
       </a>
 
       <!-- Meetings -->
-      <a href="<?php echo e(route('student.meetings')); ?>" 
-         class="nav-item <?php if(Route::currentRouteName()==='student.meetings'): ?> active <?php endif; ?>">
+      <a href="<?php echo e(route($meetingsRoute, $routeParams)); ?>" 
+         class="nav-item <?php if(str_contains(Route::currentRouteName(), 'student.meetings')): ?> active <?php endif; ?>">
         <div class="nav-icon">
           <i class="bi bi-camera-video"></i>
         </div>
@@ -99,7 +131,11 @@
       <div class="nav-section-title">My Programs</div>
       
       <?php $__currentLoopData = $studentPrograms; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $program): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-        <a href="<?php echo e(route('student.course', $program['program_id'])); ?>" 
+        <?php
+          $courseRoute = $tenantSlug ? $routePrefix . 'student.course' : 'student.course';
+          $courseParams = $tenantSlug ? ['tenant' => $tenantSlug, 'courseId' => $program['program_id']] : ['courseId' => $program['program_id']];
+        ?>
+        <a href="<?php echo e(route($courseRoute, $courseParams)); ?>" 
            class="nav-item program-item <?php if(request()->route('courseId')==$program['program_id']): ?> active <?php endif; ?>">
           <div class="nav-icon">
             <i class="bi bi-book"></i>
@@ -118,21 +154,23 @@
       <div class="nav-section-title">Account</div>
       
       <!-- Settings -->
-      <a href="<?php echo e(route('student.settings')); ?>" 
-         class="nav-item <?php if(Route::currentRouteName()==='student.settings'): ?> active <?php endif; ?>">
+      <a href="<?php echo e(route($settingsRoute, $routeParams)); ?>" 
+         class="nav-item <?php if(str_contains(Route::currentRouteName(), 'student.settings')): ?> active <?php endif; ?>">
         <div class="nav-icon">
           <i class="bi bi-gear"></i>
         </div>
         <span class="nav-text">Settings</span>
       </a>
 
-      <!-- Logout -->
+      <!-- Logout - Only show in non-preview mode -->
+      <?php if(!session('preview_mode') && !$tenantSlug): ?>
       <a href="#" class="nav-item logout-item" onclick="document.getElementById('logout-form').submit();">
         <div class="nav-icon">
           <i class="bi bi-box-arrow-right"></i>
         </div>
         <span class="nav-text">Logout</span>
       </a>
+      <?php endif; ?>
     </div>
   </nav>
 

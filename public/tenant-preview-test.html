@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenant Preview Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .test-link { display: block; margin: 10px 0; padding: 10px; background: #f0f0f0; text-decoration: none; color: #333; border-radius: 3px; }
+        .test-link:hover { background: #e0e0e0; }
+        iframe { width: 100%; height: 500px; border: 1px solid #ccc; margin-top: 10px; }
+        .status { padding: 5px; margin: 5px 0; border-radius: 3px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Tenant Preview System Test</h1>
+    <p>Testing the multi-tenant preview functionality to ensure all routes work without authentication issues.</p>
+
+    <div class="test-section">
+        <h2>📊 Dashboard Preview</h2>
+        <a href="http://127.0.0.1:8000/t/draft/test1/student/dashboard?website=15&preview=true&t=1755917847394" 
+           class="test-link" target="_blank">
+            🏠 Test Dashboard Preview
+        </a>
+        <iframe src="http://127.0.0.1:8000/t/draft/test1/student/dashboard?website=15&preview=true&t=1755917847394"></iframe>
+    </div>
+
+    <div class="test-section">
+        <h2>📅 Calendar Preview</h2>
+        <a href="http://127.0.0.1:8000/t/draft/test1/student/calendar?website=15&preview=true&t=1755917847394" 
+           class="test-link" target="_blank">
+            📅 Test Calendar Preview
+        </a>
+        <iframe src="http://127.0.0.1:8000/t/draft/test1/student/calendar?website=15&preview=true&t=1755917847394"></iframe>
+    </div>
+
+    <div class="test-section">
+        <h2>📚 Enrolled Courses Preview</h2>
+        <a href="http://127.0.0.1:8000/t/draft/test1/student/enrolled-courses?website=15&preview=true&t=1755917847394" 
+           class="test-link" target="_blank">
+            📚 Test Courses Preview
+        </a>
+        <iframe src="http://127.0.0.1:8000/t/draft/test1/student/enrolled-courses?website=15&preview=true&t=1755917847394"></iframe>
+    </div>
+
+    <div class="test-section">
+        <h2>📹 Meetings Preview</h2>
+        <a href="http://127.0.0.1:8000/t/draft/test1/student/meetings?website=15&preview=true&t=1755917847394" 
+           class="test-link" target="_blank">
+            📹 Test Meetings Preview
+        </a>
+        <iframe src="http://127.0.0.1:8000/t/draft/test1/student/meetings?website=15&preview=true&t=1755917847394"></iframe>
+    </div>
+
+    <div class="test-section">
+        <h2>⚙️ Settings Preview</h2>
+        <a href="http://127.0.0.1:8000/t/draft/test1/student/settings?website=15&preview=true&t=1755917847394" 
+           class="test-link" target="_blank">
+            ⚙️ Test Settings Preview
+        </a>
+        <iframe src="http://127.0.0.1:8000/t/draft/test1/student/settings?website=15&preview=true&t=1755917847394"></iframe>
+    </div>
+
+    <div class="test-section">
+        <h2>📖 Sample Course Preview</h2>
+        <a href="http://127.0.0.1:8000/t/draft/test1/student/course/1?website=15&preview=true&t=1755917847394" 
+           class="test-link" target="_blank">
+            📖 Test Course Preview
+        </a>
+        <iframe src="http://127.0.0.1:8000/t/draft/test1/student/course/1?website=15&preview=true&t=1755917847394"></iframe>
+    </div>
+
+    <script>
+        // Check iframe loading status
+        const iframes = document.querySelectorAll('iframe');
+        iframes.forEach((iframe, index) => {
+            const section = iframe.closest('.test-section');
+            const statusDiv = document.createElement('div');
+            statusDiv.className = 'status';
+            statusDiv.innerHTML = '⏳ Loading...';
+            section.insertBefore(statusDiv, iframe);
+
+            iframe.onload = function() {
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    if (iframeDoc.title.includes('Error') || iframeDoc.body.innerHTML.includes('error')) {
+                        statusDiv.className = 'status error';
+                        statusDiv.innerHTML = '❌ Error detected in iframe';
+                    } else {
+                        statusDiv.className = 'status success';
+                        statusDiv.innerHTML = '✅ Loaded successfully';
+                    }
+                } catch (e) {
+                    // Cross-origin restrictions - assume success if no error in URL
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = '✅ Loaded (cross-origin)';
+                }
+            };
+
+            iframe.onerror = function() {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '❌ Failed to load';
+            };
+        });
+    </script>
+</body>
+</html>

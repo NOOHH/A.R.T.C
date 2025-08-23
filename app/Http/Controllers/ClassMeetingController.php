@@ -636,4 +636,129 @@ class ClassMeetingController extends Controller
             ]
         ]);
     }
+    
+    // ======================== PREVIEW METHODS FOR TENANT SYSTEM ========================
+    
+    /**
+     * Preview student meetings for tenant customization
+     */
+    public function previewStudentMeetings($tenant)
+    {
+        // Set up tenant context
+        $tenantModel = \App\Models\Tenant::where('slug', $tenant)->firstOrFail();
+        $tenantService = app(\App\Services\TenantService::class);
+        
+        try {
+            $tenantService->switchToTenant($tenantModel);
+            
+            // Load tenant settings
+            $this->loadTenantSettings($tenantModel);
+            
+            // Set preview mode session temporarily
+            session(['preview_mode' => true, 'user_id' => 'preview-user', 'user_role' => 'student', 'user_name' => 'Preview Student', 'logged_in' => true]);
+            
+            // Create mock student data
+            $user = (object) [
+                'user_id' => 'preview-user',
+                'user_firstname' => 'Preview',
+                'user_lastname' => 'Student',
+                'role' => 'student'
+            ];
+            
+            $studentId = 'preview-student'; // Add studentId variable for the view
+            
+            // Create mock meetings data
+            $upcomingMeetings = collect([
+                (object) [
+                    'meeting_id' => 1,
+                    'title' => 'Sample Class Meeting',
+                    'meeting_date' => \Carbon\Carbon::now()->addDays(2),
+                    'description' => 'This is a preview meeting',
+                    'duration_minutes' => 60,
+                    'status' => 'scheduled',
+                    'meeting_url' => null,
+                    'actual_start_time' => null,
+                    'actual_end_time' => null,
+                    'batch' => (object) [
+                        'batch_name' => 'Sample Batch',
+                        'program' => (object) [
+                            'program_name' => 'Sample Program'
+                        ]
+                    ],
+                    'professor' => (object) [
+                        'professor_name' => 'Dr. Sample Professor',
+                        'first_name' => 'Dr.',
+                        'last_name' => 'Sample Professor'
+                    ]
+                ],
+                (object) [
+                    'meeting_id' => 2,
+                    'title' => 'Another Meeting',
+                    'meeting_date' => \Carbon\Carbon::now()->addDays(5),
+                    'description' => 'Another preview meeting',
+                    'duration_minutes' => 90,
+                    'status' => 'scheduled',
+                    'meeting_url' => 'https://zoom.us/sample',
+                    'actual_start_time' => null,
+                    'actual_end_time' => null,
+                    'batch' => (object) [
+                        'batch_name' => 'Advanced Batch',
+                        'program' => (object) [
+                            'program_name' => 'Advanced Program'
+                        ]
+                    ],
+                    'professor' => (object) [
+                        'professor_name' => 'Prof. Demo Teacher',
+                        'first_name' => 'Prof.',
+                        'last_name' => 'Demo Teacher'
+                    ]
+                ]
+            ]);
+            
+            $todaysMeetings = collect();
+            $allMeetings = $upcomingMeetings;
+            $currentMeetings = $upcomingMeetings; // Add this variable that the view expects
+            $pastMeetings = collect(); // Add past meetings variable
+            
+            $studentPrograms = collect([
+                [
+                    'program_id' => 1,
+                    'program_name' => 'Sample Program',
+                    'package_name' => 'Sample Package',
+                    'enrollment_type' => 'regular',
+                    'enrollment_status' => 'enrolled'
+                ]
+            ]);
+            
+            return view('student.student-meetings.meetings', compact(
+                'user', 'upcomingMeetings', 'todaysMeetings', 'allMeetings', 'currentMeetings', 'pastMeetings', 'studentPrograms', 'studentId'
+            ));
+            
+        } finally {
+            $tenantService->switchToMain();
+        }
+    }
+    
+    /**
+     * Load tenant-specific settings for preview
+     */
+    private function loadTenantSettings($tenant)
+    {
+        try {
+            $settings = [
+                'navbar' => \App\Models\Setting::getGroup('navbar')->toArray(),
+                'student_sidebar' => \App\Models\Setting::getGroup('student_sidebar')->toArray(),
+            ];
+            
+            // Share settings with views
+            view()->share('settings', $settings);
+            view()->share('navbar', $settings['navbar'] ?? []);
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to load tenant settings in preview', [
+                'tenant' => $tenant->slug,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
 }

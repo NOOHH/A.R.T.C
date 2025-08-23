@@ -146,7 +146,13 @@ class StudentDashboardController extends Controller
     public function __construct()
     {
         // Apply middleware conditionally - skip for preview requests and index method
-        $this->middleware('student.auth')->except(['showPreviewDashboard', 'index']);
+        $this->middleware('student.auth')->except([
+            'showPreviewDashboard', 
+            'index', 
+            'previewEnrolledCourses', 
+            'previewCourse', 
+            'previewContent'
+        ]);
     }
 
     /**
@@ -3654,6 +3660,245 @@ class StudentDashboardController extends Controller
             ]);
 
             return redirect()->route('student.dashboard')->with('error', 'Error loading quiz results');
+        }
+    }
+    
+    // ======================== PREVIEW METHODS FOR TENANT SYSTEM ========================
+    
+    /**
+     * Preview enrolled courses for tenant customization
+     */
+    public function previewEnrolledCourses($tenant)
+    {
+        // Set up tenant context
+        $tenantModel = \App\Models\Tenant::where('slug', $tenant)->firstOrFail();
+        $tenantService = app(\App\Services\TenantService::class);
+        
+        try {
+            $tenantService->switchToTenant($tenantModel);
+            
+            // Load tenant settings
+            $this->loadTenantSettings($tenantModel);
+            
+            // Set preview mode session temporarily
+            session(['preview_mode' => true, 'user_id' => 'preview-user', 'user_role' => 'student', 'user_name' => 'Preview Student', 'logged_in' => true]);
+            
+            // Create mock student data
+            $user = (object) [
+                'user_id' => 'preview-user',
+                'user_firstname' => 'Preview',
+                'user_lastname' => 'Student',
+                'role' => 'student'
+            ];
+            
+            // Get sample programs from tenant database for realistic preview
+            $samplePrograms = \App\Models\Program::with('modules.courses')->take(3)->get();
+            
+            $enrolledCoursesData = [];
+            foreach ($samplePrograms as $program) {
+                $enrolledCoursesData[] = [
+                    'program_id' => $program->program_id,
+                    'program_name' => $program->program_name,
+                    'package_name' => 'Sample Package',
+                    'enrollment_status' => 'enrolled',
+                    'enrollment_type' => 'regular',
+                    'enrolled_at' => now()->format('M d, Y'),
+                    'learning_mode' => 'online',
+                    'payment_status' => 'completed',
+                    'progress' => rand(20, 80),
+                    'moduleCount' => $program->modules->count(),
+                    'completedCount' => rand(0, $program->modules->count()),
+                    'buttonText' => 'Continue Learning',
+                    'buttonClass' => 'resume-btn',
+                    'buttonAction' => route('tenant.student.course', ['tenant' => $tenant, 'courseId' => $program->program_id]),
+                    'isPending' => false,
+                    'showAccessModal' => false,
+                    'courses' => $program->modules->pluck('courses')->flatten()->map(function($course, $index) {
+                        return [
+                            'subject_id' => $course->subject_id,
+                            'program_id' => $course->subject_id, // Add program_id alias
+                            'subject_name' => $course->subject_name,
+                            'course_name' => $course->subject_name, // Add course_name alias
+                            'course_description' => $course->subject_description ?? 'Sample course description',
+                            'module_name' => $course->module->module_name ?? 'Sample Module',
+                            'progress' => rand(0, 100),
+                            'enrolled_at' => now()->subDays($index)->format('M d, Y')
+                        ];
+                    })->toArray()
+                ];
+            }
+            
+            // Get tenant-specific completed module and content IDs
+            $completedModuleIds = [];
+            $completedContentIds = [];
+            $completedCourseIds = [];
+            
+            return view('student.student-courses.enrolled-courses', compact(
+                'user', 'enrolledCoursesData', 'completedModuleIds', 'completedContentIds', 'completedCourseIds'
+            ));
+            
+        } finally {
+            $tenantService->switchToMain();
+        }
+    }
+    
+    /**
+     * Preview course for tenant customization
+     */
+    public function previewCourse($tenant, $courseId)
+    {
+        // Set up tenant context
+        $tenantModel = \App\Models\Tenant::where('slug', $tenant)->firstOrFail();
+        $tenantService = app(\App\Services\TenantService::class);
+        
+        try {
+            $tenantService->switchToTenant($tenantModel);
+            
+            // Load tenant settings
+            $this->loadTenantSettings($tenantModel);
+            
+            // Set preview mode session temporarily
+            session(['preview_mode' => true, 'user_id' => 'preview-user', 'user_role' => 'student', 'user_name' => 'Preview Student', 'logged_in' => true]);
+            
+            // Create mock student data
+            $user = (object) [
+                'user_id' => 'preview-user',
+                'user_firstname' => 'Preview',
+                'user_lastname' => 'Student',
+                'role' => 'student'
+            ];
+            
+            // Get sample program with modules and courses
+            $program = \App\Models\Program::with(['modules.courses.contentItems'])
+                ->where('program_id', $courseId)
+                ->orWhere('program_id', 1) // Fallback to first program
+                ->first();
+                
+            if (!$program) {
+                $program = \App\Models\Program::with(['modules.courses.contentItems'])->first();
+            }
+            
+            if (!$program) {
+                // Create a mock program if none exists
+                $program = (object) [
+                    'program_id' => 1,
+                    'program_name' => 'Sample Program',
+                    'description' => 'This is a sample program for preview',
+                    'modules' => collect([
+                        (object) [
+                            'modules_id' => 1,
+                            'module_name' => 'Sample Module 1',
+                            'courses' => collect([
+                                (object) [
+                                    'subject_id' => 1,
+                                    'subject_name' => 'Sample Course 1',
+                                    'contentItems' => collect([
+                                        (object) [
+                                            'id' => 1,
+                                            'content_title' => 'Sample Lesson',
+                                            'content_type' => 'lesson',
+                                            'content_description' => 'This is a sample lesson'
+                                        ]
+                                    ])
+                                ]
+                            ])
+                        ]
+                    ])
+                ];
+            }
+            
+            // Mock completion data
+            $completedModuleIds = [];
+            $completedContentIds = [];
+            $completedCourseIds = [];
+            
+            return view('student.student-courses.student-course', compact(
+                'user', 'program', 'completedModuleIds', 'completedContentIds', 'completedCourseIds'
+            ));
+            
+        } finally {
+            $tenantService->switchToMain();
+        }
+    }
+    
+    /**
+     * Preview content view for tenant customization
+     */
+    public function previewContent($tenant, $contentId)
+    {
+        // Set up tenant context
+        $tenantModel = \App\Models\Tenant::where('slug', $tenant)->firstOrFail();
+        $tenantService = app(\App\Services\TenantService::class);
+        
+        try {
+            $tenantService->switchToTenant($tenantModel);
+            
+            // Load tenant settings
+            $this->loadTenantSettings($tenantModel);
+            
+            // Set preview mode session temporarily
+            session(['preview_mode' => true, 'user_id' => 'preview-user', 'user_role' => 'student', 'user_name' => 'Preview Student', 'logged_in' => true]);
+            
+            // Create mock student data
+            $user = (object) [
+                'user_id' => 'preview-user',
+                'user_firstname' => 'Preview',
+                'user_lastname' => 'Student',
+                'role' => 'student'
+            ];
+            
+            // Get sample content or create mock
+            $content = \App\Models\ContentItem::with(['course'])->find($contentId);
+            
+            if (!$content) {
+                // Create mock content
+                $content = (object) [
+                    'id' => $contentId,
+                    'content_title' => 'Sample Content',
+                    'content_type' => 'lesson',
+                    'content_description' => 'This is sample content for preview',
+                    'content_data' => [
+                        'content_html' => '<h3>Sample Content</h3><p>This is a preview of how content will appear in your customized website.</p>'
+                    ],
+                    'course' => (object) [
+                        'subject_name' => 'Sample Course',
+                        'module' => (object) [
+                            'module_name' => 'Sample Module',
+                            'program' => (object) [
+                                'program_name' => 'Sample Program'
+                            ]
+                        ]
+                    ]
+                ];
+            }
+            
+            return view('student.content.view', compact('user', 'content'));
+            
+        } finally {
+            $tenantService->switchToMain();
+        }
+    }
+    
+    /**
+     * Load tenant-specific settings for preview
+     */
+    private function loadTenantSettings($tenant)
+    {
+        try {
+            $settings = [
+                'navbar' => \App\Models\Setting::getGroup('navbar')->toArray(),
+                'student_sidebar' => \App\Models\Setting::getGroup('student_sidebar')->toArray(),
+            ];
+            
+            // Share settings with views
+            view()->share('settings', $settings);
+            view()->share('navbar', $settings['navbar'] ?? []);
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to load tenant settings in preview', [
+                'tenant' => $tenant->slug,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 }
