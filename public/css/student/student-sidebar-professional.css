@@ -5,12 +5,12 @@
 :root {
   --sidebar-width: 280px;
   --sidebar-collapsed-width: 70px;
-  --sidebar-bg: #1a1a1a;
-  --sidebar-text: #e0e0e0;
-  --sidebar-text-muted: #9ca3af;
-  --sidebar-hover: #2d2d2d;
-  --sidebar-active: #3b82f6;
-  --sidebar-border: #2d2d2d;
+  --student-sidebar-bg: #1a1a1a;
+  --student-sidebar-text: #e0e0e0;
+  --student-sidebar-text-muted: #9ca3af;
+  --student-sidebar-hover: #2d2d2d;
+  --student-sidebar-active: #3b82f6;
+  --student-sidebar-border: #2d2d2d;
   --sidebar-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --border-radius: 12px;
@@ -23,8 +23,8 @@
   left: 1rem;
   width: 48px;
   height: 48px;
-  background: var(--sidebar-bg);
-  border: 2px solid var(--sidebar-border);
+  background: var(--student-sidebar-bg);
+  border: 2px solid var(--student-sidebar-border);
   border-radius: 12px;
   color: white;
   display: none;
@@ -37,7 +37,7 @@
 }
 
 .mobile-sidebar-toggle:hover {
-  background: var(--sidebar-hover);
+  background: var(--student-sidebar-hover);
   transform: scale(1.05);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
@@ -75,8 +75,8 @@
   top: 0;
   width: var(--sidebar-width);
   height: 100vh;
-  background: var(--sidebar-bg);
-  border-right: 1px solid var(--sidebar-border);
+  background: var(--student-sidebar-bg);
+  border-right: 1px solid var(--student-sidebar-border);
   box-shadow: var(--sidebar-shadow);
   transform: translateX(0);
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -115,7 +115,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem 1.25rem;
-  border-bottom: 1px solid var(--sidebar-border);
+  border-bottom: 1px solid var(--student-sidebar-border);
   background: linear-gradient(135deg, #1f1f1f 0%, #1a1a1a 100%);
   min-height: 80px;
 }
@@ -199,10 +199,10 @@
 .sidebar-toggle-btn {
   width: 32px;
   height: 32px;
-  background: var(--sidebar-hover);
+  background: var(--student-sidebar-hover);
   border: none;
   border-radius: 8px;
-  color: var(--sidebar-text);
+  color: var(--student-sidebar-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -220,7 +220,7 @@
 }
 
 .sidebar-toggle-btn:hover {
-  background: var(--sidebar-active);
+  background: var(--student-sidebar-active);
   color: white;
   transform: scale(1.05);
 }
@@ -244,7 +244,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 1.25rem;
-  border-bottom: 1px solid var(--sidebar-border);
+  border-bottom: 1px solid var(--student-sidebar-border);
   background: rgba(255, 255, 255, 0.02);
 }
 
@@ -279,7 +279,7 @@
   width: 45px;
   height: 45px;
   border-radius: 12px;
-  border: 2px solid var(--sidebar-active);
+  border: 2px solid var(--student-sidebar-active);
   object-fit: cover;
 }
 
@@ -291,7 +291,7 @@
 }
 
 .avatar-placeholder {
-  background: linear-gradient(135deg, var(--sidebar-active) 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, var(--student-sidebar-active) 0%, #1d4ed8 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -340,7 +340,7 @@
   overflow-x: hidden;
   padding: 1rem 0;
   scrollbar-width: thin;
-  scrollbar-color: var(--sidebar-border) transparent;
+  scrollbar-color: var(--student-sidebar-border) transparent;
 }
 
 .sidebar-navigation::-webkit-scrollbar {
@@ -352,7 +352,7 @@
 }
 
 .sidebar-navigation::-webkit-scrollbar-thumb {
-  background: var(--sidebar-border);
+  background: var(--student-sidebar-border);
   border-radius: 2px;
 }
 
@@ -387,7 +387,7 @@
   gap: 0.75rem;
   padding: 0.75rem 1.25rem;
   margin: 0.125rem 0.75rem;
-  color: var(--sidebar-text);
+  color: var(--student-sidebar-text);
   text-decoration: none;
   border-radius: 10px;
   transition: var(--transition-smooth);
@@ -410,7 +410,7 @@
 }
 
 .nav-item:hover {
-  background: var(--sidebar-hover);
+  background: var(--student-sidebar-hover);
   color: white;
   text-decoration: none;
   transform: translateX(2px);
@@ -422,7 +422,7 @@
 }
 
 .nav-item.active {
-  background: var(--sidebar-active);
+  background: var(--student-sidebar-active);
   color: white;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
@@ -508,7 +508,7 @@
 /* ═══ SIDEBAR FOOTER ═══ */
 .sidebar-footer {
   padding: 1rem 1.25rem;
-  border-top: 1px solid var(--sidebar-border);
+  border-top: 1px solid var(--student-sidebar-border);
   background: rgba(255, 255, 255, 0.02);
 }
 
@@ -633,7 +633,7 @@
 /* Focus states for accessibility */
 .nav-item:focus,
 .sidebar-toggle-btn:focus {
-  outline: 2px solid var(--sidebar-active);
+  outline: 2px solid var(--student-sidebar-active);
   outline-offset: 2px;
 }
 

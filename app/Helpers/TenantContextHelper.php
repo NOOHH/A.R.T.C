@@ -162,23 +162,23 @@ class TenantContextHelper
                 'brand_logo' => \App\Models\Setting::get('professor_panel', 'brand_logo', null),
             ];
 
-            // Load sidebar settings
+            // Load sidebar settings from ui_settings table
             $settings['student_sidebar'] = [
-                'primary_color' => \App\Models\Setting::get('student_sidebar', 'primary_color', '#3f4d69'),
-                'secondary_color' => \App\Models\Setting::get('student_sidebar', 'secondary_color', '#2d2d2d'),
-                'accent_color' => \App\Models\Setting::get('student_sidebar', 'accent_color', '#4f757d'),
-                'text_color' => \App\Models\Setting::get('student_sidebar', 'text_color', '#e0e0e0'),
-                'hover_color' => \App\Models\Setting::get('student_sidebar', 'hover_color', '#374151'),
-                'background_color' => \App\Models\Setting::get('student_sidebar', 'background_color', '#f8f9fa'),
+                'primary_color' => \App\Models\UiSetting::get('student_sidebar', 'primary_color', '#3f4d69'),
+                'secondary_color' => \App\Models\UiSetting::get('student_sidebar', 'secondary_color', '#2d2d2d'),
+                'accent_color' => \App\Models\UiSetting::get('student_sidebar', 'accent_color', '#4f757d'),
+                'text_color' => \App\Models\UiSetting::get('student_sidebar', 'text_color', '#e0e0e0'),
+                'hover_color' => \App\Models\UiSetting::get('student_sidebar', 'hover_color', '#374151'),
+                'background_color' => \App\Models\UiSetting::get('student_sidebar', 'background_color', '#f8f9fa'),
             ];
 
             $settings['professor_sidebar'] = [
-                'primary_color' => \App\Models\Setting::get('professor_sidebar', 'primary_color', '#007bff'),
-                'secondary_color' => \App\Models\Setting::get('professor_sidebar', 'secondary_color', '#6c757d'),
-                'accent_color' => \App\Models\Setting::get('professor_sidebar', 'accent_color', '#28a745'),
-                'text_color' => \App\Models\Setting::get('professor_sidebar', 'text_color', '#ffffff'),
-                'hover_color' => \App\Models\Setting::get('professor_sidebar', 'hover_color', '#0056b3'),
-                'background_color' => \App\Models\Setting::get('professor_sidebar', 'background_color', '#f8f9fa'),
+                'primary_color' => \App\Models\UiSetting::get('professor_sidebar', 'primary_color', '#007bff'),
+                'secondary_color' => \App\Models\UiSetting::get('professor_sidebar', 'secondary_color', '#6c757d'),
+                'accent_color' => \App\Models\UiSetting::get('professor_sidebar', 'accent_color', '#28a745'),
+                'text_color' => \App\Models\UiSetting::get('professor_sidebar', 'text_color', '#ffffff'),
+                'hover_color' => \App\Models\UiSetting::get('professor_sidebar', 'hover_color', '#0056b3'),
+                'background_color' => \App\Models\UiSetting::get('professor_sidebar', 'background_color', '#f8f9fa'),
             ];
 
             // Switch back to main database

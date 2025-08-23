@@ -851,28 +851,61 @@
         let colors = {};
         
         if (role === 'student') {
+            const primaryEl = document.getElementById('student_sidebar_primary_color');
+            const secondaryEl = document.getElementById('student_sidebar_secondary_color');
+            const accentEl = document.getElementById('student_sidebar_accent_color');
+            const textEl = document.getElementById('student_sidebar_text_color');
+            const hoverEl = document.getElementById('student_sidebar_hover_color');
+            
+            if (!primaryEl || !secondaryEl || !accentEl || !textEl || !hoverEl) {
+                showNotification('Error: Could not find sidebar color input elements', 'danger');
+                return;
+            }
+            
             colors = {
-                primary_color: document.getElementById('studentSidebarPrimary').value,
-                secondary_color: document.getElementById('studentSidebarSecondary').value,
-                accent_color: document.getElementById('studentSidebarAccent').value,
-                text_color: document.getElementById('studentSidebarText').value,
-                hover_color: document.getElementById('studentSidebarHover').value
+                primary_color: primaryEl.value,
+                secondary_color: secondaryEl.value,
+                accent_color: accentEl.value,
+                text_color: textEl.value,
+                hover_color: hoverEl.value
             };
         } else if (role === 'professor') {
+            const primaryEl = document.getElementById('professor_sidebar_primary_color');
+            const secondaryEl = document.getElementById('professor_sidebar_secondary_color');
+            const accentEl = document.getElementById('professor_sidebar_accent_color');
+            const textEl = document.getElementById('professor_sidebar_text_color');
+            const hoverEl = document.getElementById('professor_sidebar_hover_color');
+            
+            if (!primaryEl || !secondaryEl || !accentEl || !textEl || !hoverEl) {
+                showNotification('Error: Could not find professor sidebar color input elements', 'danger');
+                return;
+            }
+            
             colors = {
-                primary_color: document.getElementById('professorSidebarPrimary').value,
-                secondary_color: document.getElementById('professorSidebarSecondary').value,
-                accent_color: document.getElementById('professorSidebarAccent').value,
-                text_color: document.getElementById('professorSidebarText').value,
-                hover_color: document.getElementById('professorSidebarHover').value
+                primary_color: primaryEl.value,
+                secondary_color: secondaryEl.value,
+                accent_color: accentEl.value,
+                text_color: textEl.value,
+                hover_color: hoverEl.value
             };
         } else if (role === 'admin') {
+            const primaryEl = document.getElementById('admin_sidebar_primary_color');
+            const secondaryEl = document.getElementById('admin_sidebar_secondary_color');
+            const accentEl = document.getElementById('admin_sidebar_accent_color');
+            const textEl = document.getElementById('admin_sidebar_text_color');
+            const hoverEl = document.getElementById('admin_sidebar_hover_color');
+            
+            if (!primaryEl || !secondaryEl || !accentEl || !textEl || !hoverEl) {
+                showNotification('Error: Could not find admin sidebar color input elements', 'danger');
+                return;
+            }
+            
             colors = {
-                primary_color: document.getElementById('adminSidebarPrimary').value,
-                secondary_color: document.getElementById('adminSidebarSecondary').value,
-                accent_color: document.getElementById('adminSidebarAccent').value,
-                text_color: document.getElementById('adminSidebarText').value,
-                hover_color: document.getElementById('adminSidebarHover').value
+                primary_color: primaryEl.value,
+                secondary_color: secondaryEl.value,
+                accent_color: accentEl.value,
+                text_color: textEl.value,
+                hover_color: hoverEl.value
             };
         }
         
@@ -881,6 +914,15 @@
 
     // Shared function for saving sidebar colors
     function saveSidebarColorsForRole(role, colors) {
+        // Get the websiteId from meta tag or URL parameter
+        const websiteId = document.querySelector('meta[name="x-selected-website-id"]')?.getAttribute('content') || 
+                         new URLSearchParams(window.location.search).get('website');
+        
+        if (!websiteId) {
+            showNotification('Error: No website selected for customization', 'danger');
+            return;
+        }
+        
         fetch(`/smartprep/dashboard/settings/sidebar/${websiteId}`, {
             method: 'POST',
             credentials: 'same-origin',

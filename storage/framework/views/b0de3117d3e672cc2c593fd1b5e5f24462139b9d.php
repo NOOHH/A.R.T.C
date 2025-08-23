@@ -173,12 +173,12 @@
     :root {
         --sidebar-width: 280px;
         --sidebar-collapsed-width: 70px;
-        --sidebar-bg: var(--sidebar-primary, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
-        --sidebar-text: var(--sidebar-text, #ffffff);
-        --sidebar-text-muted: var(--sidebar-text-muted, #9ca3af);
-        --sidebar-hover: var(--sidebar-hover, rgba(255, 255, 255, 0.1));
-        --sidebar-active: var(--sidebar-accent, rgba(255, 255, 255, 0.2));
-        --sidebar-border: var(--sidebar-secondary, rgba(255, 255, 255, 0.1));
+        --professor-sidebar-bg: var(--sidebar-primary, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+        --professor-sidebar-text: var(--sidebar-text, #ffffff);
+        --professor-sidebar-text-muted: var(--sidebar-text-muted, #9ca3af);
+        --professor-sidebar-hover: var(--sidebar-hover, rgba(255, 255, 255, 0.1));
+        --professor-sidebar-active: var(--sidebar-accent, rgba(255, 255, 255, 0.2));
+        --professor-sidebar-border: var(--sidebar-secondary, rgba(255, 255, 255, 0.1));
         --sidebar-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
         --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         --border-radius: 12px;
@@ -218,8 +218,8 @@
         top: 0;
         width: var(--sidebar-width);
         height: 100vh;
-        background: var(--sidebar-bg);
-        border-right: 1px solid var(--sidebar-border);
+        background: var(--professor-sidebar-bg);
+        border-right: 1px solid var(--professor-sidebar-border);
         box-shadow: var(--sidebar-shadow);
         transform: translateX(0);
         transition: var(--transition-smooth);
@@ -547,7 +547,7 @@
         display: flex;
         align-items: center;
         padding: 0.75rem 1rem;
-        color: var(--sidebar-text);
+        color: var(--professor-sidebar-text);
         text-decoration: none;
         border-radius: var(--border-radius);
         transition: var(--transition-smooth);
@@ -559,14 +559,14 @@
     }
 
     .nav-link:hover {
-        background: var(--sidebar-hover);
-        color: var(--sidebar-text);
+        background: var(--professor-sidebar-hover);
+        color: var(--professor-sidebar-text);
         text-decoration: none;
     }
 
     .nav-link.active {
-        background: var(--sidebar-active);
-        color: var(--sidebar-text);
+        background: var(--professor-sidebar-active);
+        color: var(--professor-sidebar-text);
     }
 
     .nav-link i {
@@ -657,7 +657,7 @@
         display: flex;
         align-items: center;
         padding: 0.5rem 1rem;
-        color: var(--sidebar-text);
+        color: var(--professor-sidebar-text);
         text-decoration: none;
         border-radius: var(--border-radius);
         transition: var(--transition-smooth);
@@ -669,14 +669,14 @@
     }
 
     .submenu-link:hover {
-        background: var(--sidebar-hover);
-        color: var(--sidebar-text);
+        background: var(--professor-sidebar-hover);
+        color: var(--professor-sidebar-text);
         text-decoration: none;
     }
 
     .submenu-link.active {
-        background: var(--sidebar-active);
-        color: var(--sidebar-text);
+        background: var(--professor-sidebar-active);
+        color: var(--professor-sidebar-text);
     }
 
     .submenu-link i {
@@ -717,8 +717,8 @@
     }
 
     .logout-btn:hover {
-        background: var(--sidebar-hover);
-        color: var(--sidebar-text);
+        background: var(--professor-sidebar-hover);
+        color: var(--professor-sidebar-text);
     }
 
     .logout-btn i {
@@ -794,7 +794,7 @@
     }
 
     .mobile-sidebar-toggle:hover {
-        background: var(--sidebar-hover);
+        background: var(--professor-sidebar-hover);
         transform: scale(1.05);
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
     }

@@ -70,9 +70,9 @@ class CustomizeWebsiteController extends Controller
                             'student_portal' => Setting::getGroup('student_portal')->toArray(),
                             'professor_panel' => Setting::getGroup('professor_panel')->toArray(),
                             'admin_panel' => Setting::getGroup('admin_panel')->toArray(),
-                            'student_sidebar' => Setting::getGroup('student_sidebar')->toArray(),
-                            'professor_sidebar' => Setting::getGroup('professor_sidebar')->toArray(),
-                            'admin_sidebar' => Setting::getGroup('admin_sidebar')->toArray(),
+                            'student_sidebar' => \App\Models\UiSetting::getSection('student_sidebar')->toArray(),
+                            'professor_sidebar' => \App\Models\UiSetting::getSection('professor_sidebar')->toArray(),
+                            'admin_sidebar' => \App\Models\UiSetting::getSection('admin_sidebar')->toArray(),
                             'advanced' => Setting::getGroup('advanced')->toArray(),
                         ];
                         
@@ -595,9 +595,9 @@ class CustomizeWebsiteController extends Controller
             // Switch to tenant database
             $this->tenantService->switchToTenant($tenant);
 
-            // Save each color setting to the tenant database
+            // Save each color setting to the tenant database (ui_settings table)
             foreach ($colors as $key => $value) {
-                Setting::set($section, $key, $value);
+                \App\Models\UiSetting::set($section, $key, $value, 'color');
             }
 
             // Switch back to main database

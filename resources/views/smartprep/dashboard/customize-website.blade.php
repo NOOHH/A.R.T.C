@@ -28,6 +28,7 @@
     <meta name="x-my-name" content="{{ $isLoggedIn && isset($user) ? ($user->name ?? 'User') : 'Guest' }}">
     <meta name="x-is-authenticated" content="{{ $isLoggedIn && isset($user) ? '1' : '0' }}">
     <meta name="x-user-role" content="{{ $userRole ?? 'guest' }}">
+    <meta name="x-selected-website-id" content="{{ $selectedWebsite->id ?? '' }}">
     <style>
         :root {
             --primary-color: #1e40af;

@@ -1341,7 +1341,7 @@ class StudentController extends Controller
         try {
             $settings = [
                 'navbar' => \App\Models\Setting::getGroup('navbar')->toArray(),
-                'student_sidebar' => \App\Models\Setting::getGroup('student_sidebar')->toArray(),
+                'student_sidebar' => \App\Models\UiSetting::getSection('student_sidebar')->toArray(),
             ];
             
             // Share settings with views

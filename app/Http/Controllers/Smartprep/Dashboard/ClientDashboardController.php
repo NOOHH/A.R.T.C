@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Smartprep\Dashboard;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use App\Models\WebsiteRequest;
 use App\Models\Client;
 use App\Helpers\SettingsHelper;
@@ -45,30 +46,33 @@ class ClientDashboardController extends Controller
     /**
      * Get sidebar settings for the current user's role
      */
-    public function getSidebarSettings(): JsonResponse
+    public function getSidebarSettings(Request $request): JsonResponse
     {
         try {
             // Determine user role from multiple sources
-            $userRole = 'student'; // default
+            $userRole = $request->query('role', 'student'); // Allow role to be specified via parameter
             
-            // Check Laravel Auth first
-            if (auth()->check()) {
-                $userRole = auth()->user()->role ?? 'student';
-            }
-            
-            // Check session data (common in this app)
-            if (session('user_role')) {
-                $userRole = session('user_role');
-            }
-            
-            // Check for professor-specific session
-            if (session('professor_id') || session('user_type') === 'professor') {
-                $userRole = 'professor';
-            }
-            
-            // Map client role to student if needed
-            if ($userRole === 'client') {
-                $userRole = 'student';
+            // If no role specified, try to detect from context
+            if (!$request->has('role')) {
+                // Check Laravel Auth first
+                if (auth()->check()) {
+                    $userRole = auth()->user()->role ?? 'student';
+                }
+                
+                // Check session data (common in this app)
+                if (session('user_role')) {
+                    $userRole = session('user_role');
+                }
+                
+                // Check for professor-specific session
+                if (session('professor_id') || session('user_type') === 'professor') {
+                    $userRole = 'professor';
+                }
+                
+                // Map client role to student if needed
+                if ($userRole === 'client') {
+                    $userRole = 'student';
+                }
             }
             
             // Validate role
@@ -76,17 +80,49 @@ class ClientDashboardController extends Controller
                 $userRole = 'student';
             }
 
-            $sidebarColors = SettingsHelper::getSidebarColors($userRole);
+            // Check if we're in a tenant context (website parameter)
+            $websiteId = $request->query('website');
+            $sidebarColors = [];
+            
+            if ($websiteId) {
+                // Load colors from tenant database
+                $client = \App\Models\Client::find($websiteId);
+                if ($client) {
+                    $tenant = \App\Models\Tenant::where('slug', $client->slug)->first();
+                    if ($tenant) {
+                        $tenantService = app(\App\Services\TenantService::class);
+                        $tenantService->switchToTenant($tenant);
+                        
+                        $section = $userRole . '_sidebar';
+                        $sidebarColors = [
+                            'primary_color' => \App\Models\UiSetting::get($section, 'primary_color', '#3f4d69'),
+                            'secondary_color' => \App\Models\UiSetting::get($section, 'secondary_color', '#2d2d2d'),
+                            'accent_color' => \App\Models\UiSetting::get($section, 'accent_color', '#4f757d'),
+                            'text_color' => \App\Models\UiSetting::get($section, 'text_color', '#e0e0e0'),
+                            'hover_color' => \App\Models\UiSetting::get($section, 'hover_color', '#374151'),
+                        ];
+                        
+                        $tenantService->switchToMain();
+                    }
+                }
+            }
+            
+            // Fallback to default colors if no tenant colors found
+            if (empty($sidebarColors)) {
+                $sidebarColors = \App\Helpers\SettingsHelper::getSidebarColors($userRole);
+            }
             
             return response()->json([
                 'success' => true,
                 'role' => $userRole,
                 'colors' => $sidebarColors,
+                'website_id' => $websiteId,
                 'debug' => [
                     'auth_user_role' => auth()->check() ? (auth()->user()->role ?? 'none') : 'not_logged_in',
                     'session_user_role' => session('user_role'),
                     'session_professor_id' => session('professor_id'),
-                    'final_role' => $userRole
+                    'final_role' => $userRole,
+                    'website_id' => $websiteId
                 ]
             ]);
 

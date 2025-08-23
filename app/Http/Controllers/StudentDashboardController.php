@@ -189,7 +189,7 @@ class StudentDashboardController extends Controller
                 
                 $settings = [
                     'navbar' => \App\Models\Setting::getGroup('navbar')->toArray(),
-                    'student_sidebar' => \App\Models\Setting::getGroup('student_sidebar')->toArray(),
+                    'student_sidebar' => \App\Models\UiSetting::getSection('student_sidebar')->toArray(),
                 ];
                 
                 $tenantService->switchToMain();
@@ -683,12 +683,12 @@ class StudentDashboardController extends Controller
                             'brand_logo' => \App\Models\Setting::get('student_portal', 'brand_logo', null),
                         ],
                         'student_sidebar' => [
-                            'primary_color' => \App\Models\Setting::get('student_sidebar', 'primary_color', '#3f4d69'),
-                            'secondary_color' => \App\Models\Setting::get('student_sidebar', 'secondary_color', '#2d2d2d'),
-                            'accent_color' => \App\Models\Setting::get('student_sidebar', 'accent_color', '#4f757d'),
-                            'text_color' => \App\Models\Setting::get('student_sidebar', 'text_color', '#e0e0e0'),
-                            'hover_color' => \App\Models\Setting::get('student_sidebar', 'hover_color', '#374151'),
-                            'background_color' => \App\Models\Setting::get('student_sidebar', 'background_color', '#f8f9fa'),
+                            'primary_color' => \App\Models\UiSetting::get('student_sidebar', 'primary_color', '#3f4d69'),
+                            'secondary_color' => \App\Models\UiSetting::get('student_sidebar', 'secondary_color', '#2d2d2d'),
+                            'accent_color' => \App\Models\UiSetting::get('student_sidebar', 'accent_color', '#4f757d'),
+                            'text_color' => \App\Models\UiSetting::get('student_sidebar', 'text_color', '#e0e0e0'),
+                            'hover_color' => \App\Models\UiSetting::get('student_sidebar', 'hover_color', '#374151'),
+                            'background_color' => \App\Models\UiSetting::get('student_sidebar', 'background_color', '#f8f9fa'),
                         ],
                     ];
                     
@@ -736,12 +736,12 @@ class StudentDashboardController extends Controller
                                 'brand_logo' => \App\Models\Setting::get('student_portal', 'brand_logo', null),
                             ],
                             'student_sidebar' => [
-                                'primary_color' => \App\Models\Setting::get('student_sidebar', 'primary_color', '#3f4d69'),
-                                'secondary_color' => \App\Models\Setting::get('student_sidebar', 'secondary_color', '#2d2d2d'),
-                                'accent_color' => \App\Models\Setting::get('student_sidebar', 'accent_color', '#4f757d'),
-                                'text_color' => \App\Models\Setting::get('student_sidebar', 'text_color', '#e0e0e0'),
-                                'hover_color' => \App\Models\Setting::get('student_sidebar', 'hover_color', '#374151'),
-                                'background_color' => \App\Models\Setting::get('student_sidebar', 'background_color', '#f8f9fa'),
+                                'primary_color' => \App\Models\UiSetting::get('student_sidebar', 'primary_color', '#3f4d69'),
+                                'secondary_color' => \App\Models\UiSetting::get('student_sidebar', 'secondary_color', '#2d2d2d'),
+                                'accent_color' => \App\Models\UiSetting::get('student_sidebar', 'accent_color', '#4f757d'),
+                                'text_color' => \App\Models\UiSetting::get('student_sidebar', 'text_color', '#e0e0e0'),
+                                'hover_color' => \App\Models\UiSetting::get('student_sidebar', 'hover_color', '#374151'),
+                                'background_color' => \App\Models\UiSetting::get('student_sidebar', 'background_color', '#f8f9fa'),
                             ],
                         ];
                         
@@ -3887,7 +3887,7 @@ class StudentDashboardController extends Controller
         try {
             $settings = [
                 'navbar' => \App\Models\Setting::getGroup('navbar')->toArray(),
-                'student_sidebar' => \App\Models\Setting::getGroup('student_sidebar')->toArray(),
+                'student_sidebar' => \App\Models\UiSetting::getSection('student_sidebar')->toArray(),
             ];
             
             // Share settings with views

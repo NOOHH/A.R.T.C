@@ -44,7 +44,8 @@
     window.isAuthenticated = true;
     window.userRole        = @json($user->role);
     window.csrfToken       = @json(csrf_token());
-    console.log('Globals:', { myId, myName, isAuthenticated, userRole });
+    window.preview         = @json($isPreview);
+    console.log('Globals:', { myId, myName, isAuthenticated, userRole, preview });
   </script>
 
   <!-- Fonts & CSS -->

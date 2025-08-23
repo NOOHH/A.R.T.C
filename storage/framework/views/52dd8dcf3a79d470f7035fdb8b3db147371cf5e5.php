@@ -44,7 +44,8 @@
     window.isAuthenticated = true;
     window.userRole        = <?php echo json_encode($user->role, 15, 512) ?>;
     window.csrfToken       = <?php echo json_encode(csrf_token(), 15, 512) ?>;
-    console.log('Globals:', { myId, myName, isAuthenticated, userRole });
+    window.preview         = <?php echo json_encode($isPreview, 15, 512) ?>;
+    console.log('Globals:', { myId, myName, isAuthenticated, userRole, preview });
   </script>
 
   <!-- Fonts & CSS -->

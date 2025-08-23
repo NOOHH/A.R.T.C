@@ -779,16 +779,19 @@ class SettingsHelper
         $colors = self::getSidebarColors($role);
         
         $css = ":root {\n";
-        $css .= "    --sidebar-primary: {$colors['primary_color']};\n";
-        $css .= "    --sidebar-secondary: {$colors['secondary_color']};\n";
-        $css .= "    --sidebar-accent: {$colors['accent_color']};\n";
-        $css .= "    --sidebar-text: {$colors['text_color']};\n";
-        $css .= "    --sidebar-hover: {$colors['hover_color']};\n";
+        $css .= "    --{$role}-sidebar-primary: {$colors['primary_color']};\n";
+        $css .= "    --{$role}-sidebar-secondary: {$colors['secondary_color']};\n";
+        $css .= "    --{$role}-sidebar-accent: {$colors['accent_color']};\n";
+        $css .= "    --{$role}-sidebar-text: {$colors['text_color']};\n";
+        $css .= "    --{$role}-sidebar-hover: {$colors['hover_color']};\n";
+        $css .= "    --{$role}-sidebar-bg: {$colors['primary_color']};\n";
+        $css .= "    --{$role}-sidebar-active: {$colors['accent_color']};\n";
+        $css .= "    --{$role}-sidebar-border: {$colors['secondary_color']};\n";
         
         // Generate additional variations
-        $css .= "    --sidebar-text-muted: " . self::adjustColorOpacity($colors['text_color'], 0.7) . ";\n";
-        $css .= "    --sidebar-accent-dark: " . self::darkenColor($colors['accent_color'], 10) . ";\n";
-        $css .= "    --sidebar-hover-light: " . self::lightenColor($colors['hover_color'], 10) . ";\n";
+        $css .= "    --{$role}-sidebar-text-muted: " . self::adjustColorOpacity($colors['text_color'], 0.7) . ";\n";
+        $css .= "    --{$role}-sidebar-accent-dark: " . self::darkenColor($colors['accent_color'], 10) . ";\n";
+        $css .= "    --{$role}-sidebar-hover-light: " . self::lightenColor($colors['hover_color'], 10) . ";\n";
         $css .= "}\n";
 
         return $css;
