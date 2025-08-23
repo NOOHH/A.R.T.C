@@ -1,0 +1,3298 @@
+
+
+<?php
+  $hideSidebar = true; // Hide sidebar on course page
+?>
+
+<?php $__env->startSection('title', ($program->program_name ?? 'Course') . ' - A.R.T.C'); ?>
+
+<?php $__env->startSection('head'); ?>
+  <!-- Course-specific styles -->
+  <link href="<?php echo e(asset('css/student/student-course.css')); ?>" rel="stylesheet">
+<?php $__env->stopSection(); ?>
+
+<?php $__env->startSection('content'); ?>
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+
+    <?php
+        // Use the same authentication context as student dashboard layout
+        $user = null;
+        
+        // Get user data from Laravel session (priority 1)
+        if (session('user_id') && session('user_role') === 'student') {
+            $user = (object) [
+                'id' => session('user_id'),
+                'name' => session('user_name') ?? session('user_firstname') . ' ' . session('user_lastname'),
+                'role' => 'student',
+                'email' => session('user_email')
+            ];
+        }
+        
+        // If no valid student session, redirect to login
+        if (!$user) {
+            // Check if we have any session but wrong role
+            if (session('user_role') && session('user_role') !== 'student') {
+                session()->flush();
+                header('Location: ' . route('login') . '?error=access_denied');
+                exit;
+            }
+            
+            // No session at all
+            session()->flush();
+            header('Location: ' . route('login'));
+            exit;
+        }
+    ?>
+
+    <script>
+        window.completedModuleIds = <?php echo json_encode($completedModuleIds ?? [], 15, 512) ?>;
+        window.completedContentIds = <?php echo json_encode($completedContentIds ?? [], 15, 512) ?>;
+        window.completedCourseIds = <?php echo json_encode($completedCourseIds ?? [], 15, 512) ?>;
+        
+        // Define storage URL for file access
+        const storageUrl = '<?php echo e(url("storage")); ?>';
+        
+        // Handle calendar redirects
+        document.addEventListener('DOMContentLoaded', function() {
+            handleCalendarRedirects();
+        });
+        
+        // Handle calendar redirects (assignments, lessons)
+        function handleCalendarRedirects() {
+            // Check if we were redirected from calendar
+            const calendarAssignmentId = sessionStorage.getItem('calendarAssignmentId');
+            const calendarLessonId = sessionStorage.getItem('calendarLessonId');
+            const calendarContentType = sessionStorage.getItem('calendarContentType');
+            const calendarProgramName = sessionStorage.getItem('calendarProgramName');
+            
+            if (calendarAssignmentId || calendarLessonId) {
+                // Clear the session storage
+                sessionStorage.removeItem('calendarAssignmentId');
+                sessionStorage.removeItem('calendarProgramName');
+                sessionStorage.removeItem('calendarLessonId');
+                sessionStorage.removeItem('calendarProgramId');
+                sessionStorage.removeItem('calendarModuleId');
+                sessionStorage.removeItem('calendarCourseId');
+                sessionStorage.removeItem('calendarContentType');
+                
+                // Show notification about the redirect
+                let message = 'Redirected from calendar';
+                if (calendarAssignmentId) {
+                    message = `Looking for assignment in ${calendarProgramName || 'this course'}`;
+                } else if (calendarLessonId) {
+                    message = `Looking for lesson in ${calendarProgramName || 'this course'}`;
+                }
+                
+                showNotification(message, 'info');
+                
+                // Highlight the specific content item
+                const contentId = calendarAssignmentId || calendarLessonId;
+                if (contentId) {
+                    setTimeout(() => {
+                        highlightContentItem(contentId, calendarContentType);
+                    }, 1000);
+                }
+            }
+        }
+        
+        // Function to highlight a specific content item
+        function highlightContentItem(contentId, contentType) {
+            console.log(`🎯 Highlighting content item: ${contentId} (${contentType})`);
+            
+            // Since we're now using separate pages for content, redirect directly to content view
+            if (contentId) {
+                console.log(`✅ Redirecting to content page: ${contentId}`);
+                window.location.href = `/student/content/${contentId}/view`;
+                return;
+            }
+            
+            // Fallback: Find the content item in the DOM (if still on course page)
+            const contentElement = document.querySelector(`[data-content-id="${contentId}"]`);
+            if (contentElement) {
+                // Scroll to the content item
+                contentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Add highlight animation
+                contentElement.style.transition = 'all 0.3s ease';
+                contentElement.style.backgroundColor = '#fff3cd';
+                contentElement.style.border = '2px solid #ffc107';
+                contentElement.style.borderRadius = '8px';
+                contentElement.style.padding = '10px';
+                contentElement.style.margin = '5px 0';
+                
+                // Remove highlight after 3 seconds
+                setTimeout(() => {
+                    contentElement.style.backgroundColor = '';
+                    contentElement.style.border = '';
+                    contentElement.style.borderRadius = '';
+                    contentElement.style.padding = '';
+                    contentElement.style.margin = '';
+                }, 3000);
+                
+                console.log(`✅ Content item highlighted: ${contentId}`);
+            } else {
+                console.log(`⚠️ Content item not found: ${contentId}`);
+                // Try to find by content title or other attributes
+                const contentItems = document.querySelectorAll('.content-item, .lesson-item, .assignment-item');
+                contentItems.forEach(item => {
+                    const title = item.querySelector('.content-title, .lesson-title, .assignment-title');
+                    if (title && title.textContent.includes(contentId)) {
+                        item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        item.style.backgroundColor = '#fff3cd';
+                        item.style.border = '2px solid #ffc107';
+                        setTimeout(() => {
+                            item.style.backgroundColor = '';
+                            item.style.border = '';
+                        }, 3000);
+                    }
+                });
+            }
+        }
+        
+        // Function to show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+    </script>
+
+    <!-- Course Header -->
+    <div class="course-header d-flex align-items-center justify-content-between flex-wrap">
+        <div class="flex-grow-1">
+<?php $__env->startPush('styles'); ?>
+    <!-- Course-specific styles -->
+    <link rel="stylesheet" href="<?php echo e(asset('css/student/student-course.css')); ?>">
+    <style>
+        /* Custom scrollbar styles */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        /* Video modal styles */
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 0;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            background: #000;
+        }
+        
+        .video-player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .modal-xl {
+            max-width: 90%;
+        }
+        
+        /* Video loading state */
+        .video-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+        
+        /* Video embed container styles */
+        .video-embed-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            background-color: #000; /* To hide potential white space before video loads */
+            border-radius: 0.5rem; /* Match iframe/video border-radius */
+        }
+        
+        .video-embed-container iframe,
+        .video-embed-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none; /* Remove default iframe border */
+            object-fit: contain; /* Ensure video fits within bounds */
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+<?php $__env->stopPush(); ?>
+
+<?php $__env->startPush('scripts'); ?>
+    <!-- Global Variables for JavaScript -->
+    <script>
+        // Global variables accessible throughout the page
+        window.myId = <?php echo e($user ? $user->id : 'null'); ?>;
+        window.myName = <?php echo json_encode(optional($user)->name ?? 'Guest', 15, 512) ?>;
+        window.isAuthenticated = <?php echo e($user ? 'true' : 'false'); ?>;
+        window.userRole = <?php echo json_encode(optional($user)->role ?? 'guest', 15, 512) ?>;
+        window.csrfToken = <?php echo json_encode(csrf_token(), 15, 512) ?>;
+        
+        // Make variables available without window prefix
+        var myId = window.myId;
+        var myName = window.myName;
+        var isAuthenticated = window.isAuthenticated;
+        var userRole = window.userRole;
+        var csrfToken = window.csrfToken;
+        
+        console.log('Student Course Global variables initialized:', { myId, myName, isAuthenticated, userRole });
+
+        // Initialize assignment form state for assignment submission UI
+        window.assignmentFormState = window.assignmentFormState || {};
+    </script>
+<?php $__env->stopPush(); ?>
+
+    <!-- Course Header -->
+    <div class="course-header d-flex align-items-center justify-content-between flex-wrap">
+        <div class="flex-grow-1">
+            <h1 class="course-title mb-1"><?php echo e($program->program_name ?? 'Course'); ?></h1>
+            <p class="course-subtitle mb-0"><?php echo e($program->description ?? 'Learn at your own pace with interactive modules and assignments.'); ?></p>
+        </div>
+        <a href="<?php echo e(route('student.dashboard')); ?>" class="btn btn-secondary mt-3 mt-md-0">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+    
+<?php $__env->startPush('styles'); ?>
+    <style>
+        /* Custom Colors and Variables */
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #0dcaf0;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --sidebar-width: 250px;
+
+        }
+
+        /* Global Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+
+        /* Layout Structure */
+        .main-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .content-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.3s ease;
+        }
+
+        /* Sidebar Styles */
+        .modern-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            z-index: 1050;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .sidebar-brand i {
+            margin-right: 0.5rem;
+            font-size: 1.5rem;
+        }
+
+        .sidebar-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            display: none;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            padding: 1rem 0;
+        }
+
+        .sidebar-nav .nav-item {
+            margin-bottom: 0.25rem;
+        }
+
+        .sidebar-nav .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-radius: 0;
+        }
+
+        .sidebar-nav .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .sidebar-nav .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border-left: 3px solid #fff;
+        }
+
+        .sidebar-nav .nav-link i {
+            margin-right: 0.75rem;
+            width: 1.25rem;
+            text-align: center;
+        }
+
+        .submenu {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .submenu-link {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem 0.5rem 2.5rem;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .submenu-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .submenu-link.active {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        .submenu-link i {
+            margin-right: 0.5rem;
+            width: 1rem;
+            text-align: center;
+        }
+
+        .program-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .program-name {
+            font-weight: 500;
+        }
+
+        .program-details {
+            opacity: 0.7;
+            font-size: 0.8rem;
+        }
+
+        .user-profile {
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: auto;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 0.75rem;
+        }
+
+        .user-details h6 {
+            margin: 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .user-details span {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+
+        .page-title h4 {
+            color: var(--dark-color);
+            font-weight: 600;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar-small {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            font-size: 0.7rem;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            background-color: #f5f7fa;
+            margin-left: -250px;
+        }
+
+        /* Course Layout Styles */
+        .course-header {
+            background: rgb(1, 25, 78);
+            color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .course-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .course-subtitle {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .course-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 2rem;
+            height: calc(100vh - 250px);
+        }
+
+        .modules-panel {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .modules-header {
+            background: var(--light-color);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        .modules-list {
+            height: calc(100% - 60px);
+            overflow-y: auto;
+        }
+
+        .module-item {
+            padding: 0;
+            border: none;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .module-item:last-child {
+            border-bottom: none;
+        }
+
+        .module-button {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            text-align: left;
+            background: none;
+            border: none;
+            color: var(--dark-color);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .module-button:hover {
+            background-color: var(--light-color);
+        }
+
+        .module-button.active {
+            background-color: black;
+            color: white;
+        }
+
+        .content-panel {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .content-header {
+            background: var(--light-color);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .content-tabs {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .tab-button {
+            padding: 0.5rem 1rem;
+            background: none;
+            border: none;
+            color: var(--secondary-color);
+            cursor: pointer;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .content-viewer {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        /* Course and Content Item Styles */
+        .course-item, .content-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            padding: 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            position: relative;
+        }
+
+        .course-item:hover, .content-item:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 8px 25px rgba(13, 110, 253, 0.15);
+            transform: translateY(-4px);
+        }
+
+        .course-item.active, .content-item.active {
+            border-color: var(--primary-color);
+            background-color: #f8f9ff;
+            box-shadow: 0 8px 25px rgba(13, 110, 253, 0.18);
+        }
+
+        .content-item-body {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem;
+            gap: 1.25rem;
+            min-height: 140px;
+        }
+
+        .content-item-main {
+            display: flex;
+            align-items: flex-start;
+            gap: 1.25rem;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .content-item-actions {
+            flex-shrink: 0;
+            margin-left: auto;
+        }
+
+        .item-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .item-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .item-icon::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%);
+            pointer-events: none;
+        }
+
+        .video-icon {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+
+        .document-icon {
+            background: linear-gradient(135deg, #4dabf7, #339af0);
+            color: white;
+        }
+
+        .assignment-icon {
+            background: linear-gradient(135deg, #ffd43b, #fab005);
+            color: white;
+        }
+
+        .item-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .item-title {
+            font-weight: 700;
+            color: var(--dark-color);
+            margin: 0 0 0.75rem 0;
+            font-size: 1.2rem;
+            line-height: 1.3;
+            letter-spacing: -0.01em;
+        }
+
+        .item-description {
+            color: #6c757d;
+            margin: 0 0 1rem 0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .item-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .item-badges .badge {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.75rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            text-transform: capitalize;
+            border: 1px solid transparent;
+        }
+
+        .item-badges .badge.bg-primary {
+            background: linear-gradient(135deg, #0d6efd, #0056b3) !important;
+            border-color: #0056b3;
+        }
+
+        .item-badges .badge.bg-success {
+            background: linear-gradient(135deg, #198754, #146c43) !important;
+            border-color: #146c43;
+        }
+
+        .item-badges .badge.bg-warning {
+            background: linear-gradient(135deg, #ffc107, #d39e00) !important;
+            border-color: #d39e00;
+            color: #000;
+        }
+
+        .item-badges .badge.bg-info {
+            background: linear-gradient(135deg, #0dcaf0, #0aa2c0) !important;
+            border-color: #0aa2c0;
+        }
+
+        .item-badges .badge.bg-secondary {
+            background: linear-gradient(135deg, #6c757d, #5a6169) !important;
+            border-color: #5a6169;
+        }
+
+        .mark-complete-btn {
+            padding: 0.65rem 1.25rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 140px;
+            justify-content: center;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
+            transition: all 0.25s ease;
+            border: 2px solid transparent;
+            text-transform: none;
+            letter-spacing: 0.02em;
+        }
+
+        .mark-complete-btn.btn-success {
+            background: linear-gradient(135deg, #198754, #146c43);
+            border-color: #146c43;
+        }
+
+        .mark-complete-btn.btn-outline-success {
+            background: white;
+            color: #198754;
+            border-color: #198754;
+        }
+
+        .mark-complete-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.18);
+        }
+
+        .mark-complete-btn:disabled {
+            opacity: 0.6;
+            transform: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+            cursor: not-allowed;
+        }
+
+        /* Video Player Styles */
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            background: #000;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .video-player {
+            width: 100%;
+            height: 450px;
+        }
+
+        /* Assignment Styles */
+        .assignment-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .assignment-header {
+            background: rgb(1, 25, 78);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .assignment-actions {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e9ecef;
+        }
+
+        /* Document Viewer Styles */
+        .document-container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .document-viewer {
+            width: 100%;
+            min-height: 600px;
+            border: 1px solid #e9ecef;
+            border-radius: 0.5rem;
+        }
+
+        .pdf-viewer-container {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid #dee2e6;
+        }
+
+        .file-preview {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .content-grid {
+            display: grid;
+            gap: 1.5rem;
+            padding: 0.5rem;
+        }
+
+        .courses-grid {
+            display: grid;
+            gap: 1.5rem;
+            padding: 0.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .content-grid, .courses-grid {
+                grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .content-grid, .courses-grid {
+                grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            }
+        }
+
+        @media (max-width: 767px) {
+            .content-grid, .courses-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                padding: 0.25rem;
+            }
+
+            .content-item-body {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1.25rem;
+                padding: 1.25rem;
+                min-height: auto;
+            }
+
+            .content-item-main {
+                flex-direction: row;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .content-item-actions {
+                align-self: stretch;
+                margin-left: 0;
+            }
+
+            .mark-complete-btn {
+                width: 100%;
+                min-width: auto;
+                padding: 0.75rem 1rem;
+                font-size: 0.95rem;
+            }
+
+            .item-icon {
+                width: 44px;
+                height: 44px;
+                font-size: 1.3rem;
+            }
+
+            .item-title {
+                font-size: 1.1rem;
+            }
+
+            .item-description {
+                font-size: 0.9rem;
+            }
+
+            .item-badges .badge {
+                font-size: 0.75rem;
+                padding: 0.3rem 0.6rem;
+            }
+        }
+
+        /* Loading and Empty States */
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 300px;
+            color: var(--secondary-color);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--secondary-color);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 1024px) {
+            .course-layout {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .modules-panel {
+                max-height: 300px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .content-wrapper {
+                margin-left: 0;
+            }
+
+            .modern-sidebar {
+                transform: translateX(-100%);
+            }
+
+            .modern-sidebar.show {
+                transform: translateX(0);
+            }
+
+            .sidebar-close {
+                display: block;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .course-header {
+                padding: 1.5rem;
+            }
+
+            .course-title {
+                font-size: 1.5rem;
+            }
+
+            .course-layout {
+                height: auto;
+            }
+
+            .content-viewer {
+                padding: 1rem;
+            }
+        }
+
+        /* Sidebar Overlay */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1040;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Custom Dropdown Styles */
+        .dropdown-menu {
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border: none;
+        }
+
+        .notification-dropdown {
+            width: 300px;
+        }
+
+        .notification-dropdown .dropdown-item {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .notification-dropdown .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+<?php $__env->stopPush(); ?>
+
+    <!-- Course Layout -->
+    <div class="course-layout">
+        <!-- Modules Panel -->
+        <div class="modules-panel">
+            <div class="modules-header">
+                <i class="bi bi-list-nested me-2"></i>
+                Course Modules
+            </div>
+            <div class="modules-list">
+                <?php if(!empty($course['modules'])): ?>
+                    <?php $__currentLoopData = $course['modules']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $mod): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <div class="module-item">
+                            <button class="module-button" onclick="toggleModule('<?php echo e($mod['id']); ?>')">
+                                <i class="bi bi-folder me-2"></i>
+                                <?php echo e($mod['name']); ?>
+
+                            </button>
+                        </div>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                <?php else: ?>
+                    <div class="empty-state">
+                        <i class="bi bi-folder-x"></i>
+                        <p>No modules available</p>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Content Panel -->
+        <div class="content-panel">
+            <div class="content-header">
+                <div class="content-tabs">
+                    <button class="tab-button active" id="coursesTab" onclick="showCourses()">
+                        <i class="bi bi-book me-1"></i>
+                        Courses
+                    </button>
+                    <button class="tab-button" id="contentTab" onclick="showContent()" style="display: none;">
+                        <i class="bi bi-file-earmark me-1"></i>
+                        Content
+                    </button>
+                </div>
+            </div>
+            <div class="content-viewer" id="content-viewer">
+                <!-- Default Welcome Message -->
+                <div class="empty-state" id="welcome-message">
+                    <i class="bi bi-mortarboard"></i>
+                    <h3>Welcome to Your Course</h3>
+                    <p>Select a module from the left panel to view available courses and content.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Modal -->
+    <div class="modal fade" id="videoModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="videoModalTitle">Video Content</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="video-container">
+                        <video class="video-player" id="videoPlayer" controls preload="metadata">
+                            <source id="videoSource" src="" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div id="videoLoadingState" class="video-loading" style="display: none;">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading video...</span>
+                                </div>
+                                <p class="mt-2">Loading video content...</p>
+                            </div>
+                        </div>
+                        <div id="videoErrorState" class="video-loading" style="display: none;">
+                            <div class="text-center">
+                                <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                                <h5 class="mt-3">Video Not Available</h5>
+                                <p class="text-muted">The video content could not be loaded. Please check if the video file is accessible.</p>
+                                <button class="btn btn-outline-primary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment Submission Modal -->
+    <div class="modal fade" id="submissionModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Submit Your Work</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="submissionForm" enctype="multipart/form-data">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" id="submissionContentId" name="content_id">
+                        <div class="mb-3">
+                            <label for="submissionFiles" class="form-label">Upload Files</label>
+                            <input type="file" class="form-control" id="submissionFiles" name="files[]" multiple required>
+                            <small class="form-text text-muted">Accepted formats: PDF, DOC, DOCX, ZIP, Images, Videos (Max: 100MB each)</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="submissionNotes" class="form-label">Notes (Optional)</label>
+                            <textarea class="form-control" id="submissionNotes" name="notes" rows="3" placeholder="Add any additional notes about your submission..."></textarea>
+                        </div>
+                    </form>
+                    <div id="previousSubmissions" class="mb-3"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="submitWorkBtn">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<?php $__env->stopSection(); ?>
+
+<?php $__env->startPush('scripts'); ?>
+    <!-- Course-specific JavaScript -->
+    <script>
+        // Global variables
+        let currentModule = null;
+        let currentCourse = null;
+        let currentContent = null;
+        let currentView = 'courses'; // 'courses' or 'content'
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Student course page initialized');
+            setupEventListeners();
+        });
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Sidebar toggle for mobile
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('modernSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const sidebarClose = document.getElementById('sidebarClose');
+
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebar.classList.add('show');
+                    overlay.classList.add('show');
+                });
+            }
+
+            if (sidebarClose) {
+                sidebarClose.addEventListener('click', closeSidebar);
+            }
+
+            if (overlay) {
+                overlay.addEventListener('click', closeSidebar);
+            }
+
+            // Close sidebar on mobile when clicking outside
+            function closeSidebar() {
+                sidebar.classList.remove('show');
+                overlay.classList.remove('show');
+            }
+
+            // Close sidebar when clicking on a link (mobile)
+            const sidebarLinks = document.querySelectorAll('.sidebar-nav .nav-link');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        closeSidebar();
+                    }
+                });
+            });
+        }
+
+        // Toggle module and load courses
+        function toggleModule(moduleId) {
+            console.log('Toggling module:', moduleId);
+            currentModule = moduleId;
+            
+            // Update active module button
+            const moduleButtons = document.querySelectorAll('.module-button');
+            moduleButtons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Show courses tab and hide content tab
+            showCourses();
+            document.getElementById('contentTab').style.display = 'none';
+
+            // Load courses for this module
+            loadCourses(moduleId);
+        }
+
+        // Load courses for a module
+        function loadCourses(moduleId) {
+            const viewer = document.getElementById('content-viewer');
+            
+            // Show loading spinner
+            viewer.innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading courses...</span>
+                    </div>
+                </div>
+            `;
+
+            // AJAX request to load courses
+            fetch(`/student/module/${moduleId}/courses`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Courses loaded:', data);
+                displayCourses(data.courses || []);
+            })
+            .catch(error => {
+                console.error('Error loading courses:', error);
+                viewer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-exclamation-triangle text-warning"></i>
+                        <h4>Error Loading Courses</h4>
+                        <p>Unable to load courses. Please try again later.</p>
+                        <button class="btn btn-primary" onclick="loadCourses('${moduleId}')">Retry</button>
+                    </div>
+                `;
+            });
+        }
+
+        // Display courses in the viewer
+        function displayCourses(courses) {
+            const viewer = document.getElementById('content-viewer');
+            
+            if (!courses || courses.length === 0) {
+                viewer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-book"></i>
+                        <h4>No Courses Available</h4>
+                        <p>There are no courses available for this module yet.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="courses-grid">';
+            courses.forEach(course => {
+                const icon = getContentIcon(course.type || course.course_type || 'course');
+                const isCompleted = window.completedCourseIds && window.completedCourseIds.includes(parseInt(course.course_id));
+                // Check if all content items for this course are completed
+                let allContentCompleted = true;
+                if (course.content_items && course.content_items.length > 0) {
+                    allContentCompleted = course.content_items.every(item => window.completedContentIds.includes(parseInt(item.id)));
+                }
+                html += `
+                    <div class="course-item" onclick="selectCourse('${course.course_id}')">
+                        <div class="content-item-body">
+                            <div class="content-item-main">
+                                <div class="item-icon ${icon.class}">
+                                    <i class="${icon.icon}"></i>
+                                </div>
+                                <div class="item-details">
+                                    <h5 class="item-title">${course.course_name || course.name || 'Untitled Course'}</h5>
+                                    ${(course.course_description || course.description) ? `<p class="item-description">${course.course_description || course.description}</p>` : ''}
+                                    <div class="item-badges">
+                                        <span class="badge bg-primary">${course.type || course.course_type || 'Course'}</span>
+                                        ${course.duration ? `<span class="badge bg-secondary">${course.duration}</span>` : ''}
+                                        ${course.content_items && course.content_items.length ? `<span class="badge bg-info"><i class="bi bi-collection"></i> ${course.content_items.length} items</span>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="content-item-actions">
+                                <button class="btn ${isCompleted ? 'btn-outline-success' : 'btn-success'} btn-sm mark-complete-btn" onclick="event.stopPropagation(); toggleComplete('course', '${course.course_id}', this)" ${allContentCompleted ? '' : 'disabled title=\'Complete all course content first\''}>
+                                    <i class="bi ${isCompleted ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
+                                    ${isCompleted ? 'Completed' : 'Mark Complete'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            viewer.innerHTML = html;
+        }
+
+        // Select a course and load its content
+        function selectCourse(courseId) {
+            console.log('Selecting course:', courseId);
+            currentCourse = courseId;
+            
+            // Update active course
+            const courseItems = document.querySelectorAll('.course-item');
+            courseItems.forEach(item => item.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            // Show content tab
+            document.getElementById('contentTab').style.display = 'block';
+            showContent();
+
+            // Load course content
+            loadCourseContent(currentModule, courseId);
+        }
+
+        // Load content for a course
+        function loadCourseContent(moduleId, courseId) {
+            const viewer = document.getElementById('content-viewer');
+            
+            // Show loading spinner
+            viewer.innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading content...</span>
+                    </div>
+                </div>
+            `;
+
+            // AJAX request to load course content
+            fetch(`/student/module/${moduleId}/course/${courseId}/content-items`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Course content loaded:', data);
+                console.log('Content items:', data.content_items || data.content || []);
+                displayCourseContent(data.content_items || data.content || []);
+            })
+            .catch(error => {
+                console.error('Error loading course content:', error);
+                viewer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-exclamation-triangle text-warning"></i>
+                        <h4>Error Loading Content</h4>
+                        <p>Unable to load course content. Please try again later.</p>
+                        <button class="btn btn-primary" onclick="loadCourseContent('${moduleId}', '${courseId}')">Retry</button>
+                    </div>
+                `;
+            });
+        }
+
+        // Display course content
+        function displayCourseContent(content) {
+            console.log('Displaying course content:', content);
+            const viewer = document.getElementById('content-viewer');
+            
+            if (!content || content.length === 0) {
+                viewer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-file-earmark"></i>
+                        <h4>No Content Available</h4>
+                        <p>There is no content available for this course yet.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="content-grid">';
+            content.forEach(item => {
+                console.log('Processing content item:', item);
+                const icon = getContentIcon(item.content_type || item.type);
+                const hasAttachment = item.attachment_path && item.attachment_path.trim() !== '';
+                console.log('Item has attachment:', hasAttachment, 'Path:', item.attachment_path);
+
+                // Check if this content is already completed
+                const isContentCompleted = window.completedContentIds && window.completedContentIds.includes(parseInt(item.id));
+                console.log('Content completion status:', item.id, isContentCompleted);
+
+                // Determine if it's an assignment or requires submission
+                const isAssignment = item.content_type === 'assignment' || item.enable_submission === true;
+                const isQuiz = item.content_type === 'quiz';
+
+                let itemHtml = `
+                    <div class="content-item" data-content-id="${item.id}" onclick="openContent('${item.id}', '${item.content_type || item.type}')">
+                        <div class="content-item-body">
+                            <div class="content-item-main">
+                                <div class="item-icon ${icon.class}">
+                                    <i class="${icon.icon}"></i>
+                                </div>
+                                <div class="item-details">
+                                    <h5 class="item-title">${item.content_title || item.title || 'Untitled Content'}</h5>
+                                    ${(item.content_description || item.description) ? `<p class="item-description">${item.content_description || item.description}</p>` : ''}
+                                    <div class="item-badges">
+                                        <span class="badge bg-primary">${item.content_type || item.type || 'content'}</span>
+                                        ${hasAttachment ? '<span class="badge bg-success"><i class="bi bi-paperclip"></i> Attachment</span>' : ''}
+                                        ${isAssignment ? '<span class="badge bg-warning"><i class="bi bi-pencil"></i> Assignment</span>' : ''}
+                                        ${isQuiz ? '<span class="badge bg-info"><i class="bi bi-question-circle"></i> Quiz</span>' : ''}
+                                        ${item.duration ? `<span class="badge bg-secondary">${item.duration}</span>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="content-item-actions">
+                                <button class="btn ${isContentCompleted ? 'btn-outline-success' : 'btn-success'} btn-sm mark-complete-btn" onclick="event.stopPropagation(); markComplete('content', '${item.id}', this)" ${isContentCompleted ? 'disabled' : ''}>
+                                    <i class="bi ${isContentCompleted ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
+                                    ${isContentCompleted ? 'Completed' : 'Mark Complete'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                if (isAssignment || isQuiz) {
+                    itemHtml += `
+
+                        </div>
+                    `;
+                }
+
+                html += itemHtml;
+            });
+            html += '</div>';
+            
+            viewer.innerHTML = html;
+        }
+
+        // Get appropriate icon for content type
+        function getContentIcon(type) {
+            switch (type?.toLowerCase()) {
+                case 'video':
+                    return { icon: 'bi-play-circle-fill', class: 'video-icon' };
+                case 'lesson':
+                    return { icon: 'bi-book', class: 'document-icon' };
+                case 'assignment':
+                    return { icon: 'bi-pencil-square', class: 'assignment-icon' };
+                case 'quiz':
+                    return { icon: 'bi-question-circle', class: 'assignment-icon' };
+                case 'test':
+                    return { icon: 'bi-clipboard-check', class: 'assignment-icon' };
+                case 'link':
+                    return { icon: 'bi-link-45deg', class: 'document-icon' };
+                case 'pdf':
+                    return { icon: 'bi-file-earmark-text', class: 'document-icon' };
+                default:
+                    return { icon: 'bi-book', class: 'document-icon' };
+            }
+        }
+
+        // Open content item
+        function openContent(contentId, contentType) {
+            console.log('Opening content:', contentId, 'Type:', contentType);
+            
+            // Add error tracking
+            try {
+                // For debugging
+                const url = '/student/content/' + contentId + '/view';
+                console.log('Attempting to navigate to:', url);
+                
+                // Redirect to individual content page
+                window.location.href = url;
+            } catch (e) {
+                console.error('Error in openContent:', e);
+                alert('Error redirecting: ' + e.message);
+            }
+        }
+
+        // Assignment content viewer (not modal)
+        function openAssignmentViewer(contentId) {
+            const viewer = document.getElementById('content-viewer');
+            // Show loading spinner
+            viewer.innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading assignment...</span>
+                    </div>
+                </div>
+            `;
+            fetch(`/student/content/${contentId}`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.content) {
+                    let content = data.content;
+                    let html = `<div class="assignment-container">
+                <div class="assignment-header mb-3">
+                    <h4>${content.content_title || 'Assignment'}</h4>
+                    ${content.content_description ? `<p class="mb-2">${content.content_description}</p>` : ''}
+                    ${content.due_date ? `<div><strong>Due:</strong> <span id='assignmentDueDateDisplay'>${content.due_date}</span></div>` : ''}
+                </div>`;
+                    // Show attachments if any
+                    if (content.attachment_path) {
+                        let files = [];
+                        try { files = JSON.parse(content.attachment_path); } catch (e) { files = [content.attachment_path]; }
+                        if (Array.isArray(files)) {
+                            html += '<div class="mb-3"><strong>Attachments:</strong><ul>';
+                            files.forEach(f => {
+                                const isPdf = f.toLowerCase().endsWith('.pdf');
+                                html += `<li><a href="/storage/${f}" target="_blank">${f.split('/').pop()}</a>`;
+                                if (isPdf) {
+                                    html += `<div class="pdf-viewer-container mt-2"><iframe src="/storage/${f}#toolbar=1&navpanes=1&scrollbar=1" class="document-viewer" frameborder="0" style="width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 0.5rem;"></iframe></div>`;
+                                }
+                                html += `</li>`;
+                            });
+                            html += '</ul></div>';
+                        }
+                    }
+                    // Assignment instructions
+                    if (content.content_data && content.content_data.assignment_instructions) {
+                        html += `<div class="mb-3"><strong>Instructions:</strong><div>${content.content_data.assignment_instructions}</div></div>`;
+                    }
+                    // Deadline enforcement logic
+                    let deadlinePassed = false;
+                    let dueDateObj = null;
+                    if (content.due_date) {
+                        dueDateObj = new Date(content.due_date);
+                        const now = new Date();
+                        if (now > dueDateObj) {
+                            deadlinePassed = true;
+                        }
+                    }
+                    // Fetch and display previous submissions
+                    fetch(`/student/content/${content.id}/submissions`, {
+                        method: 'GET',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Submissions response:', data.submissions); // DEBUG LOG
+                        let hasSubmission = false;
+                        let latest = null;
+                        let isDraft = false;
+                        // Always show the form if a draft exists in backend
+                        if (data.success && data.submissions && data.submissions.length > 0) {
+                            hasSubmission = true;
+                            const draftSubmission = data.submissions.find(s => s.status === 'draft');
+                            isDraft = !!draftSubmission;
+                            latest = draftSubmission || data.submissions[0];
+                            showSubmissionForm = isDraft;
+                            console.log('Draft found:', draftSubmission, 'isDraft:', isDraft, 'showSubmissionForm:', showSubmissionForm, 'latest:', latest); // DEBUG LOG
+                        } else {
+                            hasSubmission = false;
+                            latest = null;
+                            isDraft = false;
+                            showSubmissionForm = !!window.assignmentFormState[contentId];
+                            console.log('No submissions or not success. showSubmissionForm:', showSubmissionForm); // DEBUG LOG
+                        }
+                        // Use global state for form visibility
+                        html += `<div id="assignmentSubmissionBlock">`;
+                        // If no submission and not showing form, show Add Submission button
+                        if (!hasSubmission && !showSubmissionForm) {
+                            html += `<button class="btn btn-primary" id="addSubmissionBtn">Add submission</button>`;
+                        } else if (isDraft || showSubmissionForm) {
+                            let buttons = '<button type="button" class="btn btn-secondary" id="saveDraftBtn">Save changes</button>';
+                            if (isDraft) {
+                                buttons += '<button type="button" class="btn btn-primary" id="submitAssignmentBtn">Submit assignment</button>';
+                                buttons += '<button type="button" class="btn btn-danger" id="removeDraftBtn">Remove submission</button>';
+                            }
+                            buttons += '<button type="button" class="btn btn-outline-secondary" id="cancelSubmissionBtn">Cancel</button>';
+                            html += `<div class="assignment-actions">
+        <form id="assignmentDraftForm" enctype="multipart/form-data">
+            <input type="hidden" name="content_id" value="${content.id}">
+            <input type="hidden" name="module_id" value="${parseInt(content.module_id || currentModule)}">
+            <div class="mb-3">
+                <label for="assignmentFiles" class="form-label">Upload Files</label>
+                <input type="file" class="form-control" id="assignmentFiles" name="files[]" multiple ${isDraft ? '' : 'required'}>
+                <small class="form-text text-muted">Accepted formats: PDF, DOC, DOCX, ZIP, Images, Videos (Max: 100MB each)</small>
+            </div>
+            <div class="mb-3">
+                <label for="assignmentNotes" class="form-label">Notes (Optional)</label>
+                <textarea class="form-control" id="assignmentNotes" name="notes" rows="3" placeholder="Add any additional notes about your submission...">${isDraft && latest.comments ? latest.comments : ''}</textarea>
+            </div>
+            <div class="d-flex gap-2">${buttons}</div>
+        </form>
+        <div id="assignmentSubmissionStatus" class="mt-3"></div>
+        </div>`;
+                        } else if (hasSubmission && !isDraft) {
+                            // If submission exists and is not a draft, show status and disable further submissions
+                            let statusClass = 'bg-secondary';
+                            let statusText = 'Submitted';
+                            if (latest.status === 'graded') {
+                                statusClass = 'bg-success';
+                                statusText = 'Graded';
+                            } else if (latest.status === 'reviewed') {
+                                statusClass = 'bg-info';
+                                statusText = 'Reviewed';
+                            }
+                            html += `<div class="alert alert-light border-start border-4 ${statusClass} d-flex align-items-center gap-2">
+                                <i class="bi bi-check-circle me-2"></i>
+                                <strong>Submission Status:</strong> <span class="badge ${statusClass} ms-2">${statusText}</span>
+                                <span class="ms-3">You have submitted this assignment. You can no longer edit or resubmit.</span>
+                            </div>`;
+                        }
+                        html += `<div id="previousAssignmentSubmissions" class="mt-3"></div>`;
+
+                        viewer.innerHTML = html;
+
+const addSubmissionBtn = document.getElementById('addSubmissionBtn');
+if (addSubmissionBtn) {
+    addSubmissionBtn.onclick = function() {
+        window.assignmentFormState[contentId] = true;
+        openAssignmentViewer(contentId);
+    };
+}
+                        // Fetch and display submission history
+                        if (data.success && data.submissions && data.submissions.length > 0) {
+                            let html2 = '<div class="mt-4"><h5><i class="bi bi-clock-history me-2"></i>Submission History</h5>';
+                            data.submissions.forEach(sub => {
+                                let files = sub.files || [];
+                                if (typeof files === 'string') { try { files = JSON.parse(files); } catch (e) { files = []; } }
+                                
+                                // Determine status badge class
+                                let statusClass = 'bg-secondary';
+                                let statusText = 'Submitted';
+                                if (sub.status === 'graded') {
+                                    statusClass = 'bg-success';
+                                    statusText = 'Graded';
+                                } else if (sub.status === 'reviewed') {
+                                    statusClass = 'bg-info';
+                                    statusText = 'Reviewed';
+                                }
+                                
+                                html2 += `<div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="card-title mb-1">
+                                                <i class="bi bi-file-earmark-text me-2"></i>
+                                                Submission ${new Date(sub.submitted_at).toLocaleDateString()}
+                                            </h6>
+                                            <span class="badge ${statusClass}">${statusText}</span>
+                                        </div>
+                                        <p class="text-muted small mb-2">
+                                            <i class="bi bi-calendar me-1"></i>
+                                            Submitted: ${new Date(sub.submitted_at).toLocaleString()}
+                                        </p>`;
+                                
+                                // Show grade if available
+                                if (sub.grade !== null && sub.grade !== undefined && sub.status === 'graded') {
+                                    let gradeClass = 'text-success';
+                                    if (sub.grade < 70) gradeClass = 'text-danger';
+                                    else if (sub.grade < 80) gradeClass = 'text-warning';
+                                    
+                                    html2 += `<div class="alert alert-light border-start border-4 border-primary mb-2">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="bi bi-award me-2 text-primary"></i>
+                                            <strong>Grade: <span class="${gradeClass}">${sub.grade}/100</span></strong>
+                                        </div>`;
+                                    
+                                    // Show feedback if available
+                                    if (sub.feedback) {
+                                        html2 += `<div class="mt-2">
+                                            <strong><i class="bi bi-chat-text me-2"></i>Instructor Feedback:</strong>
+                                            <div class="bg-white rounded p-2 mt-1 border">${sub.feedback}</div>
+                                        </div>`;
+                                    }
+                                    html2 += `</div>`;
+                                } else if (sub.status === 'reviewed' && sub.feedback) {
+                                    // Show feedback for reviewed submissions without grade
+                                    html2 += `<div class="alert alert-info border-start border-4 border-info mb-2">
+                                        <strong><i class="bi bi-chat-text me-2"></i>Instructor Feedback:</strong>
+                                        <div class="bg-white rounded p-2 mt-1 border">${sub.feedback}</div>
+                                        <small class="text-muted mt-1 d-block">This submission needs revision. Please review the feedback and resubmit.</small>
+                                    </div>`;
+                                }
+                                
+                                // Show files
+                                if (files.length > 0) {
+                                    html2 += `<div class="mb-2">
+                                        <strong><i class="bi bi-paperclip me-2"></i>Files:</strong>
+                                        <div class="mt-1">`;
+                                    files.forEach(f => {
+                                        const fileName = f.original_filename || (typeof f === 'string' ? f.split('/').pop() : 'File');
+                                        const filePath = f.file_path || f.path || f;
+                                        html2 += `<a href="/storage/${filePath}" target="_blank" class="btn btn-outline-primary btn-sm me-2 mb-1">
+                                            <i class="bi bi-download me-1"></i>${fileName}
+                                        </a>`;
+                                    });
+                                    html2 += `</div></div>`;
+                                }
+                                
+                                // Show submission comments if any
+                                if (sub.comments) {
+                                    html2 += `<div class="mb-2">
+                                        <strong><i class="bi bi-sticky me-2"></i>Your Notes:</strong>
+                                        <div class="text-muted">${sub.comments}</div>
+                                    </div>`;
+                                }
+                                
+                                html2 += `</div></div>`;
+                            });
+                            html2 += '</div>';
+                            document.getElementById('previousAssignmentSubmissions').innerHTML = html2;
+                        }
+                        // Add form handler if form exists
+                        const formElem = document.getElementById('assignmentDraftForm');
+                        if (formElem) {
+                            // Ensure hidden input is set
+                            let hiddenInput = formElem.querySelector('input[name="content_id"]');
+                            if (!hiddenInput) {
+                                hiddenInput = document.createElement('input');
+                                hiddenInput.type = 'hidden';
+                                hiddenInput.name = 'content_id';
+                                formElem.appendChild(hiddenInput);
+                            }
+                            hiddenInput.value = content.id || contentId;
+                            // Ensure module_id is set as integer
+                            let moduleInput = formElem.querySelector('input[name="module_id"]');
+                            if (!moduleInput) {
+                                moduleInput = document.createElement('input');
+                                moduleInput.type = 'hidden';
+                                moduleInput.name = 'module_id';
+                                formElem.appendChild(moduleInput);
+                            }
+                            moduleInput.value = parseInt(content.module_id || currentModule);
+                            const saveDraftBtn = document.getElementById('saveDraftBtn');
+                            const submitAssignmentBtn = document.getElementById('submitAssignmentBtn');
+                            const removeDraftBtn = document.getElementById('removeDraftBtn');
+                            const cancelSubmissionBtn = document.getElementById('cancelSubmissionBtn');
+                            const statusDiv = document.getElementById('assignmentSubmissionStatus');
+                            if (saveDraftBtn) {
+                                saveDraftBtn.onclick = function() {
+                                    const formData = new FormData(formElem);
+                                    const contentIdValue = formElem.querySelector('input[name="content_id"]').value;
+                                    const moduleIdValue = parseInt(formElem.querySelector('input[name="module_id"]').value || currentModule);
+                                    formData.set('module_id', moduleIdValue);
+                                    formData.set('content_id', contentIdValue);
+                                    console.log('DEBUG: content_id from form before save draft:', contentIdValue, 'module_id:', moduleIdValue);
+                                    statusDiv.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving draft...';
+                                    fetch('/student/assignment/save-draft', {
+                                        method: 'POST',
+                                        headers: {
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                        },
+                                        credentials: 'include',
+                                        body: formData
+                                    })
+                                    .then(r => r.json())
+                                    .then(data => {
+                                        statusDiv.innerHTML = data.success ? '<span class="text-success">Draft saved!</span>' : `<span class="text-danger">${data.message}</span>`;
+                                        if (data.success) {
+                                            // Clear assignmentFormState so backend state is always trusted
+                                            if (window.assignmentFormState) window.assignmentFormState[contentIdValue] = false;
+                                            setTimeout(() => openAssignmentViewer(contentIdValue), 500); // Re-render to show draft state
+                                        }
+                                    })
+                                    .catch(err => {
+                                        statusDiv.innerHTML = '<span class="text-danger">Error saving draft.</span>';    
+                                    });
+                                };
+                            }
+                            if (submitAssignmentBtn) {
+                                submitAssignmentBtn.onclick = function() {
+                                    const formData = new FormData(formElem);
+                                    const contentIdValue = formElem.querySelector('input[name="content_id"]').value;
+                                    const moduleIdValue = parseInt(formElem.querySelector('input[name="module_id"]').value || currentModule);
+                                    formData.set('module_id', moduleIdValue);
+                                    formData.set('content_id', contentIdValue);
+                                    console.log('DEBUG: content_id from form before submit:', contentIdValue, 'module_id:', moduleIdValue);
+                                    statusDiv.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+                                    fetch('/student/assignment/submit', {
+                                        method: 'POST',
+                                        headers: {
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                        },
+                                        body: formData
+                                    })
+                                    .then(r => r.json())
+                                    .then(data => {
+                                        statusDiv.innerHTML = data.success ? '<span class="text-success">Assignment submitted!</span>' : `<span class="text-danger">${data.message}</span>`;
+                                        if (data.success) setTimeout(() => openAssignmentViewer(contentIdValue), 1000);
+                                    });
+                                };
+                            }
+                            if (removeDraftBtn) {
+                                removeDraftBtn.onclick = function() {
+                                    if (!confirm('Are you sure you want to remove this draft?')) return;
+                                    statusDiv.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Removing...';
+                                    fetch('/student/assignment/remove-draft', {
+                                        method: 'POST',
+                                        headers: {
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({ module_id: content.module_id })
+                                    })
+                                    .then(r => r.json())
+                                    .then(data => {
+                                        statusDiv.innerHTML = data.success ? '<span class="text-success">Draft removed!</span>' : `<span class="text-danger">${data.message}</span>`;
+                                        if (data.success) setTimeout(() => openAssignmentViewer(contentIdValue), 1000);
+                                    });
+                                };
+                            }
+                            if (cancelSubmissionBtn) {
+                                cancelSubmissionBtn.onclick = function() {
+                                    // Hide the form and show Add Submission button again
+                                    window.assignmentFormState[contentIdValue] = false;
+                                    openAssignmentViewer(contentIdValue);
+                                };
+                            }
+                        }
+                    });
+                } else {
+                    viewer.innerHTML = `<div class="empty-state"><i class="bi bi-exclamation-triangle text-warning"></i><h4>Assignment Not Available</h4><p>Unable to load assignment details.</p></div>`;
+                }
+            });
+        }
+
+        // Open video content
+        function openVideoContent(contentId) {
+            console.log('Opening video content with ID:', contentId);
+            // Load content details first
+            fetch(`/student/content/${contentId}`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Video content data:', data);
+                if (data.content && (data.content.attachment_path || data.content.content_url)) {
+                    document.getElementById('videoModalTitle').textContent = data.content.content_title || 'Video Content';
+                    
+                    // Determine video source with robust validation
+                    let videoSrc = '';
+                    if (data.content.content_url && data.content.content_url.trim() !== '') {
+                        videoSrc = data.content.content_url;
+                        console.log('Using content_url:', videoSrc);
+                    } else if (data.content.attachment_path && data.content.attachment_path.trim() !== '' && data.content.attachment_path !== '[') {
+                        // Validate attachment_path is not malformed
+                        const cleanPath = data.content.attachment_path.replace(/[\[\]]/g, '').trim();
+                        if (cleanPath && cleanPath.length > 0) {
+                            videoSrc = storageUrl + '/' + cleanPath;
+                            console.log('Using attachment_path:', videoSrc);
+                        } else {
+                            console.warn('Invalid attachment_path:', data.content.attachment_path);
+                        }
+                    }
+                    
+                    // Set video source with validation
+                    const videoSource = document.getElementById('videoSource');
+                    const videoPlayer = document.getElementById('videoPlayer');
+                    const videoLoadingState = document.getElementById('videoLoadingState');
+                    const videoErrorState = document.getElementById('videoErrorState');
+                    
+                    // Validate video source before setting
+                    if (!videoSrc || videoSrc.trim() === '' || videoSrc.includes('storage/[')) {
+                        console.error('Invalid video source:', videoSrc);
+                        videoPlayer.style.display = 'none';
+                        videoLoadingState.style.display = 'none';
+                        videoErrorState.style.display = 'flex';
+                        const videoModal = new bootstrap.Modal(document.getElementById('videoModal'));
+                        videoModal.show();
+                        return;
+                    }
+                    
+                    // Show loading state
+                    videoPlayer.style.display = 'none';
+                    videoLoadingState.style.display = 'flex';
+                    videoErrorState.style.display = 'none';
+                    
+                    videoSource.src = videoSrc;
+                    videoSource.type = 'video/mp4'; // Default type
+                    
+                    // Try to determine video type from URL
+                    if (videoSrc.includes('.webm')) {
+                        videoSource.type = 'video/webm';
+                    } else if (videoSrc.includes('.ogg')) {
+                        videoSource.type = 'video/ogg';
+                    } else if (videoSrc.includes('.mov')) {
+                        videoSource.type = 'video/quicktime';
+                    }
+                    
+                    console.log('Video source set to:', videoSrc, 'Type:', videoSource.type);
+                    
+                    // Load and show video
+                    videoPlayer.load();
+                    
+                    // Add event handlers for video loading
+                    videoPlayer.onloadstart = function() {
+                        console.log('Video loading started');
+                    };
+                    
+                    videoPlayer.onloadeddata = function() {
+                        console.log('Video loaded successfully');
+                        videoPlayer.style.display = 'block';
+                        videoLoadingState.style.display = 'none';
+                    };
+                    
+                    videoPlayer.oncanplay = function() {
+                        console.log('Video can start playing');
+                        videoPlayer.style.display = 'block';
+                        videoLoadingState.style.display = 'none';
+                    };
+                    
+                    videoPlayer.onerror = function() {
+                        console.error('Video loading error:', videoPlayer.error);
+                        videoPlayer.style.display = 'none';
+                        videoLoadingState.style.display = 'none';
+                        videoErrorState.style.display = 'flex';
+                    };
+                    
+                    // Timeout fallback
+                    setTimeout(() => {
+                        if (videoLoadingState.style.display === 'flex') {
+                            console.log('Video loading timeout, showing error state');
+                            videoPlayer.style.display = 'none';
+                            videoLoadingState.style.display = 'none';
+                            videoErrorState.style.display = 'flex';
+                        }
+                    }, 10000); // 10 second timeout
+                    
+                    const videoModal = new bootstrap.Modal(document.getElementById('videoModal'));
+                    videoModal.show();
+                } else {
+                    console.error('No video content available:', data);
+                    alert('Video content not available. Please check if the video file is uploaded or linked.');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading video:', error);
+                alert('Error loading video content');
+            });
+        }
+
+        // Open document content
+        function openDocumentContent(contentId) {
+            // Load content details and display in viewer
+            fetch(`/student/content/${contentId}`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.content) {
+                    displayDocumentViewer(data.content);
+                } else {
+                    alert('Document not available');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading document:', error);
+                alert('Error loading document');
+            });
+        }
+
+        // Display document viewer
+        function displayDocumentViewer(content) {
+            const viewer = document.getElementById('content-viewer');
+            
+            // Get the file URL - prioritize content_url, then attachment_path
+            let fileUrl = '';
+            if (content.content_url && content.content_url.trim() !== '') {
+                fileUrl = content.content_url;
+            } else if (content.attachment_path && content.attachment_path.trim() !== '') {
+                fileUrl = storageUrl + '/' + content.attachment_path;
+            } else {
+                viewer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-exclamation-triangle text-warning"></i>
+                        <h4>No Document Available</h4>
+                        <p>No document file is attached to this content item.</p>
+                        <button class="btn btn-outline-primary" onclick="showContent()">
+                            <i class="bi bi-arrow-left"></i> Back to Content
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            // Determine if it's a PDF for embedded viewing
+            const isPdf = fileUrl.toLowerCase().includes('.pdf') || content.content_type === 'pdf';
+            const fileName = content.attachment_path ? content.attachment_path.split('/').pop() : 'document';
+            
+            viewer.innerHTML = `
+                <div class="document-container">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h4>${content.content_title || 'Document'}</h4>
+                            <small class="text-muted">${fileName}</small>
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-primary me-2" onclick="showContent()">
+                                <i class="bi bi-arrow-left"></i> Back
+                            </button>
+                            <a href="${fileUrl}" target="_blank" class="btn btn-primary">
+                                <i class="bi bi-download"></i> Download
+                            </a>
+                            <button class="btn btn-success btn-sm ms-2 mark-complete-btn" onclick="markComplete('document', '${content.id}', this)">Mark Complete</button>
+                        </div>
+                    </div>
+                    ${(content.content_description) ? `<p class="text-muted mb-3">${content.content_description}</p>` : ''}
+                    
+                    ${isPdf ? 
+                        `<div class="pdf-viewer-container">
+                            <iframe src="${fileUrl}#toolbar=1&navpanes=1&scrollbar=1" 
+                                    class="document-viewer" 
+                                    frameborder="0"
+                                    style="width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 0.5rem;">
+                                <p>Your browser does not support PDFs. 
+                                   <a href="${fileUrl}" target="_blank">Download the PDF</a> to view it.
+                                </p>
+                            </iframe>
+                        </div>`
+                        :
+                        `<div class="file-preview">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                This file type cannot be previewed in the browser. Please download to view.
+                            </div>
+                            <div class="text-center p-4">
+                                <i class="bi bi-file-earmark text-primary" style="font-size: 4rem;"></i>
+                                <h5 class="mt-3">${fileName}</h5>
+                                <p class="text-muted">Click download to view this file</p>
+                            </div>
+                        </div>`
+                    }
+                </div>
+            `;
+        }
+
+        // Helper function to generate video embed HTML
+        function getVideoEmbedHtml(url) {
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                // Extract YouTube video ID
+                let videoId = '';
+                if (url.includes('youtube.com/watch?v=')) {
+                    videoId = url.split('v=')[1];
+                } else if (url.includes('youtu.be/')) {
+                    videoId = url.split('youtu.be/')[1];
+                }
+                // Remove any additional parameters
+                if (videoId.includes('&')) {
+                    videoId = videoId.split('&')[0];
+                }
+                
+                return `<iframe width="100%" height="400" 
+                        src="https://www.youtube.com/embed/${videoId}" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen>
+                    </iframe>`;
+            } else if (url.includes('vimeo.com')) {
+                // Extract Vimeo video ID
+                const videoId = url.split('vimeo.com/')[1];
+                return `<iframe width="100%" height="400" 
+                        src="https://player.vimeo.com/video/${videoId}" 
+                        frameborder="0" 
+                        allow="autoplay; fullscreen; picture-in-picture" 
+                        allowfullscreen>
+                    </iframe>`;
+            } else if (url.includes('dailymotion.com')) {
+                // Extract Dailymotion video ID
+                const videoId = url.split('dailymotion.com/video/')[1];
+                return `<iframe width="100%" height="400" 
+                        src="https://www.dailymotion.com/embed/video/${videoId}" 
+                        frameborder="0" 
+                        allow="autoplay; fullscreen; picture-in-picture" 
+                        allowfullscreen>
+                    </iframe>`;
+            } else if (url.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i)) {
+                // Direct video file
+                return `<video width="100%" height="400" controls>
+                    <source src="${url}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>`;
+            } else {
+                // Fallback to link
+                return `<div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <a href="${url}" target="_blank" class="alert-link">Click here to view the video content</a>
+                </div>`;
+            }
+        }
+
+        // Open generic content
+        function openGenericContent(contentId) {
+            fetch(`/student/content/${contentId}`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.content) {
+                    const viewer = document.getElementById('content-viewer');
+                    
+                    // Check if content_url is a video URL
+                    const isVideoUrl = data.content.content_url && (
+                        data.content.content_url.includes('youtube.com') || 
+                        data.content.content_url.includes('youtu.be') ||
+                        data.content.content_url.includes('vimeo.com') ||
+                        data.content.content_url.includes('dailymotion.com') ||
+                        data.content.content_url.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i)
+                    );
+                    
+                    // Check if there's an attachment to display
+                    let attachmentSection = '';
+                    if (data.content.attachment_path && data.content.attachment_path.trim() !== '') {
+                        // Check if we have multiple attachments
+                        const hasMultipleFiles = data.content.has_multiple_files || 
+                                               (data.content.attachment_urls && Array.isArray(data.content.attachment_urls) && data.content.attachment_urls.length > 1);
+                        
+                        if (hasMultipleFiles && data.content.attachment_urls && Array.isArray(data.content.attachment_urls)) {
+                            // Multiple files
+                            attachmentSection = `
+                                <div class="mt-4">
+                                    <h5><i class="bi bi-paperclip me-2"></i>Attachments (${data.content.attachment_urls.length})</h5>
+                                    <div class="attachment-list">
+                            `;
+                            
+                            data.content.attachment_urls.forEach((fileUrl, index) => {
+                                const fileName = data.content.file_names && data.content.file_names[index] 
+                                    ? data.content.file_names[index] 
+                                    : fileUrl.split('/').pop();
+                                
+                                const fileExt = fileName.split('.').pop().toLowerCase();
+                                const isPdf = fileExt === 'pdf';
+                                const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt);
+                                const isVideo = ['mp4', 'webm', 'ogg', 'mov'].includes(fileExt);
+                                
+                                let fileIcon = 'bi-file-earmark-text';
+                                let fileType = 'Document';
+                                
+                                if (isPdf) {
+                                    fileIcon = 'bi-file-earmark-pdf';
+                                    fileType = 'PDF Document';
+                                } else if (isImage) {
+                                    fileIcon = 'bi-file-earmark-image';
+                                    fileType = 'Image';
+                                } else if (isVideo) {
+                                    fileIcon = 'bi-file-earmark-play';
+                                    fileType = 'Video';
+                                }
+                                
+                                attachmentSection += `
+                                    <div class="d-flex align-items-center mb-3 attachment-item">
+                                        <div class="me-3">
+                                            <i class="bi ${fileIcon} text-primary" style="font-size: 2rem;"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">${fileName}</h6>
+                                            <small class="text-muted">${fileType}</small>
+                                        </div>
+                                        <div>
+                                `;
+                                
+                                // Add appropriate preview buttons based on file type
+                                if (isPdf) {
+                                    attachmentSection += `
+                                        <button class="btn btn-outline-primary me-2" onclick="viewDocumentInline('${data.content.id}-${index}', '${fileUrl}')">
+                                            <i class="bi bi-eye"></i> View
+                                        </button>
+                                    `;
+                                } else if (isImage) {
+                                    attachmentSection += `
+                                        <button class="btn btn-outline-primary me-2" onclick="viewImageInline('${fileUrl}')">
+                                            <i class="bi bi-eye"></i> View
+                                        </button>
+                                    `;
+                                } else if (isVideo) {
+                                    attachmentSection += `
+                                        <button class="btn btn-outline-primary me-2" onclick="viewVideoInline('${fileUrl}')">
+                                            <i class="bi bi-play"></i> Play
+                                        </button>
+                                    `;
+                                }
+                                
+                                attachmentSection += `
+                                            <a href="${fileUrl}" target="_blank" class="btn btn-primary">
+                                                <i class="bi bi-download"></i> Download
+                                            </a>
+                                        </div>
+                                    </div>
+                                `;
+                                
+                                // Add preview container for PDFs
+                                if (isPdf) {
+                                    attachmentSection += `
+                                        <div id="inline-document-${data.content.id}-${index}" style="display: none;">
+                                            <iframe src="${fileUrl}#toolbar=1&navpanes=1&scrollbar=1" 
+                                                    style="width: 100%; height: 500px; border: 1px solid #ddd; border-radius: 0.5rem;"
+                                                    frameborder="0">
+                                                <p>Your browser does not support PDFs. 
+                                                   <a href="${fileUrl}" target="_blank">Download the PDF</a> to view it.
+                                                </p>
+                                            </iframe>
+                                        </div>
+                                    `;
+                                }
+                            });
+                            
+                            attachmentSection += `
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            // Single file
+                            const fileUrl = data.content.attachment_urls && data.content.attachment_urls[0] 
+                                ? data.content.attachment_urls[0] 
+                                : storageUrl + '/' + data.content.attachment_path;
+                                
+                            const fileName = data.content.file_names && data.content.file_names[0]
+                                ? data.content.file_names[0]
+                                : fileUrl.split('/').pop();
+                                
+                            const fileExt = fileName.split('.').pop().toLowerCase();
+                            const isPdf = fileExt === 'pdf';
+                            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt);
+                            const isVideo = ['mp4', 'webm', 'ogg', 'mov'].includes(fileExt);
+                            
+                            let fileIcon = 'bi-file-earmark-text';
+                            let fileType = 'Document';
+                            
+                            if (isPdf) {
+                                fileIcon = 'bi-file-earmark-pdf';
+                                fileType = 'PDF Document';
+                            } else if (isImage) {
+                                fileIcon = 'bi-file-earmark-image';
+                                fileType = 'Image';
+                            } else if (isVideo) {
+                                fileIcon = 'bi-file-earmark-play';
+                                fileType = 'Video';
+                            }
+                            
+                            attachmentSection = `
+                                <div class="mt-4">
+                                    <h5><i class="bi bi-paperclip me-2"></i>Attachment</h5>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="me-3">
+                                            <i class="bi ${fileIcon} text-primary" style="font-size: 2rem;"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">${fileName}</h6>
+                                            <small class="text-muted">${fileType}</small>
+                                        </div>
+                                        <div>
+                            `;
+                            
+                            // Add appropriate preview buttons based on file type
+                            if (isPdf) {
+                                attachmentSection += `
+                                    <button class="btn btn-outline-primary me-2" onclick="viewDocumentInline('${data.content.id}')">
+                                        <i class="bi bi-eye"></i> View
+                                    </button>
+                                `;
+                            } else if (isImage) {
+                                attachmentSection += `
+                                    <button class="btn btn-outline-primary me-2" onclick="viewImageInline('${fileUrl}')">
+                                        <i class="bi bi-eye"></i> View
+                                    </button>
+                                `;
+                            } else if (isVideo) {
+                                attachmentSection += `
+                                    <button class="btn btn-outline-primary me-2" onclick="viewVideoInline('${fileUrl}')">
+                                        <i class="bi bi-play"></i> Play
+                                    </button>
+                                `;
+                            }
+                            
+                            attachmentSection += `
+                                            <a href="${fileUrl}" target="_blank" class="btn btn-primary">
+                                                <i class="bi bi-download"></i> Download
+                                            </a>
+                                        </div>
+                                    </div>
+                            `;
+                            
+                            // Add preview container for PDFs
+                            if (isPdf) {
+                                attachmentSection += `
+                                    <div id="inline-document-${data.content.id}" style="display: none;">
+                                        <iframe src="${fileUrl}#toolbar=1&navpanes=1&scrollbar=1" 
+                                                style="width: 100%; height: 500px; border: 1px solid #ddd; border-radius: 0.5rem;"
+                                                frameborder="0">
+                                            <p>Your browser does not support PDFs. 
+                                               <a href="${fileUrl}" target="_blank">Download the PDF</a> to view it.
+                                            </p>
+                                        </iframe>
+                                    </div>
+                                `;
+                            }
+                            
+                            attachmentSection += `
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    // Check if there's a content URL to display
+                    let contentUrlSection = '';
+                    if (data.content.content_url && data.content.content_url.trim() !== '') {
+                        if (isVideoUrl) {
+                            contentUrlSection = `
+                                <div class="mt-4">
+                                    <h5><i class="bi bi-play-circle me-2"></i>Video Content</h5>
+                                    <div class="video-embed-container">
+                                        ${getVideoEmbedHtml(data.content.content_url)}
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            contentUrlSection = `
+                                <div class="mt-4">
+                                    <h5><i class="bi bi-link-45deg me-2"></i>Content Link</h5>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="me-3">
+                                            <i class="bi bi-link-45deg text-primary" style="font-size: 2rem;"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">External Content</h6>
+                                            <small class="text-muted">Click to view external content</small>
+                                        </div>
+                                        <div>
+                                            <a href="${data.content.content_url}" target="_blank" class="btn btn-primary">
+                                                <i class="bi bi-box-arrow-up-right"></i> Open Content
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    viewer.innerHTML = `
+                        <div class="content-details">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4>${data.content.content_title || 'Content'}</h4>
+                                <button class="btn btn-outline-primary" onclick="showContent()">
+                                    <i class="bi bi-arrow-left"></i> Back
+                                </button>
+                            </div>
+                            ${data.content.content_description ? `<p class="mb-3">${data.content.content_description}</p>` : ''}
+                            ${data.content.content_text ? `<div class="content-body mb-4">${data.content.content_text}</div>` : ''}
+                            ${contentUrlSection}
+                            ${attachmentSection}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading content:', error);
+                alert('Error loading content');
+            });
+        }
+
+        // Helper function to toggle inline document view
+        function viewDocumentInline(contentId, fileUrl = null) {
+            const inlineDoc = document.getElementById(`inline-document-${contentId}`);
+            if (inlineDoc) {
+                if (inlineDoc.style.display === 'none') {
+                    inlineDoc.style.display = 'block';
+                } else {
+                    inlineDoc.style.display = 'none';
+                }
+            }
+        }
+        
+        // View image in a modal
+        function viewImageInline(imageUrl) {
+            // Create a modal if it doesn't exist
+            let imageModal = document.getElementById('imageViewerModal');
+            if (!imageModal) {
+                imageModal = document.createElement('div');
+                imageModal.id = 'imageViewerModal';
+                imageModal.className = 'modal fade';
+                imageModal.setAttribute('tabindex', '-1');
+                imageModal.setAttribute('role', 'dialog');
+                imageModal.setAttribute('aria-hidden', 'true');
+                
+                imageModal.innerHTML = `
+                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Image Viewer</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center p-0">
+                                <img id="modalImage" src="" class="img-fluid" style="max-height: 80vh;">
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(imageModal);
+            }
+            
+            // Set the image source
+            const modalImage = document.getElementById('modalImage');
+            if (modalImage) {
+                modalImage.src = imageUrl;
+            }
+            
+            // Show the modal
+            const modal = new bootstrap.Modal(imageModal);
+            modal.show();
+        }
+        
+        // View video in a modal
+        function viewVideoInline(videoUrl) {
+            // Create a modal if it doesn't exist
+            let videoModal = document.getElementById('videoViewerModal');
+            if (!videoModal) {
+                videoModal = document.createElement('div');
+                videoModal.id = 'videoViewerModal';
+                videoModal.className = 'modal fade';
+                videoModal.setAttribute('tabindex', '-1');
+                videoModal.setAttribute('role', 'dialog');
+                videoModal.setAttribute('aria-hidden', 'true');
+                
+                videoModal.innerHTML = `
+                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Video Player</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body p-0">
+                                <video id="modalVideo" controls class="w-100" style="max-height: 80vh;">
+                                    <source id="modalVideoSource" src="" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(videoModal);
+            }
+            
+            // Set the video source
+            const modalVideoSource = document.getElementById('modalVideoSource');
+            if (modalVideoSource) {
+                modalVideoSource.src = videoUrl;
+                
+                // Reload the video element
+                const modalVideo = document.getElementById('modalVideo');
+                if (modalVideo) {
+                    modalVideo.load();
+                }
+            }
+            
+            // Show the modal
+            const modal = new bootstrap.Modal(videoModal);
+            modal.show();
+        }
+
+        // Submit assignment
+        function submitAssignment() {
+            const form = document.getElementById('assignmentForm');
+            const formData = new FormData(form);
+            
+            // Show loading state
+            const submitBtn = event.target;
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+
+            fetch('/student/assignment/submit', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Assignment submitted successfully!');
+                    bootstrap.Modal.getInstance(document.getElementById('assignmentModal')).hide();
+                    form.reset();
+                } else {
+                    alert(data.message || 'Error submitting assignment');
+                }
+            })
+            .catch(error => {
+                console.error('Error submitting assignment:', error);
+                alert('Error submitting assignment');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            });
+        }
+
+        // Tab functions
+        function showCourses() {
+            currentView = 'courses';
+            document.getElementById('coursesTab').classList.add('active');
+            document.getElementById('contentTab').classList.remove('active');
+            
+            if (currentModule) {
+                loadCourses(currentModule);
+            } else {
+                document.getElementById('content-viewer').innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-mortarboard"></i>
+                        <h3>Welcome to Your Course</h3>
+                        <p>Select a module from the left panel to view available courses.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function showContent() {
+            currentView = 'content';
+            document.getElementById('contentTab').classList.add('active');
+            document.getElementById('coursesTab').classList.remove('active');
+            
+            if (currentModule && currentCourse) {
+                loadCourseContent(currentModule, currentCourse);
+            } else {
+                document.getElementById('content-viewer').innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-file-earmark"></i>
+                        <h3>No Course Selected</h3>
+                        <p>Please select a course first to view its content.</p>
+                    </div>
+                `;
+            }
+        }
+
+        document.getElementById('submitWorkBtn').addEventListener('click', function() {
+            const form = document.getElementById('submissionForm');
+            const formData = new FormData(form);
+            const submitBtn = this;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+            fetch('/student/assignment/submit', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Submission successful!');
+                    bootstrap.Modal.getInstance(document.getElementById('submissionModal')).hide();
+                    form.reset();
+                } else {
+                    alert(data.message || 'Error submitting your work.');
+                }
+            })
+            .catch(error => {
+                alert('Error submitting your work.');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit';
+            });
+        });
+
+    </script>
+
+    <!-- Logout Form (hidden) -->
+    <form id="logout-form" action="<?php echo e(route('logout')); ?>" method="POST" style="display: none;">
+        <?php echo csrf_field(); ?>
+    </form>
+
+    <!-- Bootstrap 5.3.0 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Move the markComplete function here and fix the CSRF token reference
+        function markComplete(type, id, btn) {
+            if (!btn) {
+                console.error('markComplete: btn is null or undefined');
+                return;
+            }
+            btn.disabled = true;
+            btn.innerText = 'Marking...';
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-secondary');
+
+            let url = '';
+            let payload = {};
+            if (type === 'course') {
+                url = '/student/complete-course';
+                payload = { course_id: id };
+            } else if (type === 'content') {
+                url = '/student/complete-content';
+                payload = {
+                    content_id: id,
+                    course_id: currentCourse,
+                    module_id: currentModule
+                };
+
+
+            let token = (typeof csrfToken !== 'undefined' && csrfToken) ? csrfToken : (document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '');
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                },
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    btn.innerText = 'Completed';
+                    btn.disabled = true;
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-outline-success');
+                    
+                    // Update global state for content completion
+                    if (type === 'content') {
+                        const contentId = parseInt(id);
+                        if (!window.completedContentIds.includes(contentId)) {
+                            window.completedContentIds.push(contentId);
+                        }
+                        
+                        // Add completed badge to the content item
+                        const contentItem = btn.closest('.content-item');
+                        if (contentItem) {
+                            const badgeContainer = contentItem.querySelector('.mt-2');
+                            if (badgeContainer && !badgeContainer.querySelector('.bi-check-circle')) {
+                                badgeContainer.innerHTML += '<span class="badge bg-success ms-1"><i class="bi bi-check-circle"></i> Completed</span>';
+                            }
+                        }
+                        
+                        // Check if all content in the current course is completed
+                        if (currentCourse && currentModule) {
+                            checkAndMarkCourseComplete(currentModule, currentCourse);
+                        }
+                    }
+                    
+                    // Update progress indicators in real time
+                    if (data.progress_percentage !== undefined && data.completed_modules !== undefined && data.total_modules !== undefined) {
+                        // Try to find dashboard progress elements (they may not exist on course page)
+                        const progressPercent = document.getElementById('progress-percentage') || document.querySelector('.completion-badge');
+                        const progressModules = document.getElementById('progress-modules');
+                        
+                        if (progressPercent) {
+                            // If it's the dashboard completion badge, update it differently
+                            if (progressPercent.classList.contains('completion-badge')) {
+                                progressPercent.innerText = `${data.progress_percentage}% overall progress`;
+                            } else {
+                                progressPercent.innerText = `${data.progress_percentage}% complete`;
+                            }
+                        }
+                        
+                        if (progressModules) {
+                            progressModules.innerText = `${data.completed_modules} / ${data.total_modules} modules complete`;
+                        }
+                        
+                        // Log progress update for debugging
+                        console.log('Progress updated:', {
+                            percentage: data.progress_percentage,
+                            completed: data.completed_modules,
+                            total: data.total_modules
+                        });
+                    }
+                    
+                    // Update completedCourseIds for UI consistency
+                    if (type === 'course') {
+                        const courseId = parseInt(id);
+                        if (!window.completedCourseIds.includes(courseId)) {
+                            window.completedCourseIds.push(courseId);
+                        }
+                    }
+                    
+                    // 🔥 DASHBOARD UPDATE NOTIFICATION 🔥
+                    // Notify dashboard to update in real-time
+                    notifyDashboardUpdate(type, id, data);
+                } else {
+                    btn.disabled = false;
+                    btn.innerText = 'Mark Complete';
+                    btn.classList.remove('btn-secondary');
+                    btn.classList.add('btn-success');
+                    alert(data.message || 'Error marking as complete.');
+                }
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.innerText = 'Mark Complete';
+                btn.classList.remove('btn-secondary');
+                btn.classList.add('btn-success');
+                alert('Error marking as complete.');
+            });
+        }
+
+        // Function to check if all content in a course is completed and auto-mark course as complete
+        function checkAndMarkCourseComplete(moduleId, courseId) {
+            console.log('Checking course completion for course:', courseId, 'in module:', moduleId);
+            
+            // Get all content items for this course from the current view
+            const contentItems = document.querySelectorAll('.content-item');
+            const totalContent = contentItems.length;
+            let completedContent = 0;
+            
+            // Count completed content items in the current view
+            contentItems.forEach(item => {
+                const markBtn = item.querySelector('.mark-complete-btn');
+                if (markBtn && markBtn.disabled && markBtn.innerText === 'Completed') {
+                    completedContent++;
+                }
+            });
+            
+            console.log(`Course completion check: ${completedContent}/${totalContent} content items completed`);
+            
+            // If all content is completed, automatically mark course as complete
+            if (totalContent > 0 && completedContent === totalContent) {
+                console.log('All content completed, auto-marking course as complete');
+                
+                // Auto-complete the course
+                fetch('/student/complete-course', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        course_id: courseId,
+                        module_id: moduleId
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Course auto-completed successfully');
+                        
+                        // Update global completed courses array
+                        const courseIdInt = parseInt(courseId);
+                        if (!window.completedCourseIds.includes(courseIdInt)) {
+                            window.completedCourseIds.push(courseIdInt);
+                        }
+                        
+                        // Update the course button in the courses view if visible
+                        const courseBtns = document.querySelectorAll(`[onclick*="toggleComplete('course', '${courseId}'"]`);
+                        courseBtns.forEach(btn => {
+                            if (btn) { // Add null check
+                                btn.innerText = 'Completed';
+                                btn.disabled = false; // Allow unmarking
+                                btn.classList.remove('btn-success');
+                                btn.classList.add('btn-outline-success');
+                            }
+                        });
+                        
+                        // Check if all courses in module are completed for auto-module completion
+                        checkAndMarkModuleComplete(moduleId);
+                        
+                        // 🔥 DASHBOARD UPDATE NOTIFICATION 🔥
+                        // Notify dashboard about auto-completion
+                        notifyDashboardUpdate('course', courseId, data);
+                    }
+                })
+                 .catch(error => {
+                     console.error('Error auto-completing course:', error);
+                 });
+             }
+         }
+
+         // Function to check if all courses in a module are completed and auto-mark module as complete
+        function checkAndMarkModuleComplete(moduleId) {
+            console.log('Checking module completion for module:', moduleId);
+            
+            // This would require fetching all courses in the module and checking their completion status
+            // For now, we'll implement a simpler version that checks via backend
+            fetch(`/student/module/${moduleId}/check-completion`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                credentials: 'include'
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.should_complete) {
+                    console.log('All courses completed, auto-marking module as complete');
+                    
+                    // Auto-complete the module
+                    fetch('/student/complete-module', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            module_id: moduleId
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log('Module auto-completed successfully');
+                            
+                            // Update global module completion state
+                            const moduleIdInt = parseInt(moduleId);
+                            if (!window.completedModuleIds.includes(moduleIdInt)) {
+                                window.completedModuleIds.push(moduleIdInt);
+                            }
+                            
+                                                         // Update module button visual state
+                             const moduleBtn = document.querySelector(`[onclick*="toggleModule('${moduleId}'"]`);
+                             if (moduleBtn) {
+                                 moduleBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2 text-success"></i>' + moduleBtn.textContent;
+                             }
+                             
+                             // 🔥 DASHBOARD UPDATE NOTIFICATION 🔥
+                             // Notify dashboard about module completion
+                             notifyDashboardUpdate('module', moduleId, data);
+                         }
+                     })
+                     .catch(error => {
+                         console.error('Error auto-completing module:', error);
+                     });
+                 }
+             })
+             .catch(error => {
+                 console.error('Error checking module completion:', error);
+             });
+         }
+
+         function toggleComplete(type, id, btn) {
+            if (!btn) {
+                console.error('toggleComplete: btn is null or undefined');
+                return;
+            }
+            btn.disabled = true;
+            btn.innerText = (btn.innerText === 'Mark Complete') ? 'Marking...' : 'Unmarking...';
+            let url = '';
+            let payload = {};
+            let isCompleted = false;
+            if (type === 'course') {
+                // For course completion, we'll just mark as complete (no toggle for now)
+                url = '/student/complete-course';
+                payload = { 
+                    course_id: id,
+                    module_id: currentModule // Include the current module ID
+                };
+                isCompleted = false; // Always mark as complete for now
+            }
+            let token = (typeof csrfToken !== 'undefined' && csrfToken) ? csrfToken : (document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '');
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                },
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Update completedCourseIds for course type
+                    const courseId = parseInt(id);
+                    if (isCompleted) {
+                        window.completedCourseIds = window.completedCourseIds.filter(cid => cid !== courseId);
+                        btn.innerText = 'Mark Complete';
+                        btn.classList.remove('btn-outline-success');
+                        btn.classList.add('btn-success');
+                    } else {
+                        if (!window.completedCourseIds.includes(courseId)) {
+                            window.completedCourseIds.push(courseId);
+                        }
+                        btn.innerText = 'Unmark as Complete';
+                        btn.classList.remove('btn-success');
+                        btn.classList.add('btn-outline-success');
+                    }
+                    btn.disabled = false;
+                    
+                    // Update progress indicators in real time
+                    if (data.progress_percentage !== undefined && data.completed_modules !== undefined && data.total_modules !== undefined) {
+                        const progressPercent = document.getElementById('progress-percentage');
+                        const progressModules = document.getElementById('progress-modules');
+                        if (progressPercent) progressPercent.innerText = `${data.progress_percentage}% complete`;
+                        if (progressModules) progressModules.innerText = `${data.completed_modules} / ${data.total_modules} modules complete`;
+                    }
+                     
+                     // 🔥 DASHBOARD UPDATE NOTIFICATION 🔥
+                     // Notify dashboard about completion update
+                     notifyDashboardUpdate(type, id, data);
+                 } else {
+                     btn.disabled = false;
+                     btn.innerText = isCompleted ? 'Unmark as Complete' : 'Mark Complete';
+                     alert(data.message || 'Error updating completion status.');
+                 }
+             })
+             .catch(() => {
+                 btn.disabled = false;
+                 btn.innerText = isCompleted ? 'Unmark as Complete' : 'Mark Complete';
+                 alert('Error updating completion status.');
+             });
+         }
+
+         // 🔥 DASHBOARD UPDATE NOTIFICATION SYSTEM 🔥
+        // Function to notify dashboard about completion updates
+        function notifyDashboardUpdate(type, id, data) {
+            console.log('🔥 Notifying dashboard about completion update:', { type, id, data });
+            
+            // Method 1: localStorage event (works across tabs)
+            const updateData = {
+                type: type,
+                id: id,
+                timestamp: Date.now(),
+                progress: data.progress_percentage,
+                completed_modules: data.completed_modules,
+                total_modules: data.total_modules,
+                course_id: (type === 'course') ? id : currentCourse,
+                module_id: currentModule
+            };
+            
+            localStorage.setItem('dashboardUpdate', JSON.stringify(updateData));
+            localStorage.setItem('dashboardLastUpdate', updateData.timestamp.toString());
+            
+            // Method 2: BroadcastChannel (works across tabs in modern browsers)
+            if (window.BroadcastChannel) {
+                try {
+                    const channel = new BroadcastChannel('dashboard-updates');
+                    channel.postMessage(updateData);
+                    console.log('📡 BroadcastChannel message sent');
+                } catch (error) {
+                    console.log('📡 BroadcastChannel not available:', error);
+                }
+            }
+            
+            // Method 3: Custom event (works on same page)
+            const event = new CustomEvent('dashboardUpdate', { 
+                detail: updateData 
+            });
+            window.dispatchEvent(event);
+            
+            console.log('✅ Dashboard update notification sent');
+        }
+
+        // Test function for dashboard updates (remove in production)
+        function testDashboardUpdate() {
+            console.log('🧪 Testing dashboard update...');
+            const testData = {
+                type: 'course',
+                id: currentCourse || '33',
+                timestamp: Date.now(),
+                progress: 85,
+                completed_modules: 3,
+                total_modules: 4,
+                course_id: currentCourse || '33',
+                module_id: currentModule || '67'
+            };
+            notifyDashboardUpdate('course', testData.id, testData);
+        }
+
+        // Function to check if all content in a course is completed and auto-mark course as complete
+        function checkAndMarkCourseComplete(moduleId, courseId) {
+            console.log('Checking course completion for course:', courseId, 'in module:', moduleId);
+            
+            // Get all content items for this course from the current view
+            const contentItems = document.querySelectorAll('.content-item');
+            const totalContent = contentItems.length;
+            let completedContent = 0;
+            
+            // Count completed content items in the current view
+            contentItems.forEach(item => {
+                const markBtn = item.querySelector('.mark-complete-btn');
+                if (markBtn && markBtn.disabled && markBtn.innerText === 'Completed') {
+                    completedContent++;
+                }
+            });
+            
+            console.log(`Course completion check: ${completedContent}/${totalContent} content items completed`);
+            
+            // If all content is completed, automatically mark course as complete
+            if (totalContent > 0 && completedContent === totalContent) {
+                console.log('All content completed, auto-marking course as complete');
+                
+                // Auto-complete the course
+                fetch('/student/complete-course', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        course_id: courseId,
+                        module_id: moduleId
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Course auto-completed successfully');
+                        
+                        // Update the course button in the courses view if visible
+                        const courseBtns = document.querySelectorAll(`[onclick*="toggleComplete('course', '${courseId}'"]`);
+                        courseBtns.forEach(btn => {
+                            btn.innerText = 'Completed';
+                            btn.disabled = false; // Allow unmarking
+                            btn.classList.remove('btn-success');
+                            btn.classList.add('btn-outline-success');
+                        });
+                        
+                        // Check if all courses in module are completed for auto-module completion
+                        checkAndMarkModuleComplete(moduleId);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error auto-completing course:', error);
+                });
+            }
+        }
+
+        // Function to check if all courses in a module are completed and auto-mark module as complete
+        function checkAndMarkModuleComplete(moduleId) {
+            console.log('Checking module completion for module:', moduleId);
+            
+            // This would require fetching all courses in the module and checking their completion status
+            // For now, we'll implement a simpler version that checks via backend
+            fetch(`/student/module/${moduleId}/check-completion`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                credentials: 'include'
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.should_complete) {
+                    console.log('All courses completed, auto-marking module as complete');
+                    
+                    // Auto-complete the module
+                    fetch('/student/complete-module', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            module_id: moduleId
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log('Module auto-completed successfully');
+                            
+                            // Update global module completion state
+                            const moduleIdInt = parseInt(moduleId);
+                            if (!window.completedModuleIds.includes(moduleIdInt)) {
+                                window.completedModuleIds.push(moduleIdInt);
+                            }
+                            
+                            // Update module button visual state
+                            const moduleBtn = document.querySelector(`[onclick*="toggleModule('${moduleId}'"]`);
+                            if (moduleBtn) {
+                                moduleBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2 text-success"></i>' + moduleBtn.textContent;
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error auto-completing module:', error);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error checking module completion:', error);
+            });
+        }
+
+        function toggleComplete(type, id, btn) {
+            if (!btn) {
+                console.error('toggleComplete: btn is null or undefined');
+                return;
+            }
+            btn.disabled = true;
+            btn.innerText = (btn.innerText === 'Mark Complete') ? 'Marking...' : 'Unmarking...';
+            let url = '';
+            let payload = {};
+            let isCompleted = false;
+            if (type === 'course') {
+                // For course completion, we'll just mark as complete (no toggle for now)
+                url = '/student/complete-course';
+                payload = { 
+                    course_id: id,
+                    module_id: currentModule // Include the current module ID
+                };
+                isCompleted = false; // Always mark as complete for now
+            }
+            let token = (typeof csrfToken !== 'undefined' && csrfToken) ? csrfToken : (document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '');
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                },
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Update completedModuleIds
+                    const moduleId = parseInt(id);
+                    if (isCompleted) {
+                        window.completedModuleIds = window.completedModuleIds.filter(mid => mid !== moduleId);
+                        btn.innerText = 'Mark Complete';
+                        btn.classList.remove('btn-outline-success');
+                        btn.classList.add('btn-success');
+                    } else {
+                        window.completedModuleIds.push(moduleId);
+                        btn.innerText = 'Unmark as Complete';
+                        btn.classList.remove('btn-success');
+                        btn.classList.add('btn-outline-success');
+                    }
+                    btn.disabled = false;
+                    // Update progress indicators in real time
+                    if (data.progress_percentage !== undefined && data.completed_modules !== undefined && data.total_modules !== undefined) {
+                        const progressPercent = document.getElementById('progress-percentage');
+                        const progressModules = document.getElementById('progress-modules');
+                        if (progressPercent) progressPercent.innerText = `${data.progress_percentage}% complete`;
+                        if (progressModules) progressModules.innerText = `${data.completed_modules} / ${data.total_modules} modules complete`;
+                    }
+                } else {
+                    btn.disabled = false;
+                    btn.innerText = isCompleted ? 'Unmark as Complete' : 'Mark Complete';
+                    alert(data.message || 'Error updating completion status.');
+                }
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.innerText = isCompleted ? 'Unmark as Complete' : 'Mark Complete';
+                alert('Error updating completion status.');
+            });
+        }
+    </script>
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('student.student-dashboard.student-dashboard-layout', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/student/student-courses/student-course.blade.php ENDPATH**/ ?>

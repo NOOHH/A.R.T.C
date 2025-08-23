@@ -40,6 +40,11 @@ class AdminProfessorController extends Controller
 
     public function archived()
     {
+        // Check if this is a preview request
+        if (request()->has('preview') && request('preview') === 'true') {
+            return $this->previewArchived(request()->segment(3) ?? 'test1');
+        }
+        
         $professors = Professor::with('programs')->archived()->paginate(10);
         
         return view('admin.professors.archived', compact('professors'));
@@ -618,6 +623,84 @@ class AdminProfessorController extends Controller
         } catch (\Exception $e) {
             Log::error('Admin professors preview error: ' . $e->getMessage());
             return response('Preview mode error: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Preview archived professors page
+     */
+    public function previewArchived($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Generate mock archived professors
+            $mockProfessors = [
+                $this->createMockObject([
+                    'professor_id' => 1,
+                    'professor_first_name' => 'Dr. Maria',
+                    'professor_last_name' => 'Rodriguez',
+                    'full_name' => 'Dr. Maria Rodriguez',
+                    'professor_email' => 'maria.rodriguez@example.com',
+                    'professor_archived' => true,
+                    'programs' => collect([
+                        $this->createMockObject([
+                            'program_name' => 'Nursing Review',
+                            'program_id' => 1
+                        ])
+                    ])
+                ]),
+                $this->createMockObject([
+                    'professor_id' => 2,
+                    'professor_first_name' => 'Dr. Carlos',
+                    'professor_last_name' => 'Martinez',
+                    'full_name' => 'Dr. Carlos Martinez',
+                    'professor_email' => 'carlos.martinez@example.com',
+                    'professor_archived' => true,
+                    'programs' => collect([
+                        $this->createMockObject([
+                            'program_name' => 'Medical Technology Review',
+                            'program_id' => 2
+                        ])
+                    ])
+                ])
+            ];
+
+            // Create a mock paginated collection
+            $professors = new \Illuminate\Pagination\LengthAwarePaginator(
+                $mockProfessors,
+                count($mockProfessors),
+                10,
+                1,
+                ['path' => request()->url(), 'pageName' => 'page']
+            );
+            $professors->withQueryString();
+
+            return view('admin.professors.archived', compact('professors'));
+
+        } catch (\Exception $e) {
+            Log::error('Archived professors preview error: ' . $e->getMessage());
+            return response('
+                <html>
+                    <head><title>Archived Professors Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>Archived Professors Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200);
         }
     }
 }

@@ -1332,6 +1332,15 @@ class AdminController extends Controller
 
     public function studentRegistration()
     {
+        // Check if this is a preview request
+        if (request()->has('preview') && request('preview') === 'true') {
+            $tenant = request()->segment(3) ?? 'test1'; // For tenant routes
+            if (!request()->segment(3)) {
+                $tenant = 'test1'; // Default for non-tenant routes
+            }
+            return $this->previewStudentRegistration($tenant);
+        }
+        
         $registrations = Registration::with(['user', 'package', 'program', 'plan'])
                                    ->where('status', 'pending')
                                    ->orderBy('created_at', 'desc')
@@ -1344,6 +1353,15 @@ class AdminController extends Controller
 
     public function studentRegistrationHistory()
     {
+        // Check if this is a preview request
+        if (request()->has('preview') && request('preview') === 'true') {
+            $tenant = request()->segment(3) ?? 'test1'; // For tenant routes
+            if (!request()->segment(3)) {
+                $tenant = 'test1'; // Default for non-tenant routes
+            }
+            return $this->previewStudentRegistrationHistory($tenant);
+        }
+        
         $registrations = Registration::with(['user', 'package', 'program', 'plan'])
                                    ->where('status', 'approved')
                                    ->orderBy('approved_at', 'desc')
@@ -1481,6 +1499,15 @@ class AdminController extends Controller
 
     public function paymentPending()
     {
+        // Check if this is a preview request
+        if (request()->has('preview') && request('preview') === 'true') {
+            $tenant = request()->segment(3) ?? 'test1'; // For tenant routes
+            if (!request()->segment(3)) {
+                $tenant = 'test1'; // Default for non-tenant routes
+            }
+            return $this->previewPaymentPending($tenant);
+        }
+        
         $enrollments = Enrollment::with(['user', 'student', 'program', 'package', 'registration', 'enrollmentCourses.course', 'payment'])
             ->where('payment_status', 'pending')
             ->whereDoesntHave('payment', function($query) {
@@ -1564,6 +1591,15 @@ class AdminController extends Controller
 
     public function paymentHistory()
     {
+        // Check if this is a preview request
+        if (request()->has('preview') && request('preview') === 'true') {
+            $tenant = request()->segment(3) ?? 'test1'; // For tenant routes
+            if (!request()->segment(3)) {
+                $tenant = 'test1'; // Default for non-tenant routes
+            }
+            return $this->previewPaymentHistory($tenant);
+        }
+        
         $paymentHistory = \App\Models\PaymentHistory::with(['enrollment.student', 'enrollment.program', 'enrollment.package'])
             ->orderBy('payment_date', 'desc')
             ->get();
@@ -2962,6 +2998,188 @@ class AdminController extends Controller
                     <head><title>Payment History Preview</title></head>
                     <body style="font-family: Arial;">
                         <h1>Payment History Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200);
+        }
+    }
+
+    /**
+     * Preview student registration pending page
+     */
+    public function previewStudentRegistration($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Generate mock registrations
+            $registrations = collect([
+                $this->createMockObject([
+                    'registration_id' => 1,
+                    'user_firstname' => 'Juan',
+                    'user_lastname' => 'Dela Cruz',
+                    'email' => 'juan.delacruz@example.com',
+                    'status' => 'pending',
+                    'enrollment_type' => 'new',
+                    'created_at' => now()->subDays(2),
+                    'user' => $this->createMockObject([
+                        'user_firstname' => 'Juan',
+                        'user_lastname' => 'Dela Cruz',
+                        'email' => 'juan.delacruz@example.com'
+                    ]),
+                    'package' => $this->createMockObject([
+                        'package_name' => 'Complete Nursing Package'
+                    ]),
+                    'program' => $this->createMockObject([
+                        'program_name' => 'Nursing Review Program'
+                    ]),
+                    'plan' => $this->createMockObject([
+                        'plan_name' => 'Standard Plan'
+                    ])
+                ]),
+                $this->createMockObject([
+                    'registration_id' => 2,
+                    'user_firstname' => 'Maria',
+                    'user_lastname' => 'Santos',
+                    'email' => 'maria.santos@example.com',
+                    'status' => 'pending',
+                    'enrollment_type' => 'renewal',
+                    'created_at' => now()->subDays(1),
+                    'user' => $this->createMockObject([
+                        'user_firstname' => 'Maria',
+                        'user_lastname' => 'Santos',
+                        'email' => 'maria.santos@example.com'
+                    ]),
+                    'package' => $this->createMockObject([
+                        'package_name' => 'MedTech Premium Package'
+                    ]),
+                    'program' => $this->createMockObject([
+                        'program_name' => 'Medical Technology Review'
+                    ]),
+                    'plan' => $this->createMockObject([
+                        'plan_name' => 'Premium Plan'
+                    ])
+                ])
+            ]);
+
+            return view('admin.admin-student-registration.admin-student-registration', [
+                'registrations' => $registrations,
+                'history' => false,
+                'isPreview' => true
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Student registration preview error: ' . $e->getMessage());
+            return response('
+                <html>
+                    <head><title>Student Registration Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>Student Registration Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200);
+        }
+    }
+
+    /**
+     * Preview student registration history page
+     */
+    public function previewStudentRegistrationHistory($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Generate mock approved registrations
+            $registrations = collect([
+                $this->createMockObject([
+                    'registration_id' => 1,
+                    'user_firstname' => 'Carlos',
+                    'user_lastname' => 'Gonzalez',
+                    'email' => 'carlos.gonzalez@example.com',
+                    'status' => 'approved',
+                    'enrollment_type' => 'new',
+                    'approved_at' => now()->subDays(5),
+                    'created_at' => now()->subDays(7),
+                    'user' => $this->createMockObject([
+                        'user_firstname' => 'Carlos',
+                        'user_lastname' => 'Gonzalez',
+                        'email' => 'carlos.gonzalez@example.com'
+                    ]),
+                    'package' => $this->createMockObject([
+                        'package_name' => 'Complete Nursing Package'
+                    ]),
+                    'program' => $this->createMockObject([
+                        'program_name' => 'Nursing Review Program'
+                    ]),
+                    'plan' => $this->createMockObject([
+                        'plan_name' => 'Standard Plan'
+                    ])
+                ]),
+                $this->createMockObject([
+                    'registration_id' => 2,
+                    'user_firstname' => 'Ana',
+                    'user_lastname' => 'Reyes',
+                    'email' => 'ana.reyes@example.com',
+                    'status' => 'approved',
+                    'enrollment_type' => 'renewal',
+                    'approved_at' => now()->subDays(3),
+                    'created_at' => now()->subDays(6),
+                    'user' => $this->createMockObject([
+                        'user_firstname' => 'Ana',
+                        'user_lastname' => 'Reyes',
+                        'email' => 'ana.reyes@example.com'
+                    ]),
+                    'package' => $this->createMockObject([
+                        'package_name' => 'MedTech Premium Package'
+                    ]),
+                    'program' => $this->createMockObject([
+                        'program_name' => 'Medical Technology Review'
+                    ]),
+                    'plan' => $this->createMockObject([
+                        'plan_name' => 'Premium Plan'
+                    ])
+                ])
+            ]);
+
+            return view('admin.admin-student-registration.admin-student-registration', [
+                'registrations' => $registrations,
+                'history' => true,
+                'isPreview' => true
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Student registration history preview error: ' . $e->getMessage());
+            return response('
+                <html>
+                    <head><title>Student Registration History Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>Student Registration History Preview - Tenant: '.$tenant.'</h1>
                         <p>❌ Error rendering full view: '.$e->getMessage().'</p>
                         <p>But route is working correctly!</p>
                         <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
