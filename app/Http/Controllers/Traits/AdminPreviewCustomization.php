@@ -171,6 +171,7 @@ trait AdminPreviewCustomization
                 return collect([
                     $this->createMockObject([
                         'id' => 1,
+                        'modules_id' => 1,
                         'title' => 'Introduction to Programming',
                         'description' => 'Basic programming concepts and syntax',
                         'status' => 'published',
@@ -179,6 +180,7 @@ trait AdminPreviewCustomization
                     ]),
                     $this->createMockObject([
                         'id' => 2,
+                        'modules_id' => 2,
                         'title' => 'Variables and Data Types',
                         'description' => 'Understanding different data types and variable usage',
                         'status' => 'published',

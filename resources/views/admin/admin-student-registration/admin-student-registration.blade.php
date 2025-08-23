@@ -111,7 +111,12 @@
             {{-- Registration Rejected Table --}}
             @if(!isset($history) || !$history)
                 @php
-                    $rejectedRegistrations = \App\Models\Registration::where('status', 'rejected')->orderBy('rejected_at', 'desc')->get();
+                    if (isset($isPreview) && $isPreview) {
+                        // Mock data for preview mode
+                        $rejectedRegistrations = collect([]);
+                    } else {
+                        $rejectedRegistrations = \App\Models\Registration::where('status', 'rejected')->orderBy('rejected_at', 'desc')->get();
+                    }
                 @endphp
                 @if($rejectedRegistrations->count() > 0)
                 <div class="card shadow mb-4">
@@ -188,7 +193,12 @@
 
                 {{-- Registration Resubmission Table --}}
                 @php
-                    $resubmittedRegistrations = \App\Models\Registration::where('status', 'resubmitted')->orderBy('resubmitted_at', 'desc')->get();
+                    if (isset($isPreview) && $isPreview) {
+                        // Mock data for preview mode
+                        $resubmittedRegistrations = collect([]);
+                    } else {
+                        $resubmittedRegistrations = \App\Models\Registration::where('status', 'resubmitted')->orderBy('resubmitted_at', 'desc')->get();
+                    }
                 @endphp
                 @if($resubmittedRegistrations->count() > 0)
                 <div class="card shadow mb-4">

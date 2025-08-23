@@ -253,10 +253,6 @@
         
     // Add preview parameter, website parameter, and timestamp to bypass cache
     const websiteId = '<?php echo e($selectedWebsite->id); ?>';
-    // store the base preview URL on the iframe so refreshPreview() can reuse it
-    try{
-        iframe.dataset.previewBase = previewUrl;
-    } catch(e){}
     const urlSeparator = previewUrl.includes('?') ? '&' : '?';
     const finalUrl = previewUrl + urlSeparator + 'website=' + websiteId + '&preview=true&t=' + Date.now();
         
@@ -353,12 +349,9 @@
                     const basePreviewUrl = (settings.data && settings.data.general && settings.data.general.preview_url)
                         ? settings.data.general.preview_url
                         : fallbackUrl;
-                    // If user switched to a specific panel (student/professor/admin), the iframe may have stored that base
-                    const iframeBase = (iframe && (iframe.dataset.previewBase || iframe.getAttribute('data-preview-base')) ) ? (iframe.dataset.previewBase || iframe.getAttribute('data-preview-base')) : null;
-                    const baseToUse = iframeBase || basePreviewUrl;
-                    const urlSeparator = baseToUse.includes('?') ? '&' : '?';
-                    const finalPreviewUrl = baseToUse + urlSeparator + 'website=' + websiteId + '&preview=true&t=' + Date.now();
-                    console.log('Setting iframe to:', finalPreviewUrl, ' (using base:', baseToUse, ')');
+                    const urlSeparator = basePreviewUrl.includes('?') ? '&' : '?';
+                    const finalPreviewUrl = basePreviewUrl + urlSeparator + 'website=' + websiteId + '&preview=true&t=' + Date.now();
+                    console.log('Setting iframe to:', finalPreviewUrl);
                     iframe.src = finalPreviewUrl;
                 }
             } catch (error) {

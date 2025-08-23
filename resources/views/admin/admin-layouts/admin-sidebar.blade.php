@@ -249,16 +249,6 @@
                         @endif
                         @if($isAdmin)
                             @php
-                                $courseUploadUrl = $tenantSlug 
-                                    ? $basePreviewUrl . "/admin/courses/upload" . $urlParams
-                                    : route('admin.courses.upload', [], false);
-                            @endphp
-                            <a href="{{ $courseUploadUrl }}" class="submenu-link">
-                                <i class="bi bi-cloud-upload"></i><span>Course Content Upload</span>
-                            </a>
-                        @endif
-                        @if($isAdmin)
-                            @php
                                 $submissionsUrl = $tenantSlug 
                                     ? $basePreviewUrl . "/admin/submissions" . $urlParams
                                     : route('admin.submissions');

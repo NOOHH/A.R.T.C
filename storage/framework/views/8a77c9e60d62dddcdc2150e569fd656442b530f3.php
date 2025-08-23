@@ -486,6 +486,22 @@ function getQueryParam(name) {
     return url.searchParams.get(name);
 }
 
+// Helper to get tenant from URL path
+function getTenantFromPath() {
+    const path = window.location.pathname;
+    const match = path.match(/\/t\/draft\/([^\/]+)\//);
+    return match ? match[1] : null;
+}
+
+// Helper to construct tenant-aware API URL
+function getApiUrl(endpoint) {
+    const tenant = getTenantFromPath();
+    if (tenant) {
+        return `/t/draft/${tenant}/admin/${endpoint}`;
+    }
+    return `/admin/${endpoint}`;
+}
+
 // Auto-select from query params if present
 const preselectProgramId = getQueryParam('program_id');
 const preselectModuleId = getQueryParam('module_id');
@@ -548,7 +564,7 @@ function populateModules(programId, moduleToSelect, courseToSelect) {
     nonModalCourseSelect.disabled = true;
     addLoadingState(nonModalModuleSelect);
     if (programId) {
-        fetch('/admin/modules/by-program?program_id=' + programId)
+        fetch(getApiUrl('modules/by-program') + '?program_id=' + programId)
             .then(response => response.json())
             .then(data => {
                 nonModalModuleSelect.innerHTML = '<option value="">-- Select Module --</option>';
@@ -590,7 +606,7 @@ function populateCourses(moduleId, courseToSelect) {
     nonModalCourseSelect.disabled = true;
     addLoadingState(nonModalCourseSelect);
     if (moduleId) {
-        fetch('/admin/modules/' + moduleId + '/courses')
+        fetch(getApiUrl('modules/' + moduleId + '/courses'))
             .then(response => response.json())
             .then(data => {
                 nonModalCourseSelect.innerHTML = '<option value="">-- Select Course --</option>';

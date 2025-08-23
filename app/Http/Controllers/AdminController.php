@@ -3525,29 +3525,24 @@ class AdminController extends Controller
                     'issued_date' => now()->subDays(15),
                     'status' => 'pending',
                     'certificate_number' => 'CERT-2025-002'
+                ]),
+                $this->createMockObject([
+                    'id' => 3,
+                    'student_name' => 'Ana Rodriguez',
+                    'program_name' => 'Pharmacy Review Program',
+                    'certificate_type' => 'Honor Certificate',
+                    'issued_date' => now()->subDays(5),
+                    'status' => 'issued',
+                    'certificate_number' => 'CERT-2025-003'
                 ])
             ]);
 
-            return response('
-                <html>
-                    <head>
-                        <title>Certificates Preview - TEST11</title>
-                        <style>body { font-family: Arial; margin: 20px; }</style>
-                    </head>
-                    <body>
-                        <h1>TEST11 - Certificates Management</h1>
-                        <p>✅ Tenant: '.$tenant.' | Preview Mode Active</p>
-                        <div>
-                            <h3>Certificate Records:</h3>
-                            <ul>
-                                <li>Maria Santos - Nursing Review Program (CERT-2025-001)</li>
-                                <li>Carlos Garcia - Medical Technology Review (CERT-2025-002)</li>
-                            </ul>
-                        </div>
-                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
-                    </body>
-                </html>
-            ', 200, ['Content-Type' => 'text/html']);
+            $html = view('admin.certificates.certificates', [
+                'certificates' => $certificates,
+                'isPreview' => true
+            ])->render();
+
+            return response($html);
 
         } catch (\Exception $e) {
             Log::error('Certificates preview error: ' . $e->getMessage());
@@ -3556,12 +3551,12 @@ class AdminController extends Controller
                     <head><title>TEST11 - Certificates Preview</title></head>
                     <body style="font-family: Arial;">
                         <h1>TEST11 - Certificates Preview - Tenant: '.$tenant.'</h1>
-                        <p>❌ Error: '.$e->getMessage().'</p>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
                         <p>But route is working correctly!</p>
                         <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
                     </body>
                 </html>
-            ', 200, ['Content-Type' => 'text/html']);
+            ', 200);
         }
     }
 
@@ -3583,27 +3578,52 @@ class AdminController extends Controller
                 'preview_mode' => true
             ]);
 
-            return response('
-                <html>
-                    <head>
-                        <title>Archived Content Preview - TEST11</title>
-                        <style>body { font-family: Arial; margin: 20px; }</style>
-                    </head>
-                    <body>
-                        <h1>TEST11 - Archived Content Management</h1>
-                        <p>✅ Tenant: '.$tenant.' | Preview Mode Active</p>
-                        <div>
-                            <h3>Archived Items:</h3>
-                            <ul>
-                                <li>Nursing Program 2024-A (Archived: 30 days ago)</li>
-                                <li>MedTech Batch 2024-B (Archived: 15 days ago)</li>
-                                <li>Pharmacy Review 2024-C (Archived: 7 days ago)</li>
-                            </ul>
-                        </div>
-                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
-                    </body>
-                </html>
-            ', 200, ['Content-Type' => 'text/html']);
+            // Generate mock archived data
+            $archivedPrograms = collect([
+                $this->createMockObject([
+                    'id' => 1,
+                    'program_name' => 'TEST11 Nursing Program 2024-A',
+                    'archived_at' => now()->subDays(30),
+                    'status' => 'archived'
+                ]),
+                $this->createMockObject([
+                    'id' => 2,
+                    'program_name' => 'TEST11 MedTech Batch 2024-B',
+                    'archived_at' => now()->subDays(15),
+                    'status' => 'archived'
+                ]),
+                $this->createMockObject([
+                    'id' => 3,
+                    'program_name' => 'TEST11 Pharmacy Review 2024-C',
+                    'archived_at' => now()->subDays(7),
+                    'status' => 'archived'
+                ])
+            ]);
+
+            $archivedCourses = collect([
+                $this->createMockObject([
+                    'id' => 1,
+                    'course_name' => 'Advanced Nursing Procedures',
+                    'program_name' => 'TEST11 Nursing Program',
+                    'archived_at' => now()->subDays(20),
+                    'status' => 'archived'
+                ]),
+                $this->createMockObject([
+                    'id' => 2,
+                    'course_name' => 'Clinical Chemistry Lab',
+                    'program_name' => 'TEST11 Medical Technology',
+                    'archived_at' => now()->subDays(10),
+                    'status' => 'archived'
+                ])
+            ]);
+
+            $html = view('admin.archived.index', [
+                'archivedPrograms' => $archivedPrograms,
+                'archivedCourses' => $archivedCourses,
+                'isPreview' => true
+            ])->render();
+
+            return response($html);
 
         } catch (\Exception $e) {
             Log::error('Archived content preview error: ' . $e->getMessage());
@@ -3612,12 +3632,12 @@ class AdminController extends Controller
                     <head><title>TEST11 - Archived Content Preview</title></head>
                     <body style="font-family: Arial;">
                         <h1>TEST11 - Archived Content Preview - Tenant: '.$tenant.'</h1>
-                        <p>❌ Error: '.$e->getMessage().'</p>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
                         <p>But route is working correctly!</p>
                         <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
                     </body>
                 </html>
-            ', 200, ['Content-Type' => 'text/html']);
+            ', 200);
         }
     }
 
@@ -3639,28 +3659,57 @@ class AdminController extends Controller
                 'preview_mode' => true
             ]);
 
-            return response('
-                <html>
-                    <head>
-                        <title>Course Content Upload Preview - TEST11</title>
-                        <style>body { font-family: Arial; margin: 20px; }</style>
-                    </head>
-                    <body>
-                        <h1>TEST11 - Course Content Upload</h1>
-                        <p>✅ Tenant: '.$tenant.' | Preview Mode Active</p>
-                        <div>
-                            <h3>Upload Interface:</h3>
-                            <form>
-                                <p>Course: <select><option>Nursing Review</option><option>Medical Technology</option></select></p>
-                                <p>File Type: <select><option>Video</option><option>PDF</option><option>Quiz</option></select></p>
-                                <p>File Upload: <input type="file" disabled></p>
-                                <button type="button" disabled>Upload Content</button>
-                            </form>
-                        </div>
-                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
-                    </body>
-                </html>
-            ', 200, ['Content-Type' => 'text/html']);
+            // Generate mock data for the form
+            $mockData = [
+                'programs' => collect([
+                    $this->createMockObject([
+                        'id' => 1,
+                        'program_name' => 'TEST11 Nursing Review Program',
+                        'status' => 'active'
+                    ]),
+                    $this->createMockObject([
+                        'id' => 2,
+                        'program_name' => 'TEST11 Medical Technology Program', 
+                        'status' => 'active'
+                    ])
+                ]),
+                'modules' => collect([
+                    $this->createMockObject([
+                        'id' => 1,
+                        'modules_id' => 1,
+                        'module_name' => 'TEST11 Module 1 - Introduction',
+                        'program_id' => 1
+                    ]),
+                    $this->createMockObject([
+                        'id' => 2,
+                        'modules_id' => 2,
+                        'module_name' => 'TEST11 Module 2 - Advanced Topics',
+                        'program_id' => 1
+                    ])
+                ]),
+                'courses' => collect([
+                    $this->createMockObject([
+                        'id' => 1,
+                        'course_name' => 'Introduction to Nursing',
+                        'module_id' => 1
+                    ]),
+                    $this->createMockObject([
+                        'id' => 2,
+                        'course_name' => 'Advanced Nursing Procedures',
+                        'module_id' => 2
+                    ])
+                ])
+            ];
+
+            $html = view('admin.admin-modules.course-content-upload', [
+                'programs' => $mockData['programs'],
+                'modules' => $mockData['modules'],
+                'courses' => $mockData['courses'],
+                'isPreview' => true,
+                'previewData' => $mockData
+            ])->render();
+
+            return response($html);
 
         } catch (\Exception $e) {
             Log::error('Course content upload preview error: ' . $e->getMessage());
@@ -3669,12 +3718,12 @@ class AdminController extends Controller
                     <head><title>TEST11 - Course Content Upload Preview</title></head>
                     <body style="font-family: Arial;">
                         <h1>TEST11 - Course Content Upload Preview - Tenant: '.$tenant.'</h1>
-                        <p>❌ Error: '.$e->getMessage().'</p>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
                         <p>But route is working correctly!</p>
                         <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
                     </body>
                 </html>
-            ', 200, ['Content-Type' => 'text/html']);
+            ', 200);
         }
     }
 
@@ -3747,6 +3796,369 @@ class AdminController extends Controller
                             <button type="button" disabled>Upload</button>
                         </form>
                         <a href="/admin">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200);
+        }
+    }
+
+    /**
+     * Preview mode for archived courses page
+     */
+    public function previewArchivedCourses($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            return response('
+                <html>
+                    <head>
+                        <title>Archived Courses Preview - TEST11</title>
+                        <style>body { font-family: Arial; margin: 20px; }</style>
+                    </head>
+                    <body>
+                        <h1>TEST11 - Archived Courses Management</h1>
+                        <p>✅ Tenant: '.$tenant.' | Preview Mode Active</p>
+                        <div>
+                            <h3>Archived Courses:</h3>
+                            <ul>
+                                <li>Advanced Nursing Fundamentals (Archived: 45 days ago)</li>
+                                <li>Medical Terminology Course (Archived: 30 days ago)</li>
+                                <li>Pharmacology Basics (Archived: 20 days ago)</li>
+                                <li>Patient Care Protocols (Archived: 10 days ago)</li>
+                            </ul>
+                        </div>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200, ['Content-Type' => 'text/html']);
+
+        } catch (\Exception $e) {
+            Log::error('Archived courses preview error: ' . $e->getMessage());
+            return response('
+                <html>
+                    <head><title>TEST11 - Archived Courses Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>TEST11 - Archived Courses Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200, ['Content-Type' => 'text/html']);
+        }
+    }
+
+    /**
+     * Preview mode for archived materials page
+     */
+    public function previewArchivedMaterials($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            return response('
+                <html>
+                    <head>
+                        <title>Archived Materials Preview - TEST11</title>
+                        <style>body { font-family: Arial; margin: 20px; }</style>
+                    </head>
+                    <body>
+                        <h1>TEST11 - Archived Materials Management</h1>
+                        <p>✅ Tenant: '.$tenant.' | Preview Mode Active</p>
+                        <div>
+                            <h3>Archived Materials:</h3>
+                            <ul>
+                                <li>Nursing Study Guides v2.1 (Archived: 60 days ago)</li>
+                                <li>Medical Equipment Manual (Archived: 45 days ago)</li>
+                                <li>Clinical Practice Videos (Archived: 30 days ago)</li>
+                                <li>Assessment Tools Collection (Archived: 15 days ago)</li>
+                            </ul>
+                        </div>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200, ['Content-Type' => 'text/html']);
+
+        } catch (\Exception $e) {
+            Log::error('Archived materials preview error: ' . $e->getMessage());
+            return response('
+                <html>
+                    <head><title>TEST11 - Archived Materials Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>TEST11 - Archived Materials Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200, ['Content-Type' => 'text/html']);
+        }
+    }
+
+    /**
+     * Preview modules by program for tenant (API endpoint)
+     */
+    public function previewModulesByProgram(Request $request, $tenant)
+    {
+        try {
+            // Set up preview session for API access
+            session([
+                'preview_tenant' => $tenant, 
+                'user_name' => 'Preview Admin', 
+                'user_role' => 'admin', 
+                'logged_in' => true, 
+                'preview_mode' => true
+            ]);
+            
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            $programId = $request->get('program_id');
+            
+            if (!$programId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Program ID is required',
+                    'modules' => []
+                ]);
+            }
+
+            // Switch to tenant database
+            $this->switchToTenantDatabase($tenant);
+            
+            // Get modules for the program - mock data for preview
+            $modules = [
+                [
+                    'modules_id' => 1,
+                    'module_name' => 'TEST11 Module 1 - Introduction',
+                    'program_id' => $programId
+                ],
+                [
+                    'modules_id' => 2,
+                    'module_name' => 'TEST11 Module 2 - Advanced Topics',
+                    'program_id' => $programId
+                ],
+                [
+                    'modules_id' => 3,
+                    'module_name' => 'TEST11 Module 3 - Final Project',
+                    'program_id' => $programId
+                ]
+            ];
+            
+            return response()->json([
+                'success' => true,
+                'modules' => $modules,
+                'tenant' => $tenant,
+                'message' => 'Modules loaded successfully for TEST11 tenant'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Preview modules by program error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading modules: ' . $e->getMessage(),
+                'modules' => []
+            ]);
+        }
+    }
+
+    /**
+     * Preview courses by module for tenant (API endpoint)
+     */
+    public function previewCoursesByModule(Request $request, $tenant, $moduleId)
+    {
+        try {
+            // Set up preview session for API access
+            session([
+                'preview_tenant' => $tenant, 
+                'user_name' => 'Preview Admin', 
+                'user_role' => 'admin', 
+                'logged_in' => true, 
+                'preview_mode' => true
+            ]);
+            
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+
+            if (!$moduleId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Module ID is required',
+                    'courses' => []
+                ]);
+            }
+
+            // Switch to tenant database
+            $this->switchToTenantDatabase($tenant);
+            
+            // Get courses for the module - mock data for preview
+            $courses = [
+                [
+                    'subject_id' => 1,
+                    'subject_name' => 'TEST11 Course 1 - Fundamentals',
+                    'module_id' => $moduleId
+                ],
+                [
+                    'subject_id' => 2,
+                    'subject_name' => 'TEST11 Course 2 - Practical Applications',
+                    'module_id' => $moduleId
+                ],
+                [
+                    'subject_id' => 3,
+                    'subject_name' => 'TEST11 Course 3 - Assessment',
+                    'module_id' => $moduleId
+                ]
+            ];
+            
+            return response()->json([
+                'success' => true,
+                'courses' => $courses,
+                'tenant' => $tenant,
+                'module_id' => $moduleId,
+                'message' => 'Courses loaded successfully for TEST11 tenant'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Preview courses by module error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading courses: ' . $e->getMessage(),
+                'courses' => []
+            ]);
+        }
+    }
+
+    /**
+     * Preview student registration pending page for tenant
+     */
+    public function previewStudentRegistrationPending($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Generate mock pending registrations
+            $registrations = collect([
+                $this->createMockObject([
+                    'registration_id' => 1,
+                    'user_firstname' => 'John',
+                    'user_lastname' => 'Doe',
+                    'email' => 'john.doe@email.com',
+                    'status' => 'pending',
+                    'enrollment_type' => 'new',
+                    'created_at' => now()->subDays(2),
+                    'user' => $this->createMockObject([
+                        'user_firstname' => 'John',
+                        'user_lastname' => 'Doe',
+                        'email' => 'john.doe@email.com',
+                        'phone' => '+1-555-0123'
+                    ]),
+                    'package' => $this->createMockObject([
+                        'package_name' => 'TEST11 Nursing Program'
+                    ]),
+                    'program' => $this->createMockObject([
+                        'program_name' => 'TEST11 Nursing Program'
+                    ]),
+                    'plan' => $this->createMockObject([
+                        'plan_name' => 'Standard Plan'
+                    ])
+                ]),
+                $this->createMockObject([
+                    'registration_id' => 2,
+                    'user_firstname' => 'Jane',
+                    'user_lastname' => 'Smith',
+                    'email' => 'jane.smith@email.com',
+                    'status' => 'pending',
+                    'enrollment_type' => 'new',
+                    'created_at' => now()->subDays(1),
+                    'user' => $this->createMockObject([
+                        'user_firstname' => 'Jane',
+                        'user_lastname' => 'Smith',
+                        'email' => 'jane.smith@email.com',
+                        'phone' => '+1-555-0124'
+                    ]),
+                    'package' => $this->createMockObject([
+                        'package_name' => 'TEST11 Medical Technology Program'
+                    ]),
+                    'program' => $this->createMockObject([
+                        'program_name' => 'TEST11 Medical Technology Program'
+                    ]),
+                    'plan' => $this->createMockObject([
+                        'plan_name' => 'Premium Plan'
+                    ])
+                ]),
+                $this->createMockObject([
+                    'registration_id' => 3,
+                    'user_firstname' => 'Mike',
+                    'user_lastname' => 'Johnson',
+                    'email' => 'mike.johnson@email.com',
+                    'status' => 'pending',
+                    'enrollment_type' => 'new',
+                    'created_at' => now()->subHours(3),
+                    'user' => $this->createMockObject([
+                        'user_firstname' => 'Mike',
+                        'user_lastname' => 'Johnson',
+                        'email' => 'mike.johnson@email.com',
+                        'phone' => '+1-555-0125'
+                    ]),
+                    'package' => $this->createMockObject([
+                        'package_name' => 'TEST11 Physical Therapy Program'
+                    ]),
+                    'program' => $this->createMockObject([
+                        'program_name' => 'TEST11 Physical Therapy Program'
+                    ]),
+                    'plan' => $this->createMockObject([
+                        'plan_name' => 'Basic Plan'
+                    ])
+                ])
+            ]);
+
+            return view('admin.admin-student-registration.admin-student-registration', [
+                'registrations' => $registrations,
+                'history' => false,
+                'isPreview' => true
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Student registration pending preview error: ' . $e->getMessage());
+            return response('
+                <html>
+                    <head><title>TEST11 - Student Registration Pending Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>TEST11 - Student Registration Pending Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
                     </body>
                 </html>
             ', 200);
