@@ -46,7 +46,7 @@
                                 </thead>
                                 <tbody>
                                     @foreach($professors as $professor)
-                                    <tr class="table-warning">
+                                    <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" 

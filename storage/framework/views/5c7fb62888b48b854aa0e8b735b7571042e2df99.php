@@ -46,7 +46,7 @@
                                 </thead>
                                 <tbody>
                                     <?php $__currentLoopData = $professors; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $professor): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <tr class="table-warning">
+                                    <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" 
