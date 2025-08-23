@@ -21,6 +21,14 @@ class CheckAdminAuth
             return $next($request);
         }
 
+        // Allow tenant preview admin routes to bypass authentication
+        $path = $request->path();
+        if (str_starts_with($path, 't/draft/') && (str_contains($path, '/admin/') || str_contains($path, '/admin-dashboard'))) {
+            // Log for debugging
+            \Illuminate\Support\Facades\Log::info("CheckAdminAuth: Bypassing auth for tenant preview path: $path");
+            return $next($request);
+        }
+
         // Start PHP session if not already started
         if (session_status() === PHP_SESSION_NONE) {
             session_start();

@@ -106,12 +106,21 @@
         <button type="button" class="batch-upload-btn" id="showBatchModal">
             <i class="bi bi-upload"></i> Add Course Content
         </button>
-        <a href="{{ route('admin.modules.archived') }}" class="view-archived-btn">
-            <i class="bi bi-archive"></i> View Archived
-        </a>
-        <a href="{{ route('admin.quiz-generator') }}" class="quiz-generator-btn">
-            <i class="bi bi-robot"></i> AI Quiz Generator
-        </a>
+        @if(isset($isPreview) && $isPreview)
+            <a href="/t/draft/{{ session('preview_tenant') }}/admin/modules/archived?website={{ request('website') }}" class="view-archived-btn">
+                <i class="bi bi-archive"></i> View Archived
+            </a>
+            <a href="/t/draft/{{ session('preview_tenant') }}/admin/quiz-generator?website={{ request('website') }}" class="quiz-generator-btn">
+                <i class="bi bi-robot"></i> AI Quiz Generator
+            </a>
+        @else
+            <a href="{{ route('admin.modules.archived') }}" class="view-archived-btn">
+                <i class="bi bi-archive"></i> View Archived
+            </a>
+            <a href="{{ route('admin.quiz-generator') }}" class="quiz-generator-btn">
+                <i class="bi bi-robot"></i> AI Quiz Generator
+            </a>
+        @endif
     </div>
 
     <!-- Split Layout Container -->

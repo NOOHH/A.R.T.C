@@ -2814,6 +2814,51 @@ class AdminController extends Controller
     }
 
     /**
+     * Preview mode for admin dashboard with tenant customization
+     */
+    public function previewDashboard($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Mock analytics data for preview
+            $analytics = [
+                'total_students' => 156,
+                'total_programs' => 8,
+                'total_modules' => 24,
+                'total_enrollments' => 342,
+                'pending_registrations' => 12,
+                'new_students_this_month' => 28,
+                'modules_this_week' => 3,
+                'archived_programs' => 2,
+            ];
+            
+            $registrations = collect();
+            $dbError = null;
+
+            return view('admin.admin-dashboard.admin-dashboard', compact('analytics','registrations','dbError'));
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Preview dashboard error for tenant $tenant", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response('<h1>Dashboard Preview Error</h1><p>Error: ' . htmlspecialchars($e->getMessage()) . '</p>', 500);
+        }
+    }
+
+    /**
      * Preview mode for payment pending page
      */
     public function previewPaymentPending($tenant)
@@ -3627,14 +3672,67 @@ class AdminController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Archived content preview error: ' . $e->getMessage());
+            
+            // Fallback HTML response when view rendering fails
             return response('
                 <html>
-                    <head><title>TEST11 - Archived Content Preview</title></head>
-                    <body style="font-family: Arial;">
-                        <h1>TEST11 - Archived Content Preview - Tenant: '.$tenant.'</h1>
-                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
-                        <p>But route is working correctly!</p>
-                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    <head>
+                        <title>TEST11 - Archived Content Management</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+                            .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                            .header { border-bottom: 2px solid #0074D9; padding-bottom: 10px; margin-bottom: 20px; }
+                            .card { border: 1px solid #ddd; border-radius: 6px; padding: 15px; margin: 10px 0; background: #f9f9f9; }
+                            .program { background: #e7f3ff; }
+                            .course { background: #fff3e0; }
+                            .status { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+                            .archived { background: #ffeb3b; color: #333; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="header">
+                                <h1>🗄️ TEST11 - Archived Content Management</h1>
+                                <p>Tenant: <strong>'.$tenant.'</strong> | Preview Mode Active ✅</p>
+                            </div>
+                            
+                            <h2>📚 Archived Programs</h2>
+                            <div class="card program">
+                                <h3>TEST11 Nursing Program 2024-A</h3>
+                                <p>Status: <span class="status archived">Archived</span></p>
+                                <p>Archived: 30 days ago</p>
+                            </div>
+                            <div class="card program">
+                                <h3>TEST11 MedTech Batch 2024-B</h3>
+                                <p>Status: <span class="status archived">Archived</span></p>
+                                <p>Archived: 15 days ago</p>
+                            </div>
+                            <div class="card program">
+                                <h3>TEST11 Pharmacy Review 2024-C</h3>
+                                <p>Status: <span class="status archived">Archived</span></p>
+                                <p>Archived: 7 days ago</p>
+                            </div>
+                            
+                            <h2>📖 Archived Courses</h2>
+                            <div class="card course">
+                                <h3>Advanced Nursing Procedures</h3>
+                                <p>Program: TEST11 Nursing Program</p>
+                                <p>Status: <span class="status archived">Archived</span></p>
+                                <p>Archived: 20 days ago</p>
+                            </div>
+                            <div class="card course">
+                                <h3>Clinical Chemistry Lab</h3>
+                                <p>Program: TEST11 Medical Technology</p>
+                                <p>Status: <span class="status archived">Archived</span></p>
+                                <p>Archived: 10 days ago</p>
+                            </div>
+                            
+                            <div style="margin-top: 30px; padding: 15px; background: #e8f5e8; border-radius: 6px;">
+                                <p><strong>✅ Template Fallback Active:</strong> The main template failed to render, but this fallback ensures the preview works.</p>
+                                <p><strong>Error:</strong> '.$e->getMessage().'</p>
+                                <p><a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a></p>
+                            </div>
+                        </div>
                     </body>
                 </html>
             ', 200);
@@ -3663,12 +3761,12 @@ class AdminController extends Controller
             $mockData = [
                 'programs' => collect([
                     $this->createMockObject([
-                        'id' => 1,
+                        'program_id' => 1,
                         'program_name' => 'TEST11 Nursing Review Program',
                         'status' => 'active'
                     ]),
                     $this->createMockObject([
-                        'id' => 2,
+                        'program_id' => 2,
                         'program_name' => 'TEST11 Medical Technology Program', 
                         'status' => 'active'
                     ])
@@ -4156,6 +4254,107 @@ class AdminController extends Controller
                     <head><title>TEST11 - Student Registration Pending Preview</title></head>
                     <body style="font-family: Arial;">
                         <h1>TEST11 - Student Registration Pending Preview - Tenant: '.$tenant.'</h1>
+                        <p>❌ Error rendering full view: '.$e->getMessage().'</p>
+                        <p>But route is working correctly!</p>
+                        <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>
+                    </body>
+                </html>
+            ', 200);
+        }
+    }
+
+    /**
+     * Preview archived modules for tenant
+     */
+    public function previewArchivedModules($tenant)
+    {
+        try {
+            // Load tenant customization
+            $this->loadAdminPreviewCustomization();
+            
+            // Set preview session
+            session([
+                'preview_tenant' => $tenant,
+                'user_name' => 'Preview Admin',
+                'user_role' => 'admin',
+                'logged_in' => true,
+                'preview_mode' => true
+            ]);
+
+            // Generate mock archived data
+            $mockData = [
+                'programs' => collect([
+                    $this->createMockObject([
+                        'program_id' => 1,
+                        'program_name' => 'TEST11 Nursing Review Program',
+                        'status' => 'active'
+                    ]),
+                    $this->createMockObject([
+                        'program_id' => 2,
+                        'program_name' => 'TEST11 Medical Technology Program',
+                        'status' => 'active'
+                    ])
+                ]),
+                'archivedModules' => collect([
+                    $this->createMockObject([
+                        'id' => 1,
+                        'module_name' => 'TEST11 Archived Module 1',
+                        'program_id' => 1,
+                        'is_archived' => true,
+                        'archived_at' => now()->subDays(5)->format('Y-m-d H:i:s')
+                    ]),
+                    $this->createMockObject([
+                        'id' => 2,
+                        'module_name' => 'TEST11 Archived Module 2',
+                        'program_id' => 2,
+                        'is_archived' => true,
+                        'archived_at' => now()->subDays(10)->format('Y-m-d H:i:s')
+                    ])
+                ]),
+                'archivedCourses' => collect([
+                    $this->createMockObject([
+                        'id' => 1,
+                        'course_name' => 'TEST11 Archived Course 1',
+                        'module_id' => 1,
+                        'is_archived' => true
+                    ])
+                ]),
+                'archivedContent' => collect([
+                    $this->createMockObject([
+                        'id' => 1,
+                        'title' => 'TEST11 Archived Content Item',
+                        'course_id' => 1,
+                        'is_archived' => true,
+                        'archived_at' => now()->subDays(2)->format('Y-m-d H:i:s')
+                    ])
+                ]),
+                'stats' => [
+                    'total_archived' => 4,
+                    'archived_modules' => 2,
+                    'archived_courses' => 1,
+                    'archived_content' => 1
+                ]
+            ];
+
+            $html = view('admin.admin-modules.admin-modules-archived', [
+                'programs' => $mockData['programs'],
+                'archivedModules' => $mockData['archivedModules'],
+                'archivedCourses' => $mockData['archivedCourses'],
+                'archivedContent' => $mockData['archivedContent'],
+                'stats' => $mockData['stats'],
+                'isPreview' => true,
+                'previewData' => $mockData
+            ])->render();
+
+            return response($html);
+
+        } catch (\Exception $e) {
+            Log::error('Archived modules preview error: ' . $e->getMessage());
+            return response('
+                <html>
+                    <head><title>TEST11 - Archived Modules Preview</title></head>
+                    <body style="font-family: Arial;">
+                        <h1>TEST11 - Archived Modules Preview - Tenant: '.$tenant.'</h1>
                         <p>❌ Error rendering full view: '.$e->getMessage().'</p>
                         <p>But route is working correctly!</p>
                         <a href="/t/draft/'.$tenant.'/admin-dashboard">← Back to Admin Dashboard</a>

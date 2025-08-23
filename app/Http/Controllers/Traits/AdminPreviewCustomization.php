@@ -28,6 +28,7 @@ trait AdminPreviewCustomization
                             'navbar' => [
                                 'brand_name' => $navbarSettings ? $navbarSettings->get('brand_name', 'Ascendo Review and Training Center') : 'Ascendo Review and Training Center',
                                 'brand_logo' => $navbarSettings ? $navbarSettings->get('brand_logo', null) : null,
+                                'admin_subtext' => $navbarSettings ? $navbarSettings->get('admin_subtext', 'Admin Portal') : 'Admin Portal',
                             ],
                             'admin_panel' => [
                                 'brand_name' => $adminSettings ? $adminSettings->get('brand_name', 'Ascendo Review and Training Center') : 'Ascendo Review and Training Center',
@@ -35,11 +36,32 @@ trait AdminPreviewCustomization
                             ],
                         ];
                         
+                        // Load admin settings from tenant database
+                        $adminSettings = [];
+                        try {
+                            $adminSettings['director_view_students'] = \App\Models\AdminSetting::getValue('director_view_students', 'true');
+                            $adminSettings['director_manage_programs'] = \App\Models\AdminSetting::getValue('director_manage_programs', 'false');
+                            $adminSettings['director_manage_modules'] = \App\Models\AdminSetting::getValue('director_manage_modules', 'false');
+                            $adminSettings['director_manage_professors'] = \App\Models\AdminSetting::getValue('director_manage_professors', 'false');
+                            $adminSettings['director_manage_batches'] = \App\Models\AdminSetting::getValue('director_manage_batches', 'false');
+                            $adminSettings['director_view_analytics'] = \App\Models\AdminSetting::getValue('director_view_analytics', 'false');
+                            $adminSettings['director_manage_enrollments'] = \App\Models\AdminSetting::getValue('director_manage_enrollments', 'true');
+                        } catch (\Exception $e) {
+                            $adminSettings['director_view_students'] = 'true';
+                            $adminSettings['director_manage_programs'] = 'false';
+                            $adminSettings['director_manage_modules'] = 'false';
+                            $adminSettings['director_manage_professors'] = 'false';
+                            $adminSettings['director_manage_batches'] = 'false';
+                            $adminSettings['director_view_analytics'] = 'false';
+                            $adminSettings['director_manage_enrollments'] = 'true';
+                        }
+                        
                         $tenantService->switchToMain();
                         
                         // Share settings with the view
                         view()->share('settings', $settings);
                         view()->share('navbar', $settings['navbar'] ?? []);
+                        view()->share('adminSettings', $adminSettings);
                         
                         return $settings;
                     }

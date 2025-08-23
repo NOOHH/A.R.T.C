@@ -981,6 +981,9 @@ Route::prefix('t')->group(function() {
         }
     })->name('tenant.draft.admin.enrollments.history');
 
+    // Admin Dashboard route
+    Route::get('/draft/{tenant}/admin-dashboard', [AdminController::class, 'previewDashboard'])->name('tenant.draft.admin.dashboard');
+
     Route::get('/draft/{tenant}/admin/payments/pending', [AdminController::class, 'previewPaymentPending'])->name('tenant.draft.admin.payments.pending');
 
     Route::get('/draft/{tenant}/admin/payments/history', [AdminController::class, 'previewPaymentHistory'])->name('tenant.draft.admin.payments.history');
@@ -994,6 +997,7 @@ Route::prefix('t')->group(function() {
     Route::get('/draft/{tenant}/admin/archived/programs', [AdminController::class, 'previewArchivedContent'])->name('tenant.draft.admin.archived.programs');
     Route::get('/draft/{tenant}/admin/archived/courses', [AdminController::class, 'previewArchivedCourses'])->name('tenant.draft.admin.archived.courses');
     Route::get('/draft/{tenant}/admin/archived/materials', [AdminController::class, 'previewArchivedMaterials'])->name('tenant.draft.admin.archived.materials');
+    Route::get('/draft/{tenant}/admin/modules/archived', [AdminController::class, 'previewArchivedModules'])->name('tenant.draft.admin.modules.archived');
 
     // Student registration routes
     Route::get('/draft/{tenant}/admin/student-registration', [AdminController::class, 'previewStudentRegistration'])->name('tenant.draft.admin.student.registration');

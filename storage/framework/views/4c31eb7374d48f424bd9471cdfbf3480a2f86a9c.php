@@ -246,7 +246,7 @@
             <?php endif; ?>
             <div class="brand-text-area d-flex flex-column justify-content-center">
                 <span class="brand-text fw-bold"><?php echo e($navbar['brand_name'] ?? 'Ascendo Review & Training Center'); ?></span>
-                <span class="brand-subtext text-muted">Admin Portal</span>
+                <span class="brand-subtext text-muted"><?php echo e($navbar['admin_subtext'] ?? 'Admin Portal'); ?></span>
             </div>
         </div>
     </div>

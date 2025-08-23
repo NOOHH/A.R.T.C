@@ -143,13 +143,13 @@
                  || (session('user_type') === 'director')
                  || ($user && isset($user->role) && $user->role === 'director');
         $directorFeatures = [
-            'view_students' => AdminSetting::getValue('director_view_students', 'true') === 'true' || AdminSetting::getValue('director_view_students', '1') === '1',
-            'manage_programs' => AdminSetting::getValue('director_manage_programs', 'false') === 'true' || AdminSetting::getValue('director_manage_programs', '0') === '1',
-            'manage_modules' => AdminSetting::getValue('director_manage_modules', 'false') === 'true' || AdminSetting::getValue('director_manage_modules', '0') === '1',
-            'manage_professors' => AdminSetting::getValue('director_manage_professors', 'false') === 'true' || AdminSetting::getValue('director_manage_professors', '0') === '1',
-            'manage_batches' => AdminSetting::getValue('director_manage_batches', 'false') === 'true' || AdminSetting::getValue('director_manage_batches', '0') === '1',
-            'view_analytics' => AdminSetting::getValue('director_view_analytics', 'false') === 'true' || AdminSetting::getValue('director_view_analytics', '0') === '1',
-            'manage_enrollments' => AdminSetting::getValue('director_manage_enrollments', 'true') === 'true' || AdminSetting::getValue('director_manage_enrollments', '1') === '1',
+            'view_students' => (isset($adminSettings['director_view_students']) ? $adminSettings['director_view_students'] : 'true') === 'true',
+            'manage_programs' => (isset($adminSettings['director_manage_programs']) ? $adminSettings['director_manage_programs'] : 'false') === 'true',
+            'manage_modules' => (isset($adminSettings['director_manage_modules']) ? $adminSettings['director_manage_modules'] : 'false') === 'true',
+            'manage_professors' => (isset($adminSettings['director_manage_professors']) ? $adminSettings['director_manage_professors'] : 'false') === 'true',
+            'manage_batches' => (isset($adminSettings['director_manage_batches']) ? $adminSettings['director_manage_batches'] : 'false') === 'true',
+            'view_analytics' => (isset($adminSettings['director_view_analytics']) ? $adminSettings['director_view_analytics'] : 'false') === 'true',
+            'manage_enrollments' => (isset($adminSettings['director_manage_enrollments']) ? $adminSettings['director_manage_enrollments'] : 'true') === 'true',
         ];
     ?>
     
