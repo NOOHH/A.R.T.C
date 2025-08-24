@@ -1191,6 +1191,37 @@
                                     <input type="text" class="form-control" name="login_button_text" value="{{ $settings['auth']['login_button_text'] ?? 'Sign In' }}" placeholder="Login button text">
                                 </div>
                                 
+                                <!-- Left Panel Customization -->
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h6 class="mb-0"><i class="fas fa-palette me-2"></i>Left Panel Customization</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Review Text</label>
+                                            <textarea class="form-control" name="login_review_text" rows="3" placeholder="Review Smarter.&#10;Learn Better.&#10;Succeed Faster.">{{ $settings['auth']['login_review_text'] ?? 'Review Smarter.\nLearn Better.\nSucceed Faster.' }}</textarea>
+                                            <small class="form-text text-muted">Main text displayed on the left panel. Use line breaks for multiple lines.</small>
+                                        </div>
+                                        
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Login Illustration</label>
+                                            <input type="file" class="form-control" name="login_illustration" accept="image/*">
+                                            <small class="form-text text-muted">Upload a custom illustration for the login page</small>
+                                            @if(isset($settings['auth']['login_illustration_url']) && $settings['auth']['login_illustration_url'])
+                                                <div class="mt-2">
+                                                    <small class="text-muted">Current illustration:</small><br>
+                                                    <img src="{{ $settings['auth']['login_illustration_url'] }}" alt="Current illustration" style="max-height: 100px;" class="img-thumbnail">
+                                                </div>
+                                            @endif
+                                        </div>
+                                        
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Copyright Text</label>
+                                            <textarea class="form-control" name="login_copyright_text" rows="2" placeholder="© Copyright Your Company. All Rights Reserved.">{{ $settings['auth']['login_copyright_text'] ?? '© Copyright Ascendo Review and Training Center.\nAll Rights Reserved.' }}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group mb-3">
@@ -1204,6 +1235,23 @@
                                             <label class="form-label">Gradient Color (Bottom of Gradient)</label>
                                             <small class="form-text text-muted">Bottom color for the gradient background</small>
                                             <input type="color" class="form-control form-control-color" name="login_bg_bottom_color" value="{{ $settings['auth']['login_bg_bottom_color'] ?? '#764ba2' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Review Text Color</label>
+                                            <small class="form-text text-muted">Color for the main review text</small>
+                                            <input type="color" class="form-control form-control-color" name="login_text_color" value="{{ $settings['auth']['login_text_color'] ?? '#ffffff' }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Copyright Text Color</label>
+                                            <small class="form-text text-muted">Color for the copyright text</small>
+                                            <input type="color" class="form-control form-control-color" name="login_copyright_color" value="{{ $settings['auth']['login_copyright_color'] ?? '#ffffff' }}">
                                         </div>
                                     </div>
                                 </div>

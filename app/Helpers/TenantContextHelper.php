@@ -181,6 +181,24 @@ class TenantContextHelper
                 'background_color' => \App\Models\UiSetting::get('professor_sidebar', 'background_color', '#f8f9fa'),
             ];
 
+            // Load auth settings
+            $settings['auth'] = [
+                'login_title' => \App\Models\Setting::get('auth', 'login_title', 'Welcome Back'),
+                'login_subtitle' => \App\Models\Setting::get('auth', 'login_subtitle', 'Sign in to your account to continue'),
+                'login_button_text' => \App\Models\Setting::get('auth', 'login_button_text', 'Sign In'),
+                'login_review_text' => \App\Models\Setting::get('auth', 'login_review_text', 'Review Smarter.\nLearn Better.\nSucceed Faster.'),
+                'login_illustration_url' => \App\Models\Setting::get('auth', 'login_illustration', null),
+                'login_copyright_text' => \App\Models\Setting::get('auth', 'login_copyright_text', '© Copyright Ascendo Review and Training Center.\nAll Rights Reserved.'),
+                'login_bg_top_color' => \App\Models\Setting::get('auth', 'login_bg_top_color', '#667eea'),
+                'login_bg_bottom_color' => \App\Models\Setting::get('auth', 'login_bg_bottom_color', '#764ba2'),
+                'login_text_color' => \App\Models\Setting::get('auth', 'login_text_color', '#ffffff'),
+                'login_copyright_color' => \App\Models\Setting::get('auth', 'login_copyright_color', '#ffffff'),
+                'register_title' => \App\Models\Setting::get('auth', 'register_title', 'Create Account'),
+                'register_subtitle' => \App\Models\Setting::get('auth', 'register_subtitle', 'Join us to start your learning journey'),
+                'register_button_text' => \App\Models\Setting::get('auth', 'register_button_text', 'Create Account'),
+                'registration_enabled' => \App\Models\Setting::get('auth', 'registration_enabled', true),
+            ];
+
             // Switch back to main database
             $tenantService->switchToMain();
 
