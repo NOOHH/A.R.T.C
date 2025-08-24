@@ -3,15 +3,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
     <title>Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('css/homepage/login.css') }}">
+    <link rel="stylesheet" href="<?php echo e(asset('css/homepage/login.css')); ?>">
     <style>
-        {!! \App\Helpers\SettingsHelper::getLoginStyles() !!}
+        <?php echo \App\Helpers\SettingsHelper::getLoginStyles(); ?>
+
     </style>
     <style>
-        {!! \App\Helpers\SettingsHelper::getButtonStyles() !!}
+        <?php echo \App\Helpers\SettingsHelper::getButtonStyles(); ?>
+
     </style>
     <style>
         /* Enhanced Password Toggle Design for Login Page */
@@ -71,7 +73,7 @@
     </style>
 </head>
 <body class="login-page">
-    @php
+    <?php
         $settings = \App\Helpers\SettingsHelper::getSettings();
         $login = $settings['login'] ?? [];
         $footer = $settings['footer'] ?? [];
@@ -88,67 +90,70 @@
                 $navbar = $tenantSettings['navbar'] ?? $navbar;
             }
         }
-    @endphp
-    <div class="left" style="background: linear-gradient(135deg, {{ $auth['login_bg_top_color'] ?? '#667eea' }} 0%, {{ $auth['login_bg_bottom_color'] ?? '#764ba2' }} 100%);">
-        <div class="review-text" style="color: {{ $auth['login_text_color'] ?? '#ffffff' }};">
-            {!! nl2br(e($auth['login_review_text'] ?? 'Review Smarter.\nLearn Better.\nSucceed Faster.')) !!}
+    ?>
+    <div class="left" style="background: linear-gradient(135deg, <?php echo e($auth['login_bg_top_color'] ?? '#667eea'); ?> 0%, <?php echo e($auth['login_bg_bottom_color'] ?? '#764ba2'); ?> 100%);">
+        <div class="review-text" style="color: <?php echo e($auth['login_text_color'] ?? '#ffffff'); ?>;">
+            <?php echo nl2br(e($auth['login_review_text'] ?? 'Review Smarter.\nLearn Better.\nSucceed Faster.')); ?>
+
         </div>
 
         <div class="login-illustration-container">
-            @if(isset($auth['login_illustration_url']) && $auth['login_illustration_url'])
-                <img src="{{ asset('storage/' . $auth['login_illustration_url']) }}" alt="Login Illustration" class="login-illustration">
-            @else
-                <img src="{{ asset('images/Login-image.png') }}" alt="Login Illustration" class="login-illustration">
-            @endif
+            <?php if(isset($auth['login_illustration_url']) && $auth['login_illustration_url']): ?>
+                <img src="<?php echo e(asset('storage/' . $auth['login_illustration_url'])); ?>" alt="Login Illustration" class="login-illustration">
+            <?php else: ?>
+                <img src="<?php echo e(asset('images/Login-image.png')); ?>" alt="Login Illustration" class="login-illustration">
+            <?php endif; ?>
             <div class="floating-icon-1">📚</div>
             <div class="floating-icon-2">▶️</div>
         </div>
 
-        <div class="copyright" style="color: {{ $auth['login_copyright_color'] ?? '#ffffff' }};">
-            {!! nl2br(e($auth['login_copyright_text'] ?? '© Copyright Ascendo Review and Training Center.\nAll Rights Reserved.')) !!}
+        <div class="copyright" style="color: <?php echo e($auth['login_copyright_color'] ?? '#ffffff'); ?>;">
+            <?php echo nl2br(e($auth['login_copyright_text'] ?? '© Copyright Ascendo Review and Training Center.\nAll Rights Reserved.')); ?>
+
         </div>
     </div>
     <div class="right">
         <div class="logo-row">
-            <img src="{{ \App\Helpers\SettingsHelper::getLogoUrl() }}" alt="Logo">
-            <a href="{{ url('/') }}" class="brand-text">{{ $navbar['brand_name'] ?? 'Ascendo Review and Training Center' }}</a>
+            <img src="<?php echo e(\App\Helpers\SettingsHelper::getLogoUrl()); ?>" alt="Logo">
+            <a href="<?php echo e(url('/')); ?>" class="brand-text"><?php echo e($navbar['brand_name'] ?? 'Ascendo Review and Training Center'); ?></a>
         </div>
         <h2>Log in to your account.</h2>
 
-        {{-- Display Success Messages --}}
-        @if(session('success'))
+        
+        <?php if(session('success')): ?>
             <div class="alert alert-success">
-                {{ session('success') }}
-            </div>
-        @endif
+                <?php echo e(session('success')); ?>
 
-        {{-- Display Validation Errors --}}
-        @if($errors->any())
+            </div>
+        <?php endif; ?>
+
+        
+        <?php if($errors->any()): ?>
             <div class="alert alert-error">
-                @foreach($errors->all() as $error)
-                    <div>{{ $error }}</div>
-                @endforeach
+                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <div><?php echo e($error); ?></div>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </div>
-        @endif
+        <?php endif; ?>
 
-        @php $tenantSlug = $tenantSlug ?? (request()->attributes->get('tenant_slug') ?? null); @endphp
-        @php
+        <?php $tenantSlug = $tenantSlug ?? (request()->attributes->get('tenant_slug') ?? null); ?>
+        <?php
             $path = request()->path();
             $isDraftTenant = false;
             if(preg_match('#^t/draft/([a-z0-9\-]+)/login$#i',$path,$mm)){ $isDraftTenant = true; }
-        @endphp
-        <form class="login-form" method="POST" action="{{ $tenantSlug ? ($isDraftTenant ? route('tenant.draft.login.submit',['tenant'=>$tenantSlug]) : route('tenant.login.submit',['tenant'=>$tenantSlug])) : route('login.submit') }}">
-            @csrf
-            @if($tenantSlug)
-                <input type="hidden" name="tenant_slug" value="{{ $tenantSlug }}">
-                @if($isDraftTenant)
+        ?>
+        <form class="login-form" method="POST" action="<?php echo e($tenantSlug ? ($isDraftTenant ? route('tenant.draft.login.submit',['tenant'=>$tenantSlug]) : route('tenant.login.submit',['tenant'=>$tenantSlug])) : route('login.submit')); ?>">
+            <?php echo csrf_field(); ?>
+            <?php if($tenantSlug): ?>
+                <input type="hidden" name="tenant_slug" value="<?php echo e($tenantSlug); ?>">
+                <?php if($isDraftTenant): ?>
                     <input type="hidden" name="tenant_is_draft" value="1">
-                @endif
-            @endif
-            <input type="hidden" name="from_enrollment" value="{{ request()->query('from_enrollment', 'false') }}">
+                <?php endif; ?>
+            <?php endif; ?>
+            <input type="hidden" name="from_enrollment" value="<?php echo e(request()->query('from_enrollment', 'false')); ?>">
             
             <label for="email">Enter your email address</label>
-            <input type="email" id="email" name="email" placeholder="name@example.com" value="{{ old('email') }}" required>
+            <input type="email" id="email" name="email" placeholder="name@example.com" value="<?php echo e(old('email')); ?>" required>
 
             <label for="password">Enter your password</label>
             <div class="input-row">
@@ -156,9 +161,9 @@
                 <span class="toggle-password" onclick="togglePassword()">👁️</span>
             </div>
             
-            <a href="{{ route('password.request') }}" class="forgot">Forgot your password? Click here.</a>
+            <a href="<?php echo e(route('password.request')); ?>" class="forgot">Forgot your password? Click here.</a>
             <button type="submit">LOG IN</button>
-            <div style="margin-top: 16px; font-size: 0.95em; text-align: center;">Don't have an account? <a href="{{ route('signup') }}" class="register-link">Register here.</a></div>
+            <div style="margin-top: 16px; font-size: 0.95em; text-align: center;">Don't have an account? <a href="<?php echo e(route('signup')); ?>" class="register-link">Register here.</a></div>
         </form>
     </div>
     <script>
@@ -179,3 +184,4 @@
     </script>
 </body>
 </html>
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/Login/login.blade.php ENDPATH**/ ?>
