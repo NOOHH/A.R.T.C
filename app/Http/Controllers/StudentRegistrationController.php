@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\Student;
 use App\Models\Registration;
@@ -20,6 +21,11 @@ use App\Models\StudentBatch;
 
 class StudentRegistrationController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('tenant');
+    }
+
     public function store(Request $request)
     {
         Log::info('========== REGISTRATION ATTEMPT STARTED ==========');
@@ -2215,6 +2221,18 @@ class StudentRegistrationController extends Controller
                 'message' => 'Failed to create auto batch'
             ], 500);
         }
+    }
+
+    /**
+     * Handle user logout for preview mode
+     */
+    public function logout(Request $request)
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        
+        return redirect('/login')->with('message', 'You have been logged out.');
     }
 
 }

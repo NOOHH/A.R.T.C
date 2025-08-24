@@ -246,6 +246,10 @@
                 previewUrl = '<?php echo e($previewUrl); ?>';
                 titleText = 'Homepage Preview';
                 break;
+            case 'auth':
+                previewUrl = '<?php echo e($previewUrl); ?>' + '/login';
+                titleText = 'Login/Register Preview';
+                break;
             case 'navbar':
             case 'branding':
                 previewUrl = '<?php echo e($previewUrl); ?>';

@@ -246,6 +246,10 @@
                 previewUrl = '{{ $previewUrl }}';
                 titleText = 'Homepage Preview';
                 break;
+            case 'auth':
+                previewUrl = '{{ $previewUrl }}' + '/login';
+                titleText = 'Login/Register Preview';
+                break;
             case 'navbar':
             case 'branding':
                 previewUrl = '{{ $previewUrl }}';

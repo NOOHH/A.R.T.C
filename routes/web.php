@@ -4216,3 +4216,6 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/settings', [AdminSettingsController::class, 'index'])->name('admin.settings.index');
     // ...add any other /admin/settings routes here...
 });
+
+Route::post('/enrollment/logout', [StudentRegistrationController::class, 'logout'])->name('enrollment.logout');
+Route::get('/enrollment/logout', [StudentRegistrationController::class, 'logout'])->name('enrollment.logout.get');

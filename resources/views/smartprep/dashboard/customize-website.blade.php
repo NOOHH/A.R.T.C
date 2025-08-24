@@ -1311,8 +1311,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         s.classList.remove('active');
                         s.style.display = 'none';
                     });
-                    document.getElementById(section + '-settings').style.display = 'block';
-                    document.getElementById(section + '-settings').classList.add('active');
+                    const sectionElement = document.getElementById(section + '-settings');
+                    if (sectionElement) {
+                        sectionElement.style.display = 'block';
+                        sectionElement.classList.add('active');
+                    }
                 });
             });
             

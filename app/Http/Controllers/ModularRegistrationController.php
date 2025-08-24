@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Auth;
 
 class ModularRegistrationController extends Controller
 {
@@ -29,6 +30,7 @@ class ModularRegistrationController extends Controller
 
     public function __construct(OcrService $ocrService)
     {
+        $this->middleware('tenant');
         $this->ocrService = $ocrService;
     }
 
@@ -1128,5 +1130,17 @@ class ModularRegistrationController extends Controller
         ];
 
         return $mapping[strtolower($fieldName)] ?? $fieldName;
+    }
+
+    /**
+     * Handle user logout for preview mode
+     */
+    public function logout(Request $request)
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        
+        return redirect('/login')->with('message', 'You have been logged out.');
     }
 }
