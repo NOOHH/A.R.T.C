@@ -552,8 +552,13 @@ Route::prefix('t')->group(function() {
 
     // Tenant homepage (active)
     Route::get('/{tenant}', [\App\Http\Controllers\Tenant\PreviewController::class, 'homepage'])->name('tenant.home');
+    // Tenant enrollment (active)
+    Route::get('/{tenant}/enrollment', [\App\Http\Controllers\Tenant\PreviewController::class, 'enrollment'])->name('tenant.enrollment');
+    
     // Draft homepage
     Route::get('/draft/{tenant}', [\App\Http\Controllers\Tenant\PreviewController::class, 'homepage'])->name('tenant.draft.home');
+    // Draft enrollment
+    Route::get('/draft/{tenant}/enrollment', [\App\Http\Controllers\Tenant\PreviewController::class, 'enrollment'])->name('tenant.draft.enrollment');
     
     // STUDENT ROUTES - Active Tenant
     Route::get('/{tenant}/student/dashboard', function($tenant) {
@@ -3509,7 +3514,8 @@ Route::get('/quick-login-test', function () {
 // ------------------------------------------------------------------
 Route::prefix('t')->group(function () {
     // Draft preview routes must be declared BEFORE generic /{tenant}
-    Route::get('/draft/{tenant}', [\App\Http\Controllers\Tenant\HomeController::class, 'index'])->name('tenant.draft.home');
+    // REMOVED: Duplicate route that was overriding PreviewController
+    // Route::get('/draft/{tenant}', [\App\Http\Controllers\Tenant\HomeController::class, 'index'])->name('tenant.draft.home');
     Route::get('/{tenant}', [\App\Http\Controllers\Tenant\HomeController::class, 'index'])->name('tenant.home');
     Route::get('/{tenant}/programs', [\App\Http\Controllers\Tenant\HomeController::class, 'programs'])->name('tenant.programs');
     Route::get('/{tenant}/programs/{id}', [\App\Http\Controllers\Tenant\HomeController::class, 'programDetails'])->name('tenant.program.details');

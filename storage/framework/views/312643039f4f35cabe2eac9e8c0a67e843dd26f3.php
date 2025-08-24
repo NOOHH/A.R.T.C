@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="<?php echo e(str_replace('_', '-', app()->getLocale())); ?>">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+    
+    <title><?php echo e($title ?? config('app.name', 'SmartPrep')); ?> - Authentication</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #059669;
+            --accent-color: #0891b2;
+            --gradient-primary: linear-gradient(135deg, #2563eb 0%, #0891b2 100%);
+            --gradient-secondary: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --surface: #f8fafc;
+            --surface-dark: #1e293b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--gradient-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="a" cx="50%" cy="50%"><stop offset="0%" stop-color="%23ffffff" stop-opacity="0.1"/><stop offset="100%" stop-color="%23ffffff" stop-opacity="0"/></radialGradient></defs><circle cx="50%" cy="50%" r="50%" fill="url(%23a)"/></svg>') center/cover;
+            opacity: 0.3;
+            z-index: 1;
+        }
+
+        .auth-container {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+
+        .auth-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .auth-left {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            min-height: 600px;
+        }
+
+        .auth-left::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .auth-left-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .auth-brand {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .auth-brand:hover {
+            transform: translateY(-2px);
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .auth-brand i {
+            margin-right: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            font-size: 2rem;
+            color: white !important;
+            -webkit-text-fill-color: white !important;
+        }
+
+        .auth-subtitle {
+            font-size: 1.3rem;
+            opacity: 0.95;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .feature-list li i {
+            margin-right: 15px;
+            width: 20px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .auth-right {
+            padding: 60px 40px;
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .auth-form-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .auth-form-header h2 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+        }
+
+        .auth-form-header p {
+            color: var(--text-light);
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .form-control {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 15px 20px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none;
+        }
+
+        .form-control.is-invalid {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+
+        .invalid-feedback {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 5px;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: 12px;
+            padding: 15px 30px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(37, 99, 235, 0.4);
+            background: var(--gradient-primary);
+        }
+
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .auth-links {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .auth-links a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .auth-links a:hover {
+            color: var(--accent-color);
+        }
+
+        .floating-shape {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .floating-shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 10%;
+            right: 10%;
+            animation-delay: 0s;
+        }
+
+        .floating-shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            bottom: 15%;
+            left: 15%;
+            animation-delay: 2s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        @media (max-width: 768px) {
+            .auth-card {
+                margin: 20px;
+                border-radius: 16px;
+            }
+            
+            .auth-left, .auth-right {
+                padding: 40px 30px;
+            }
+            
+            .auth-brand {
+                font-size: 2rem;
+            }
+            
+            .auth-form-header h2 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-shape"></div>
+    <div class="floating-shape"></div>
+    
+    <div class="auth-container">
+        <div class="container">
+            <div class="auth-card">
+                <div class="row g-0">
+                    <?php echo $__env->yieldContent('content'); ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms of Service Modal -->
+    <div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 25px 60px rgba(0,0,0,0.2);">
+                <div class="modal-header" style="background: var(--gradient-primary); color: white; border-radius: 16px 16px 0 0;">
+                    <h5 class="modal-title fw-bold" id="termsModalLabel">
+                        <i class="fas fa-file-contract me-2"></i>Terms of Service
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: 30px;">
+                    <h6 class="fw-bold text-primary mb-3">1. Acceptance of Terms</h6>
+                    <p>By accessing and using SmartPrep ("the Platform"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.</p>
+                    
+                    <h6 class="fw-bold text-primary mb-3">2. Description of Service</h6>
+                    <p>SmartPrep is a multi-tenant learning management system that provides educational institutions with comprehensive tools to create, manage, and deliver online learning experiences. Our platform includes features such as course management, student enrollment, assessment tools, and analytics.</p>
+                    
+                    <h6 class="fw-bold text-primary mb-3">3. User Accounts</h6>
+                    <p>To access certain features of the Platform, you must register for an account. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to immediately notify us of any unauthorized use of your account.</p>
+                    
+                    <h6 class="fw-bold text-primary mb-3">4. Acceptable Use</h6>
+                    <p>You agree to use the Platform only for lawful purposes and in accordance with these Terms. You may not use the Platform:</p>
+                    <ul>
+                        <li>To violate any applicable laws or regulations</li>
+                        <li>To transmit or distribute harmful, offensive, or inappropriate content</li>
+                        <li>To interfere with or disrupt the Platform's functionality</li>
+                        <li>To attempt unauthorized access to any part of the Platform</li>
+                    </ul>
+                    
+                    <h6 class="fw-bold text-primary mb-3">5. Intellectual Property</h6>
+                    <p>The Platform and its original content, features, and functionality are owned by SmartPrep and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.</p>
+                    
+                    <h6 class="fw-bold text-primary mb-3">6. Payment Terms</h6>
+                    <p>Certain features of the Platform may require payment of fees. You agree to pay all applicable fees in connection with your use of the Platform. All fees are non-refundable except as expressly stated otherwise.</p>
+                    
+                    <h6 class="fw-bold text-primary mb-3">7. Limitation of Liability</h6>
+                    <p>SmartPrep shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the Platform.</p>
+                    
+                    <h6 class="fw-bold text-primary mb-3">8. Changes to Terms</h6>
+                    <p>We reserve the right to modify these terms at any time. We will notify users of any material changes via email or through the Platform.</p>
+                    
+                    <p class="text-muted mt-4"><strong>Last updated:</strong> August 12, 2025</p>
+                </div>
+                <div class="modal-footer" style="border: none; padding: 20px 30px;">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">I Understand</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy Policy Modal -->
+    <div class="modal fade" id="privacyModal" tabindex="-1" aria-labelledby="privacyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 25px 60px rgba(0,0,0,0.2);">
+                <div class="modal-header" style="background: var(--gradient-secondary); color: white; border-radius: 16px 16px 0 0;">
+                    <h5 class="modal-title fw-bold" id="privacyModalLabel">
+                        <i class="fas fa-shield-alt me-2"></i>Privacy Policy
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: 30px;">
+                    <h6 class="fw-bold text-success mb-3">1. Information We Collect</h6>
+                    <p>We collect information you provide directly to us, such as when you create an account, use our services, or contact us for support. This may include:</p>
+                    <ul>
+                        <li>Name, email address, and contact information</li>
+                        <li>Account credentials and preferences</li>
+                        <li>Course content and educational materials you upload</li>
+                        <li>Communication and support interactions</li>
+                    </ul>
+                    
+                    <h6 class="fw-bold text-success mb-3">2. How We Use Your Information</h6>
+                    <p>We use the information we collect to:</p>
+                    <ul>
+                        <li>Provide, maintain, and improve our services</li>
+                        <li>Process transactions and manage your account</li>
+                        <li>Send you technical notices and support messages</li>
+                        <li>Respond to your comments and questions</li>
+                        <li>Analyze usage patterns to enhance user experience</li>
+                    </ul>
+                    
+                    <h6 class="fw-bold text-success mb-3">3. Information Sharing</h6>
+                    <p>We do not sell, trade, or otherwise transfer your personal information to third parties without your consent, except as described in this policy. We may share your information:</p>
+                    <ul>
+                        <li>With service providers who assist in our operations</li>
+                        <li>When required by law or to protect our rights</li>
+                        <li>In connection with a business transfer or acquisition</li>
+                    </ul>
+                    
+                    <h6 class="fw-bold text-success mb-3">4. Data Security</h6>
+                    <p>We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. However, no method of transmission over the internet is 100% secure.</p>
+                    
+                    <h6 class="fw-bold text-success mb-3">5. Data Retention</h6>
+                    <p>We retain your personal information for as long as necessary to provide our services and fulfill the purposes outlined in this policy, unless a longer retention period is required by law.</p>
+                    
+                    <h6 class="fw-bold text-success mb-3">6. Your Rights</h6>
+                    <p>You have the right to:</p>
+                    <ul>
+                        <li>Access, update, or delete your personal information</li>
+                        <li>Object to processing of your personal information</li>
+                        <li>Request data portability</li>
+                        <li>Withdraw consent where applicable</li>
+                    </ul>
+                    
+                    <h6 class="fw-bold text-success mb-3">7. Cookies and Tracking</h6>
+                    <p>We use cookies and similar technologies to enhance your experience on our Platform. You can control cookie settings through your browser preferences.</p>
+                    
+                    <h6 class="fw-bold text-success mb-3">8. Contact Us</h6>
+                    <p>If you have any questions about this Privacy Policy, please contact us at privacy@smartprep.com or through our support system.</p>
+                    
+                    <p class="text-muted mt-4"><strong>Last updated:</strong> August 12, 2025</p>
+                </div>
+                <div class="modal-footer" style="border: none; padding: 20px 30px;">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">I Understand</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/layouts/auth.blade.php ENDPATH**/ ?>

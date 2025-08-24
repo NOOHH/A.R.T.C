@@ -13,11 +13,12 @@
   <div class="header-left">
     <a href="{{ route('home') }}" class="brand-link">
       @if($brandLogo)
-        <img src="{{ asset($brandLogo) }}" 
+        <img src="{{ asset('storage/' . $brandLogo) }}" 
              alt="{{ $brandName }}" 
+             class="brand-logo"
              onerror="this.src='{{ $defaultLogo }}'">
       @else
-        <img src="{{ $defaultLogo }}" alt="{{ $brandName }}">
+        <img src="{{ $defaultLogo }}" alt="{{ $brandName }}" class="brand-logo">
       @endif
       <div class="brand-text">
         {{ $brandName }}

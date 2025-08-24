@@ -34,14 +34,54 @@ class PreviewController extends Controller
 
     public function homepage(string $slug)
     {
-        return $this->withTenant($slug, function($tenant){
+        return $this->withTenant($slug, function($tenant) use ($slug) {
             // Load homepage settings
             $settings = [
                 'homepage' => \App\Models\Setting::getGroup('homepage')->toArray(),
                 'navbar' => \App\Models\Setting::getGroup('navbar')->toArray(),
             ];
             $programs = DB::table('programs')->limit(6)->get();
-            return view('welcome.homepage', compact('settings','programs'));
+            
+            // Get tenant-specific homepage settings
+            $homepageSettings = \App\Models\Setting::getGroup('homepage')->toArray();
+            
+            // Build homepageContent array similar to HomepageController
+            $homepageContent = array_merge([
+                'hero_title' => 'Welcome to Ascendo Review and Training Center',
+                'hero_subtitle' => 'Your premier destination for comprehensive review programs and professional training.',
+                'hero_button_text' => 'ENROLL NOW',
+                'programs_title' => 'Our Programs',
+                'programs_subtitle' => 'Choose from our comprehensive range of review and training programs',
+                'modalities_title' => 'Learning Modalities',
+                'modalities_subtitle' => 'Flexible learning options designed to fit your schedule and learning style',
+                'about_title' => 'About Us',
+                'about_subtitle' => 'We are committed to providing high-quality education and training'
+            ], $homepageSettings);
+            
+            // For backward compatibility
+            $homepageTitle = $homepageContent['hero_button_text'] ?? 'ENROLL NOW';
+            
+            // Pass tenant slug for proper enrollment routing
+            $tenantSlug = $slug;
+            
+            return view('welcome.homepage', compact('settings','programs', 'tenantSlug', 'homepageContent', 'homepageTitle'));
+        });
+    }
+
+    public function enrollment(string $slug)
+    {
+        return $this->withTenant($slug, function($tenant){
+            // Load tenant-specific settings for enrollment page
+            $settings = [
+                'auth' => \App\Models\Setting::getGroup('auth')->toArray(),
+                'navbar' => \App\Models\Setting::getGroup('navbar')->toArray(),
+                'branding' => \App\Models\Setting::getGroup('branding')->toArray(),
+            ];
+            
+            // Get programs for enrollment
+            $programs = DB::table('programs')->get();
+            
+            return view('welcome.enrollment', compact('settings', 'programs'));
         });
     }
 

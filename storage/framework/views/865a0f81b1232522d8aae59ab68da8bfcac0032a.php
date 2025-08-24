@@ -13,11 +13,12 @@
   <div class="header-left">
     <a href="<?php echo e(route('home')); ?>" class="brand-link">
       <?php if($brandLogo): ?>
-        <img src="<?php echo e(asset($brandLogo)); ?>" 
+        <img src="<?php echo e(asset('storage/' . $brandLogo)); ?>" 
              alt="<?php echo e($brandName); ?>" 
+             class="brand-logo"
              onerror="this.src='<?php echo e($defaultLogo); ?>'">
       <?php else: ?>
-        <img src="<?php echo e($defaultLogo); ?>" alt="<?php echo e($brandName); ?>">
+        <img src="<?php echo e($defaultLogo); ?>" alt="<?php echo e($brandName); ?>" class="brand-logo">
       <?php endif; ?>
       <div class="brand-text">
         <?php echo e($brandName); ?>

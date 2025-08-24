@@ -107,9 +107,13 @@
     <header class="main-header">
         <div class="header-left">
             <a href="{{ route('home') }}" class="brand-link">
-                <img src="{{ asset('images/ARTC_logo.png') }}" alt="Logo">
+                @if(isset($navbar['brand_logo']) && $navbar['brand_logo'])
+                    <img src="{{ asset('storage/' . $navbar['brand_logo']) }}" alt="{{ $navbar['brand_name'] ?? 'Student Portal' }}" class="brand-logo">
+                @else
+                    <img src="{{ asset('images/ARTC_logo.png') }}" alt="Logo" class="brand-logo">
+                @endif
                 <div class="brand-text">
-                    Ascendo Review<br>and Training Center
+                    {{ $navbar['brand_name'] ?? 'Ascendo Review and Training Center' }}
                 </div>
             </a>
         </div>

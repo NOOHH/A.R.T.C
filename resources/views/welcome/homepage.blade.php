@@ -480,7 +480,8 @@
                     <p class="hero-subtitle fade-in-up lead mb-4" style="color: {{ $heroTitleColor }}; opacity: 0.9;">
                         {{ $homepageContent['hero_subtitle'] }}
                     </p>
-                    <a href="{{ url('/enrollment') }}" class="btn btn-lg enroll-btn fade-in-up" style="background-color: {{ $buttonColor }}; border-color: {{ $buttonColor }}; color: white;">
+                    <a href="{{ isset($tenantSlug) ? url('/t/draft/' . $tenantSlug . '/enrollment') : url('/enrollment') }}" class="btn btn-lg enroll-btn fade-in-up" style="background-color: {{ $buttonColor }}; border-color: {{ $buttonColor }}; color: white;"
+                       data-tenant="{{ $tenantSlug ?? 'none' }}">
                         <i class="bi bi-mortarboard me-2"></i>{{ $homepageContent['hero_button_text'] }}
                     </a>
                 </div>

@@ -76,6 +76,11 @@
         await handleFormSubmission(event, 'admin', 'Updating admin panel...');
     }
     
+    async function updateAuth(event) {
+        event.preventDefault();
+        await handleFormSubmission(event, 'auth', 'Updating authentication settings...');
+    }
+    
     async function updateAdvanced(event) {
         event.preventDefault();
         await handleFormSubmission(event, 'advanced', 'Updating advanced settings...');
@@ -1023,6 +1028,74 @@
             updateAdminSidebarPreview();
         }, 100);
     });
-</script>
-<script type="application/json" id="sidebar-settings-json"><?php echo json_encode($sidebarSettings ?? [], 15, 512) ?></script>
+
+        // Director Features Update Function
+        async function updateDirectorFeatures(event) {
+            event.preventDefault();
+            await handleFormSubmission(event, 'director', 'Updating director features...');
+        }
+        
+        // Professor Features Update Function
+        async function updateProfessorFeatures(event) {
+            event.preventDefault();
+            await handleFormSubmission(event, 'professor', 'Updating professor features...');
+        }
+        
+        // Show specific section function
+        function showSection(sectionId) {
+            // Hide all sections first
+            document.querySelectorAll('.sidebar-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show the requested section
+            const targetSection = document.getElementById(sectionId);
+            if (targetSection) {
+                targetSection.style.display = 'block';
+                targetSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        
+        // Reset to show all sections
+        function showAllSections() {
+            document.querySelectorAll('.sidebar-section').forEach(section => {
+                section.style.display = 'block';
+            });
+        }
+    </script>
+<script type="application/json" id="sidebar-settings-json"><?php echo json_encode($sidebarSettings ?? [], 15, 512) ?>
+        // Director Features Update Function
+        async function updateDirectorFeatures(event) {
+            event.preventDefault();
+            await handleFormSubmission(event, 'director', 'Updating director features...');
+        }
+        
+        // Professor Features Update Function
+        async function updateProfessorFeatures(event) {
+            event.preventDefault();
+            await handleFormSubmission(event, 'professor', 'Updating professor features...');
+        }
+        
+        // Show specific section function
+        function showSection(sectionId) {
+            // Hide all sections first
+            document.querySelectorAll('.sidebar-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show the requested section
+            const targetSection = document.getElementById(sectionId);
+            if (targetSection) {
+                targetSection.style.display = 'block';
+                targetSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        
+        // Reset to show all sections
+        function showAllSections() {
+            document.querySelectorAll('.sidebar-section').forEach(section => {
+                section.style.display = 'block';
+            });
+        }
+    </script>
 <?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/smartprep/dashboard/partials/customize-scripts.blade.php ENDPATH**/ ?>

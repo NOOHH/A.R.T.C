@@ -485,7 +485,8 @@
                         <?php echo e($homepageContent['hero_subtitle']); ?>
 
                     </p>
-                    <a href="<?php echo e(url('/enrollment')); ?>" class="btn btn-lg enroll-btn fade-in-up" style="background-color: <?php echo e($buttonColor); ?>; border-color: <?php echo e($buttonColor); ?>; color: white;">
+                    <a href="<?php echo e(isset($tenantSlug) ? url('/t/draft/' . $tenantSlug . '/enrollment') : url('/enrollment')); ?>" class="btn btn-lg enroll-btn fade-in-up" style="background-color: <?php echo e($buttonColor); ?>; border-color: <?php echo e($buttonColor); ?>; color: white;"
+                       data-tenant="<?php echo e($tenantSlug ?? 'none'); ?>">
                         <i class="bi bi-mortarboard me-2"></i><?php echo e($homepageContent['hero_button_text']); ?>
 
                     </a>

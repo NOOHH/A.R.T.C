@@ -193,12 +193,8 @@ Route::middleware(['smartprep.auth', 'debug.smartprep'])->group(function () {
     Route::post('/dashboard/settings/student/{website}', [CustomizeWebsiteController::class, 'updateStudent'])->name('dashboard.settings.update.student');
     Route::post('/dashboard/settings/professor/{website}', [CustomizeWebsiteController::class, 'updateProfessor'])->name('dashboard.settings.update.professor');
     Route::post('/dashboard/settings/admin/{website}', [CustomizeWebsiteController::class, 'updateAdmin'])->name('dashboard.settings.update.admin');
-    Route::post('/dashboard/settings/auth/{website}', [CustomizeWebsiteController::class, 'updateAuth'])->name('dashboard.settings.update.auth');
-    Route::post('/dashboard/settings/registration/{website}', [CustomizeWebsiteController::class, 'updateRegistration'])->name('dashboard.settings.update.registration');
     Route::post('/dashboard/settings/advanced/{website}', [CustomizeWebsiteController::class, 'updateAdvanced'])->name('dashboard.settings.update.advanced');
     Route::post('/dashboard/settings/sidebar/{website}', [CustomizeWebsiteController::class, 'updateSidebar'])->name('dashboard.settings.update.sidebar');
-    Route::post('/dashboard/settings/director/{website}', [CustomizeWebsiteController::class, 'updateDirector'])->name('dashboard.settings.update.director');
-    Route::post('/dashboard/settings/professor-features/{website}', [CustomizeWebsiteController::class, 'updateProfessorFeatures'])->name('dashboard.settings.update.professor-features');
     
     // User-managed website deletion (non-admin) – allows a client to delete their own draft/ inactive site
     Route::delete('/dashboard/websites/{id}', [CustomizeWebsiteController::class, 'destroy'])

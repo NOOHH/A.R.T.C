@@ -25,6 +25,9 @@
                 <button type="button" class="settings-nav-tab" data-section="admin">
                     <i class="fas fa-user-shield me-2"></i>Admin Panel
                 </button>
+                <button type="button" class="settings-nav-tab" data-section="auth">
+                    <i class="fas fa-sign-in-alt me-2"></i>Login/Register
+                </button>
                 <button type="button" class="settings-nav-tab" data-section="advanced">
                     <i class="fas fa-code me-2"></i>Advanced
                 </button>
@@ -67,7 +70,10 @@
         <!-- Admin Panel Settings -->
         @include('smartprep.dashboard.partials.settings.admin-panel')
         
-        <!-- Advanced Settings -->
+        <!-- Auth (Login/Register) Settings -->
+        @include('smartprep.dashboard.partials.settings.auth')
+        
+        <!-- Permissions Settings (formerly Advanced Settings) -->
         @include('smartprep.dashboard.partials.settings.advanced')
     </div>
 
