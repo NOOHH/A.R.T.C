@@ -25,11 +25,11 @@
                 <button type="button" class="settings-nav-tab" data-section="admin">
                     <i class="fas fa-user-shield me-2"></i>Admin Panel
                 </button>
+                <button type="button" class="settings-nav-tab" data-section="permissions">
+                    <i class="fas fa-shield-alt me-2"></i>Permissions
+                </button>
                 <button type="button" class="settings-nav-tab" data-section="auth">
                     <i class="fas fa-sign-in-alt me-2"></i>Login/Register
-                </button>
-                <button type="button" class="settings-nav-tab" data-section="advanced">
-                    <i class="fas fa-code me-2"></i>Advanced
                 </button>
             </div>
             
@@ -70,11 +70,11 @@
         <!-- Admin Panel Settings -->
         <?php echo $__env->make('smartprep.dashboard.partials.settings.admin-panel', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
         
+        <!-- Permissions Settings -->
+        <?php echo $__env->make('smartprep.dashboard.partials.settings.permissions', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+        
         <!-- Auth (Login/Register) Settings -->
         <?php echo $__env->make('smartprep.dashboard.partials.settings.auth', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
-        
-        <!-- Permissions Settings (formerly Advanced Settings) -->
-        <?php echo $__env->make('smartprep.dashboard.partials.settings.advanced', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
     </div>
 
     <!-- Live Preview Panel -->

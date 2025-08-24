@@ -211,7 +211,13 @@
         }
         
         .sidebar-section.active {
-            display: block;
+            display: block !important;
+        }
+        
+        /* Ensure permissions section displays correctly */
+        #permissions-settings.active,
+        #permissions-settings[style*="display: block"] {
+            display: block !important;
         }
         
         .section-header {
@@ -543,9 +549,6 @@
                         </button>
                         <button class="settings-nav-tab" data-section="permissions">
                             <i class="fas fa-shield-alt me-2"></i>Permissions
-                        </button>
-                        <button class="settings-nav-tab" data-section="advanced">
-                            <i class="fas fa-code me-2"></i>Advanced
                         </button>
                     </div>
                     
@@ -1312,10 +1315,10 @@
                 </div>
                 
                 <!-- Permissions Settings -->
-                <div id="permissions-settings" class="sidebar-section" style="display: none;">
-                    <h3 class="section-title">
-                        <i class="fas fa-shield-alt me-2"></i>Permissions
-                    </h3>
+                <div class="sidebar-section" id="permissions-settings" style="display: none;">
+                    <div class="section-header mb-3">
+                        <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Permissions Settings</h5>
+                    </div>
                     <p class="text-muted small mb-3">Configure access permissions for different user roles on your website.</p>
                     
                     <div class="alert alert-info">
@@ -1354,10 +1357,10 @@
                 </div>
 
                 <!-- Director Features -->
-                <div id="director-features" class="sidebar-section" style="display: none;">
-                    <h3 class="section-title">
-                        <i class="fas fa-user-tie me-2"></i>Director Features
-                    </h3>
+                <div class="sidebar-section" id="director-features" style="display: none;">
+                    <div class="section-header mb-3">
+                        <h5 class="mb-0"><i class="fas fa-user-tie me-2"></i>Director Features</h5>
+                    </div>
 
                     <form id="directorFeaturesForm" action="{{ route('smartprep.dashboard.settings.update.director', $selectedWebsite->id ?? 1) }}" method="POST" onsubmit="updateDirectorFeatures(event)">
                         @csrf
@@ -1397,10 +1400,10 @@
                 </div>
 
                 <!-- Professor Features -->
-                <div id="professor-features" class="sidebar-section" style="display: none;">
-                    <h3 class="section-title">
-                        <i class="fas fa-chalkboard-teacher me-2"></i>Professor Features
-                    </h3>
+                <div class="sidebar-section" id="professor-features" style="display: none;">
+                    <div class="section-header mb-3">
+                        <h5 class="mb-0"><i class="fas fa-chalkboard-teacher me-2"></i>Professor Features</h5>
+                    </div>
 
                     <form id="professorFeaturesForm" action="{{ route('smartprep.dashboard.settings.update.professor-features', $selectedWebsite->id ?? 1) }}" method="POST" onsubmit="updateProfessorFeatures(event)">
                         @csrf
@@ -1439,76 +1442,7 @@
                     </form>
                 </div>
                 
-                <!-- Advanced Settings -->
-                <div class="sidebar-section" id="advanced-settings" style="display: none;">
-                    <div class="section-header">
-                        <h5><i class="fas fa-code me-2"></i>Advanced Settings</h5>
-                    </div>
-                    
-                    <form id="advancedForm" onsubmit="updateAdvanced(event)">
-                        @csrf
-                        <div class="form-group mb-3">
-                            <label class="form-label">Custom CSS</label>
-                            <textarea class="form-control" name="custom_css" rows="8" placeholder="/* Add your custom CSS here */" style="font-family: monospace; font-size: 12px;">/* Custom styles for your training center */
-.custom-hero {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
 
-.custom-button {
-    border-radius: 25px;
-    padding: 12px 30px;
-}</textarea>
-                        </div>
-                        
-                        <div class="form-group mb-3">
-                            <label class="form-label">Custom JavaScript</label>
-                            <textarea class="form-control" name="custom_js" rows="6" placeholder="// Add your custom JavaScript here" style="font-family: monospace; font-size: 12px;">// Custom JavaScript for enhanced functionality
-document.addEventListener('DOMContentLoaded', function() {
-    // Your custom code here
-    console.log('A.R.T.C Custom JavaScript Loaded');
-});</textarea>
-                        </div>
-                        
-                        <div class="form-group mb-3">
-                            <label class="form-label">Google Analytics ID</label>
-                            <input type="text" class="form-control" name="google_analytics" placeholder="GA-XXXXXXXXXX">
-                        </div>
-                        
-                        <div class="form-group mb-3">
-                            <label class="form-label">Facebook Pixel ID</label>
-                            <input type="text" class="form-control" name="facebook_pixel" placeholder="Facebook Pixel ID">
-                        </div>
-                        
-                        <div class="form-group mb-3">
-                            <label class="form-label">Meta Tags</label>
-                            <textarea class="form-control" name="meta_tags" rows="4" placeholder="Additional meta tags">
-<meta name="keywords" content="training, education, review, certification">
-<meta name="author" content="A.R.T.C">
-<meta property="og:type" content="website"></textarea>
-                        </div>
-                        
-                        <h6 class="mt-4 mb-3">System Preferences</h6>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="maintenance_mode">
-                            <label class="form-check-label">Maintenance Mode</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="debug_mode">
-                            <label class="form-check-label">Debug Mode</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="cache_enabled" checked>
-                            <label class="form-check-label">Enable Caching</label>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-sync me-2"></i>Update Advanced Settings
-                        </button>
-                    </form>
-                </div>
             </div>
 
             <!-- Live Preview Panel -->
@@ -1581,9 +1515,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const navTabs = document.querySelectorAll('.settings-nav-tab');
             const sidebarSections = document.querySelectorAll('.sidebar-section');
             
+            console.log('🔍 DOMContentLoaded: Found', navTabs.length, 'nav tabs and', sidebarSections.length, 'sidebar sections');
+            
             navTabs.forEach(tab => {
                 tab.addEventListener('click', function() {
                     const section = this.getAttribute('data-section');
+                    console.log('🔍 Tab clicked:', section);
                     
                     // Update active tab
                     navTabs.forEach(t => t.classList.remove('active'));
@@ -1594,10 +1531,35 @@ document.addEventListener('DOMContentLoaded', function() {
                         s.classList.remove('active');
                         s.style.display = 'none';
                     });
-                    const sectionElement = document.getElementById(section + '-settings');
+                    
+                    const sectionId = section + '-settings';
+                    console.log('🔍 Looking for section:', sectionId);
+                    const sectionElement = document.getElementById(sectionId);
+                    console.log('🔍 Section element found:', sectionElement);
+                    
                     if (sectionElement) {
                         sectionElement.style.display = 'block';
                         sectionElement.classList.add('active');
+                        console.log('✅ Section displayed successfully');
+                        
+                        // Force display with setTimeout to ensure it takes effect
+                        setTimeout(() => {
+                            sectionElement.style.display = 'block';
+                            console.log('✅ Forced display update for:', sectionId);
+                        }, 10);
+                    } else {
+                        console.error('❌ Section element not found:', sectionId);
+                        console.log('🔍 Available sections:', Array.from(sidebarSections).map(s => s.id));
+                        
+                        // Try alternative approach - search by class and data attribute
+                        const alternativeElement = document.querySelector(`[id="${sectionId}"]`);
+                        if (alternativeElement) {
+                            console.log('✅ Found element with alternative method');
+                            alternativeElement.style.display = 'block';
+                            alternativeElement.classList.add('active');
+                        } else {
+                            console.error('❌ Element not found with alternative method either');
+                        }
                     }
                     
                     // Update preview for section
@@ -1626,7 +1588,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Function to show specific sections (for permissions navigation)
         function showSection(sectionId) {
+            console.log('🔍 showSection called with:', sectionId);
             const sidebarSections = document.querySelectorAll('.sidebar-section');
+            console.log('🔍 Available sidebar sections:', Array.from(sidebarSections).map(s => s.id));
             
             // Hide all sections
             sidebarSections.forEach(s => {
@@ -1636,9 +1600,30 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Show the requested section
             const sectionElement = document.getElementById(sectionId);
+            console.log('🔍 Section element found:', sectionElement);
+            
             if (sectionElement) {
                 sectionElement.style.display = 'block';
                 sectionElement.classList.add('active');
+                console.log('✅ Section displayed successfully:', sectionId);
+                
+                // Force display with setTimeout to ensure it takes effect
+                setTimeout(() => {
+                    sectionElement.style.display = 'block';
+                    console.log('✅ Forced display update for:', sectionId);
+                }, 10);
+            } else {
+                console.error('❌ Section element not found:', sectionId);
+                
+                // Try alternative approach - search by class and data attribute
+                const alternativeElement = document.querySelector(`[id="${sectionId}"]`);
+                if (alternativeElement) {
+                    console.log('✅ Found element with alternative method');
+                    alternativeElement.style.display = 'block';
+                    alternativeElement.classList.add('active');
+                } else {
+                    console.error('❌ Element not found with alternative method either');
+                }
             }
         }
 
@@ -1720,6 +1705,11 @@ document.addEventListener('DOMContentLoaded', function() {
             await handleFormSubmission(event, 'homepage', 'Updating homepage content...');
         }
         
+        async function updateAuth(event) {
+            event.preventDefault();
+            await handleFormSubmission(event, 'auth', 'Updating auth settings...');
+        }
+        
         async function updateStudent(event) {
             event.preventDefault();
             await handleFormSubmission(event, 'student', 'Updating student portal...');
@@ -1735,10 +1725,17 @@ document.addEventListener('DOMContentLoaded', function() {
             await handleFormSubmission(event, 'admin', 'Updating admin panel...');
         }
         
-        async function updateAdvanced(event) {
+        async function updateDirectorFeatures(event) {
             event.preventDefault();
-            await handleFormSubmission(event, 'advanced', 'Updating advanced settings...');
+            await handleFormSubmission(event, 'director', 'Updating director features...');
         }
+        
+        async function updateProfessorFeatures(event) {
+            event.preventDefault();
+            await handleFormSubmission(event, 'professor-features', 'Updating professor features...');
+        }
+        
+
 
         // Social Media Links Management
         function addSocialLink() {
@@ -1825,6 +1822,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (settingType === 'navbar') endpoint = '/smartprep/admin/settings/navbar';
                 if (settingType === 'branding') endpoint = '/smartprep/admin/settings/branding';
                 if (settingType === 'homepage') endpoint = '/smartprep/admin/settings/homepage';
+                if (settingType === 'auth') endpoint = '/smartprep/dashboard/settings/auth/{{ $selectedWebsite->id ?? 1 }}';
+                if (settingType === 'director') endpoint = '/smartprep/dashboard/settings/director/{{ $selectedWebsite->id ?? 1 }}';
+                if (settingType === 'professor-features') endpoint = '/smartprep/dashboard/settings/professor-features/{{ $selectedWebsite->id ?? 1 }}';
 
                 // Include mode to inform backend intent
                 formData.append('website_mode', websiteMode);
@@ -2110,7 +2110,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = {};
             
             // Gather data from all forms
-            const forms = ['generalForm', 'brandingForm', 'navbarForm', 'homepageForm', 'studentForm', 'professorForm', 'adminForm', 'advancedForm'];
+            const forms = ['generalForm', 'brandingForm', 'navbarForm', 'homepageForm', 'studentForm', 'professorForm', 'adminForm'];
             
             forms.forEach(formId => {
                 const form = document.getElementById(formId);
