@@ -27,31 +27,30 @@ Route::middleware(['web'])->group(function () {
 Route::get('/api/ui-settings', function () {
     $request = request();
     $websiteId = $request->query('website');
-    
+
     try {
-        // If website parameter is provided, load tenant-specific settings
         if ($websiteId) {
             $client = \App\Models\Client::find($websiteId);
             if ($client) {
-                // Find tenant by matching the client's slug (client name in lowercase)
-                $tenant = \App\Models\Tenant::where('slug', strtolower($client->name))->first();
+                // Use the client's stored slug directly (previously used strtolower(name) which could mismatch)
+                $tenant = \App\Models\Tenant::where('slug', $client->slug)->first();
                 if ($tenant) {
-                    // Switch to tenant database
                     $tenantService = app(\App\Services\TenantService::class);
                     $tenantService->switchToTenant($tenant);
-                    
-                    // Get settings from tenant database
+
                     $general = \App\Models\Setting::getGroup('general');
                     $navbar = \App\Models\Setting::getGroup('navbar');
                     $homepage = \App\Models\Setting::getGroup('homepage');
                     $branding = \App\Models\Setting::getGroup('branding');
-                    
-                    // Switch back to main database
+
                     $tenantService->switchToMain();
-                    
-                    // Force preview URL to ARTC preview route to avoid SmartPrep root redirect
-                    $general['preview_url'] = url('/artc');
-                    
+
+                    // Build tenant-specific preview URL (respect draft vs active status)
+                    $previewUrl = $tenant->status === 'draft'
+                        ? url('/t/draft/' . $tenant->slug)
+                        : url('/t/' . $tenant->slug);
+                    $general['preview_url'] = $previewUrl;
+
                     return response()->json([
                         'success' => true,
                         'data' => [
@@ -64,15 +63,14 @@ Route::get('/api/ui-settings', function () {
                 }
             }
         }
-        
-        // Fallback to main database settings
+
+        // Fallback to main database settings (platform-wide)
         return response()->json([
             'success' => true,
             'data' => \App\Helpers\UiSettingsHelper::getAll()
         ]);
-        
-    } catch (\Exception $e) {
-        // Error fallback - return main database settings
+    } catch (\Throwable $e) {
+        // Silent fallback – never block preview; include basic settings
         return response()->json([
             'success' => true,
             'data' => \App\Helpers\UiSettingsHelper::getAll()

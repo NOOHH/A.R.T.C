@@ -1,0 +1,287 @@
+
+<?php $__env->startSection('title','Admin Dashboard'); ?>
+<?php $__env->startPush('styles'); ?>
+    <link rel="stylesheet" href="<?php echo e(asset('css/admin/admin-dashboard.css')); ?>">
+<?php $__env->stopPush(); ?>
+
+
+<?php $__env->startSection('content'); ?>
+<?php if(isset($dbError) && $dbError): ?>
+    <div style="background:#ffeaea;color:#b91c1c;padding:14px 18px;border-radius:8px;margin-bottom:18px;font-weight:600;border:1.5px solid #fca5a5;">
+        <span style="font-size:1.2em;vertical-align:middle;">&#9888;&#65039;</span> <?php echo e($dbError); ?><br>
+        <span style="font-weight:400;font-size:0.98em;">Some dashboard features are unavailable until the database is restored.</span>
+    </div>
+<?php endif; ?>
+
+<!-- Analytics Section -->
+<div class="analytics-section">
+    <div class="analytics-grid">
+        <div class="analytics-card students">
+            <div class="analytics-number"><?php echo e($analytics['total_students'] ?? 8); ?></div>
+            <div class="analytics-label">Total Students</div>
+            <div class="analytics-change">
+                <span>📈</span> +<?php echo e($analytics['new_students_this_month'] ?? 4); ?> this month
+            </div>
+        </div>
+        
+        <div class="analytics-card programs">
+            <div class="analytics-number"><?php echo e($analytics['total_programs'] ?? 3); ?></div>
+            <div class="analytics-label">Active Programs</div>
+            <div class="analytics-change">
+                <span>🗂️</span> <?php echo e($analytics['archived_programs'] ?? 2); ?> archived
+            </div>
+        </div>
+        
+        <div class="analytics-card modules">
+            <div class="analytics-number"><?php echo e($analytics['total_modules'] ?? 0); ?></div>
+            <div class="analytics-label">Course Modules</div>
+            <div class="analytics-change">
+                <span>📚</span> <?php echo e($analytics['modules_this_week'] ?? 1); ?> added this week
+            </div>
+        </div>
+        
+        <div class="analytics-card enrollments">
+            <div class="analytics-number"><?php echo e($analytics['total_enrollments'] ?? 11); ?></div>
+            <div class="analytics-label">Total Enrollments</div>
+            <div class="analytics-change">
+                <span>⏳</span> <?php echo e($analytics['pending_registrations'] ?? 2); ?> pending approval
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-container">
+    <div class="left-column">
+        <!-- Content Management Section -->
+        <div class="module-management">
+            <div class="section-header">
+                <span class="section-icon">📚</span>
+                <h2 class="section-title">Content Management</h2>
+            </div>
+            
+            <div class="module-actions-grid">
+                <?php if(session('preview_tenant') && request('website')): ?>
+                    
+                    <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/modules?website=<?php echo e(request('website')); ?>" class="module-action-card">
+                        <span class="icon">📝</span>
+                        <div class="title">Create Module</div>
+                        <div class="description">Add new learning modules</div>
+                    </a>
+                    
+                    <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/modules?website=<?php echo e(request('website')); ?>" class="module-action-card">
+                        <span class="icon">📋</span>
+                        <div class="title">Create Quiz</div>
+                        <div class="description">Design interactive quizzes</div>
+                    </a>
+                    
+                    <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/modules?website=<?php echo e(request('website')); ?>" class="module-action-card">
+                        <span class="icon">📊</span>
+                        <div class="title">Create Test</div>
+                        <div class="description">Build comprehensive tests</div>
+                    </a>
+                    
+                    <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/modules?website=<?php echo e(request('website')); ?>" class="module-action-card">
+                        <span class="icon">🔗</span>
+                        <div class="title">Add Link</div>
+                        <div class="description">Link external resources</div>
+                    </a>
+                    
+                    <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/courses/upload?website=<?php echo e(request('website')); ?>" class="module-action-card">
+                        <span class="icon">📤</span>
+                        <div class="title">Batch Upload</div>
+                        <div class="description">Upload multiple XML files</div>
+                    </a>
+                    
+                    <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/modules/archived?website=<?php echo e(request('website')); ?>" class="module-action-card">
+                        <span class="icon">🗃️</span>
+                        <div class="title">Archived Content</div>
+                        <div class="description">Manage archived modules</div>
+                    </a>
+                    
+                    <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/programs?website=<?php echo e(request('website')); ?>" class="module-action-card">
+                        <span class="icon">🎓</span>
+                        <div class="title">Manage Programs</div>
+                        <div class="description">Create and edit programs</div>
+                    </a>
+                    
+                    <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/submissions?website=<?php echo e(request('website')); ?>" class="module-action-card">
+                        <span class="icon">📋</span>
+                        <div class="title">Assignment Submissions</div>
+                        <div class="description">Review and grade student work</div>
+                    </a>
+                    
+                    <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/certificates?website=<?php echo e(request('website')); ?>" class="module-action-card">
+                        <span class="icon">🏆</span>
+                        <div class="title">Certificates</div>
+                        <div class="description">Generate student certificates</div>
+                    </a>
+                <?php else: ?>
+                    
+                    <a href="<?php echo e(route('admin.modules.index')); ?>" class="module-action-card">
+                        <span class="icon">📝</span>
+                        <div class="title">Create Module</div>
+                        <div class="description">Add new learning modules</div>
+                    </a>
+                    
+                    <a href="<?php echo e(route('admin.modules.index')); ?>" class="module-action-card">
+                        <span class="icon">📋</span>
+                        <div class="title">Create Quiz</div>
+                        <div class="description">Design interactive quizzes</div>
+                    </a>
+                    
+                    <a href="<?php echo e(route('admin.modules.index')); ?>" class="module-action-card">
+                        <span class="icon">📊</span>
+                        <div class="title">Create Test</div>
+                        <div class="description">Build comprehensive tests</div>
+                    </a>
+                    
+                    <a href="<?php echo e(route('admin.modules.index')); ?>" class="module-action-card">
+                        <span class="icon">🔗</span>
+                        <div class="title">Add Link</div>
+                        <div class="description">Link external resources</div>
+                    </a>
+                    
+                    <a href="<?php echo e(route('admin.modules.index')); ?>" class="module-action-card">
+                        <span class="icon">📤</span>
+                        <div class="title">Batch Upload</div>
+                        <div class="description">Upload multiple XML files</div>
+                    </a>
+                    
+                    <a href="<?php echo e(route('admin.modules.archived')); ?>" class="module-action-card">
+                        <span class="icon">🗃️</span>
+                        <div class="title">Archived Content</div>
+                        <div class="description">Manage archived modules</div>
+                    </a>
+                    
+                    <a href="<?php echo e(route('admin.programs.index')); ?>" class="module-action-card">
+                        <span class="icon">🎓</span>
+                        <div class="title">Manage Programs</div>
+                        <div class="description">Create and edit programs</div>
+                    </a>
+                    
+                    <a href="<?php echo e(route('admin.submissions')); ?>" class="module-action-card">
+                        <span class="icon">📋</span>
+                        <div class="title">Assignment Submissions</div>
+                        <div class="description">Review and grade student work</div>
+                    </a>
+                    
+                    <a href="<?php echo e(route('admin.certificates')); ?>" class="module-action-card">
+                        <span class="icon">🏆</span>
+                        <div class="title">Certificates</div>
+                        <div class="description">Generate student certificates</div>
+                    </a>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Analytics Chart Section -->
+        <div class="analytics-chart">
+            <div class="section-header">
+                <span class="section-icon">📈</span>
+                <h2 class="section-title">Analytics Overview</h2>
+            </div>
+            <div class="chart-container">
+                <canvas id="analyticsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="right-column">
+        <!-- Pending Student Registrations -->
+        <div class="pending-panel">
+            <div class="panel-title">
+                <span>⏳</span> Pending Student Registrations
+            </div>
+            <?php if(isset($dbError) && $dbError): ?>
+                <div style="color:#b91c1c;padding:12px 0;">Cannot load registrations. Database unavailable.</div>
+            <?php else: ?>
+                <?php if($registrations->count() > 0): ?>
+                    <?php $__currentLoopData = $registrations->take(3); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $registration): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <div class="registration-item">
+                        <div class="student-info">
+                            <div class="student-name"><?php echo e($registration->firstname); ?> <?php echo e($registration->lastname); ?></div>
+                            <div class="student-date"><?php echo e($registration->created_at ? $registration->created_at->format('M d, Y') : 'Jul 02, 2025'); ?></div>
+                        </div>
+                        <a href="<?php echo e(route('admin.student.registration.pending')); ?>" class="review-btn view-btn">Review</a>
+                    </div>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    <?php if($registrations->count() > 3): ?>
+                        <div style="text-align: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid #f0f0f0;">
+                            <a href="<?php echo e(route('admin.student.registration')); ?>" style="color: #667eea; text-decoration: none; font-weight: 500; font-size: 0.9rem;">
+                                View all <?php echo e($registrations->count()); ?> pending registrations →
+                            </a>
+                        </div>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <div class="empty-state">
+                        <div class="empty-state-icon">✅</div>
+                        <div style="font-weight: 600; margin-bottom: 4px;">No pending registrations</div>
+                        <small>All applications have been processed</small>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+
+        <!-- Recent Activities -->
+        <div class="recent-activities">
+            <div class="section-header">
+                <span class="section-icon">🕒</span>
+                <h2 class="section-title">Recent Activities</h2>
+            </div>
+            
+            <div class="activity-item">
+                <div class="activity-icon new-student"><span>👤</span></div>
+                <div class="activity-content">
+                    <div class="activity-title">New student registration</div>
+                    <div class="activity-time">2 hours ago</div>
+                </div>
+            </div>
+            
+            <div class="activity-item">
+                <div class="activity-icon new-module"><span>📚</span></div>
+                <div class="activity-content">
+                    <div class="activity-title">Module "Advanced Calculus" created</div>
+                    <div class="activity-time">4 hours ago</div>
+                </div>
+            </div>
+            
+            <div class="activity-item">
+                <div class="activity-icon enrollment"><span>✅</span></div>
+                <div class="activity-content">
+                    <div class="activity-title">Student enrolled in Nursing Program</div>
+                    <div class="activity-time">1 day ago</div>
+                </div>
+            </div>
+            
+            <div class="activity-item">
+                <div class="activity-icon new-student"><span>👤</span></div>
+                <div class="activity-content">
+                    <div class="activity-title">Student registration approved</div>
+                    <div class="activity-time">2 days ago</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Registration Modal -->
+<div id="registrationModal" class="modal">
+    <div class="modal-content landscape-modal">
+        <span class="close">&times;</span>
+        <h2>Registration Details</h2>
+        <div id="modal-details" class="modal-details-structured landscape-details"></div>
+        <div class="modal-actions">
+            <form id="approveForm" method="POST" style="display:inline;">
+                <?php echo csrf_field(); ?>
+                <button type="submit" class="approve-btn btn btn-success btn-sm">Approve</button>
+            </form>
+            <form id="rejectForm" method="POST" style="display:inline;">
+                <?php echo csrf_field(); ?>
+                <button type="submit" class="reject-btn btn btn-danger btn-sm">Reject</button>
+            </form>
+        </div>
+    </div>
+</div>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('admin.admin-dashboard.admin-dashboard-layout', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/admin/admin-dashboard/admin-dashboard.blade.php ENDPATH**/ ?>

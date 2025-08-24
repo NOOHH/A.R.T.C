@@ -636,6 +636,12 @@ class CustomizeWebsiteController extends Controller
 
             // Switch to tenant database
             $this->tenantService->switchToTenant($tenant);
+            Log::debug('[SidebarUpdate] Switched to tenant DB', [
+                'tenant_slug' => $tenant->slug,
+                'tenant_db' => $tenant->database_name,
+                'connection' => config('database.default'),
+                'section' => $section,
+            ]);
 
             // Save each color setting to the tenant database (ui_settings table)
             foreach ($colors as $key => $value) {
@@ -644,6 +650,9 @@ class CustomizeWebsiteController extends Controller
 
             // Switch back to main database
             $this->tenantService->switchToMain();
+            Log::debug('[SidebarUpdate] Switched back to main DB', [
+                'connection' => config('database.default'),
+            ]);
 
             Log::info("Sidebar colors updated for {$role} in tenant {$tenant->slug}", $colors);
 
@@ -710,6 +719,12 @@ class CustomizeWebsiteController extends Controller
 
             // Switch to tenant database
             $this->tenantService->switchToTenant($tenant);
+            Log::debug('[TenantSettingsUpdate] Switched to tenant DB', [
+                'section' => $section,
+                'tenant_slug' => $tenant->slug,
+                'tenant_db' => $tenant->database_name,
+                'connection' => config('database.default'),
+            ]);
 
             // Save all submitted settings to tenant database
             // Handle file uploads: if a field has an uploaded file, store to 'public' disk and persist disk-relative path
@@ -750,6 +765,10 @@ class CustomizeWebsiteController extends Controller
 
             // Switch back to main database
             $this->tenantService->switchToMain();
+            Log::debug('[TenantSettingsUpdate] Switched back to main DB', [
+                'section' => $section,
+                'connection' => config('database.default'),
+            ]);
 
             Log::info("Settings updated for section {$section} in tenant {$tenant->slug}");
 

@@ -10,7 +10,16 @@ class UiSetting extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mysql';
+    /**
+     * IMPORTANT: Previously forced to 'mysql' which caused tenant writes to go to main DB,
+     * leaking customization across all websites. We now defer to the current default
+     * connection so when TenantService switches database.default to 'tenant' the same
+     * model operates on the tenant DB.
+     */
+    public function getConnectionName()
+    {
+        return config('database.default');
+    }
 
     protected $fillable = [
         'section',

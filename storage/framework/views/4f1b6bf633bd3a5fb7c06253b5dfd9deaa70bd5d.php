@@ -192,7 +192,7 @@
                         // Add a "View Changes" button
                         const viewChangesBtn = document.createElement('button');
                         viewChangesBtn.className = 'btn btn-outline-primary btn-sm ms-2';
-                        viewChangesBtn.onclick = () => window.open('{{ $previewUrl }}?v=' + Date.now(), '_blank');
+                        viewChangesBtn.onclick = () => window.open('<?php echo e($previewUrl); ?>?v=' + Date.now(), '_blank');
                         
                         // Add the button to the notification area
                         const notificationArea = document.querySelector('.notification-area') || document.body;
@@ -246,45 +246,45 @@
         
     // Determine base preview URL from DOM (selected website) or fallback
     const previewPanelEl = document.querySelector('.preview-panel');
-    let previewUrl = (previewPanelEl && previewPanelEl.getAttribute('data-preview-base')) || '{{ $previewUrl }}';
+    let previewUrl = (previewPanelEl && previewPanelEl.getAttribute('data-preview-base')) || '<?php echo e($previewUrl); ?>';
         let titleText = 'Live Preview';
         
         switch(section) {
             case 'student':
                 // Use tenant-specific student dashboard URL instead of hardcoded /student/dashboard
-                previewUrl = '{{ $previewUrl }}' + '/student/dashboard';
+                previewUrl = '<?php echo e($previewUrl); ?>' + '/student/dashboard';
                 titleText = 'Student Portal Preview';
                 break;
             case 'professor':
                 // Use tenant-specific professor dashboard URL instead of hardcoded /professor/dashboard
-                previewUrl = '{{ $previewUrl }}' + '/professor/dashboard';
+                previewUrl = '<?php echo e($previewUrl); ?>' + '/professor/dashboard';
                 titleText = 'Professor Panel Preview';
                 break;
             case 'admin':
                 // Use tenant-specific admin dashboard URL instead of hardcoded /admin-dashboard
-                previewUrl = '{{ $previewUrl }}' + '/admin-dashboard';
+                previewUrl = '<?php echo e($previewUrl); ?>' + '/admin-dashboard';
                 titleText = 'Admin Panel Preview';
                 break;
             case 'homepage':
-                previewUrl = '{{ $previewUrl }}';
+                previewUrl = '<?php echo e($previewUrl); ?>';
                 titleText = 'Homepage Preview';
                 break;
             case 'auth':
-                previewUrl = '{{ $previewUrl }}' + '/login';
+                previewUrl = '<?php echo e($previewUrl); ?>' + '/login';
                 titleText = 'Login/Register Preview';
                 break;
             case 'navbar':
             case 'branding':
-                previewUrl = '{{ $previewUrl }}';
+                previewUrl = '<?php echo e($previewUrl); ?>';
                 titleText = 'Live Preview';
                 break;
             default:
-                previewUrl = '{{ $previewUrl }}';
+                previewUrl = '<?php echo e($previewUrl); ?>';
                 titleText = 'Live Preview';
         }
         
     // Add preview parameter, website parameter, and timestamp to bypass cache
-    const websiteId = '{{ $selectedWebsite->id }}';
+    const websiteId = '<?php echo e($selectedWebsite->id); ?>';
     // Persist section & base per website
     try {
         const lsBaseKey = 'preview_base_customize_' + websiteId;
@@ -379,8 +379,8 @@
             
             try {
                 // Fetch current UI settings from API with website parameter
-                const websiteId = '{{ $selectedWebsite->id }}';
-                const apiUrl = '{{ route("smartprep.api.ui-settings") }}' + '?website=' + websiteId;
+                const websiteId = '<?php echo e($selectedWebsite->id); ?>';
+                const apiUrl = '<?php echo e(route("smartprep.api.ui-settings")); ?>' + '?website=' + websiteId;
                 const response = await fetch(apiUrl);
                 if (response.ok) {
                     const settings = await response.json();
@@ -388,7 +388,7 @@
                     applySettingsToPreview(settings.data);
                     
                     // Update iframe src with configurable preview URL and website parameter
-                    const fallbackUrl = "{{ $previewUrl }}";
+                    const fallbackUrl = "<?php echo e($previewUrl); ?>";
                     const basePreviewUrl = (settings.data && settings.data.general && settings.data.general.preview_url)
                         ? settings.data.general.preview_url
                         : fallbackUrl;
@@ -410,7 +410,7 @@
             } catch (error) {
                 console.error('Failed to fetch UI settings:', error);
                 // Fallback to default URL
-                iframe.src = "{{ $previewUrl }}";
+                iframe.src = "<?php echo e($previewUrl); ?>";
             }
             
             showNotification('Refreshing preview...', 'info');
@@ -484,7 +484,7 @@
                     openInNewTabLink.href = href;
                 } else if (isTenantContext) {
                     // Tenant context: preserve current iframe src base (without cache buster)
-                    let base = iframe ? iframe.src.split('?')[0] : '{{ $previewUrl }}';
+                    let base = iframe ? iframe.src.split('?')[0] : '<?php echo e($previewUrl); ?>';
                     let href = base + (base.includes('?') ? '&' : '?') + 'preview=true';
                     openInNewTabLink.href = href;
                 }
@@ -523,11 +523,11 @@
     // Initialize preview URL from settings
     async function initializePreviewUrl() {
         try {
-            const websiteId = '{{ $selectedWebsite->id }}';
-            const response = await fetch('{{ route("smartprep.api.ui-settings") }}' + '?website=' + websiteId);
+            const websiteId = '<?php echo e($selectedWebsite->id); ?>';
+            const response = await fetch('<?php echo e(route("smartprep.api.ui-settings")); ?>' + '?website=' + websiteId);
             if (response.ok) {
                 const settings = await response.json();
-                const fallbackUrlInit = (document.querySelector('.preview-panel')?.getAttribute('data-preview-base')) || "{{ $previewUrl }}";
+                const fallbackUrlInit = (document.querySelector('.preview-panel')?.getAttribute('data-preview-base')) || "<?php echo e($previewUrl); ?>";
                 // Attempt to restore stored base (panel) first
                 let previewUrl = fallbackUrlInit;
                 try {
@@ -557,8 +557,8 @@
     // Refresh homepage form with latest data
     async function refreshHomepageForm() {
         try {
-            const websiteId = '{{ $selectedWebsite->id }}';
-            const response = await fetch('{{ route("smartprep.api.ui-settings") }}' + '?website=' + websiteId);
+            const websiteId = '<?php echo e($selectedWebsite->id); ?>';
+            const response = await fetch('<?php echo e(route("smartprep.api.ui-settings")); ?>' + '?website=' + websiteId);
             if (response.ok) {
                 const settings = await response.json();
                 const homepageSettings = settings.data.homepage;
@@ -648,7 +648,7 @@
     // Restore stored preview section (if any) and switch UI to it
     function restoreStoredPreviewState() {
         try {
-            const websiteId = '{{ $selectedWebsite->id }}';
+            const websiteId = '<?php echo e($selectedWebsite->id); ?>';
             const lsSectionKey = 'preview_section_customize_' + websiteId;
             const storedSection = localStorage.getItem(lsSectionKey);
             if (storedSection) {
@@ -1128,7 +1128,7 @@
             });
         }
     </script>
-<script type="application/json" id="sidebar-settings-json">@json($sidebarSettings ?? [])
+<script type="application/json" id="sidebar-settings-json"><?php echo json_encode($sidebarSettings ?? [], 15, 512) ?>
         // Director Features Update Function
         async function updateDirectorFeatures(event) {
             event.preventDefault();
@@ -1163,3 +1163,4 @@
             });
         }
     </script>
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/smartprep/dashboard/partials/customize-scripts.blade.php ENDPATH**/ ?>
