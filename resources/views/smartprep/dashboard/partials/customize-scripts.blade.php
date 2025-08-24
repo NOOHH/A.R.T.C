@@ -12,13 +12,20 @@
                 navTabs.forEach(t => t.classList.remove('active'));
                 this.classList.add('active');
                 
-                // Update active section
+                // Update active section (null-safe)
                 sidebarSections.forEach(s => {
-                    s.classList.remove('active');
-                    s.style.display = 'none';
+                    if (s) {
+                        s.classList.remove('active');
+                        if (s.style) s.style.display = 'none';
+                    }
                 });
-                document.getElementById(section + '-settings').style.display = 'block';
-                document.getElementById(section + '-settings').classList.add('active');
+                const sectionElement = document.getElementById(section + '-settings');
+                if (sectionElement) {
+                    if (sectionElement.style) sectionElement.style.display = 'block';
+                    if (sectionElement.classList) sectionElement.classList.add('active');
+                } else {
+                    console.warn('Section element not found for:', section);
+                }
                 
                 // Update preview URL based on section
                 updatePreviewForSection(section);
@@ -79,6 +86,21 @@
     async function updateAuth(event) {
         event.preventDefault();
         await handleFormSubmission(event, 'auth', 'Updating authentication settings...');
+    }
+    
+    async function updateRegistration(event) {
+        event.preventDefault();
+        await handleFormSubmission(event, 'registration', 'Updating registration settings...');
+    }
+    
+    async function updateDirectorFeatures(event) {
+        event.preventDefault();
+        await handleFormSubmission(event, 'director', 'Updating director features...');
+    }
+    
+    async function updateProfessorFeatures(event) {
+        event.preventDefault();
+        await handleFormSubmission(event, 'professor-features', 'Updating professor features...');
     }
     
     async function updateAdvanced(event) {

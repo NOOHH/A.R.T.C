@@ -53,6 +53,22 @@ class RouteServiceProvider extends ServiceProvider
                 ->middleware(['web', 'smartprep.db'])
                 ->namespace($this->namespace)
                 ->group(base_path('routes/smartprep.php'));
+
+            // Tenant routes (live): /t/{tenant}/...
+            if (file_exists(base_path('routes/tenant.php'))) {
+                Route::prefix('t/{tenant}')
+                    ->as('tenant.')
+                    ->middleware(['web'])
+                    ->namespace($this->namespace)
+                    ->group(base_path('routes/tenant.php'));
+
+                // Tenant routes (draft preview): /t/draft/{tenant}/...
+                Route::prefix('t/draft/{tenant}')
+                    ->as('tenant.draft.')
+                    ->middleware(['web'])
+                    ->namespace($this->namespace)
+                    ->group(base_path('routes/tenant.php'));
+            }
         });
     }
 

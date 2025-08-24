@@ -729,9 +729,14 @@
         event.preventDefault();
         event.stopPropagation();
         const modal = document.getElementById('programsModal');
-        if (modal.style.display === 'none' || modal.style.display === '') {
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
+        if (!modal) {
+            console.warn('Programs modal element not found');
+            return;
+        }
+        const display = (modal.style && modal.style.display) || '';
+        if (display === 'none' || display === '') {
+            if (modal.style) modal.style.display = 'flex';
+            if (document.body && document.body.style) document.body.style.overflow = 'hidden';
             // Load programs when modal is opened
             loadProgramsModal();
         } else {
@@ -741,17 +746,19 @@
     
     // Close programs modal
     function closeProgramsModal() {
-        const modal = document.getElementById('programsModal');
-        modal.style.display = 'none';
-        document.body.style.overflow = '';
+    const modal = document.getElementById('programsModal');
+    if (!modal) return;
+    if (modal.style) modal.style.display = 'none';
+    if (document.body && document.body.style) document.body.style.overflow = '';
     }
     
     function loadProgramsModal() {
+        const modalList = document.getElementById('programsModalList');
+        if (!modalList) return;
         fetch('/api/programs')
             .then(response => response.json())
             .then(data => {
-                const modalList = document.getElementById('programsModalList');
-                if (!modalList) return;
+                // modalList already verified
                 
                 modalList.innerHTML = '';
                 

@@ -47,9 +47,17 @@
                 @if(!$f->is_enabled) @continue @endif
                 <div class="form-group">
                     <label class="form-label">{{ $f->label }}</label>
+                    @php
+                        $autocomplete = match($f->field_key) {
+                            'email' => 'email',
+                            'username' => 'username',
+                            'password' => 'current-password',
+                            default => $f->type === 'password' ? 'current-password' : 'on',
+                        };
+                    @endphp
                     <input id="{{ $f->field_key }}" type="{{ $f->type }}" class="form-control @error($f->field_key) is-invalid @enderror" name="{{ $f->field_key }}" 
                         value="{{ old($f->field_key) ?? (($f->field_key == 'email' || $f->field_key == 'username') && isset($autoEmail) ? $autoEmail : '') }}" 
-                        {{ $f->is_required ? 'required' : '' }} autocomplete="{{ $f->field_key }}" autofocus>
+                        {{ $f->is_required ? 'required' : '' }} autocomplete="{{ $autocomplete }}" autofocus>
                     @error($f->field_key)
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror

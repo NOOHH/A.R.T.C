@@ -9,6 +9,31 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
+// TEST NAVIGATION ROUTE (bypass authentication for debugging)
+Route::get('/test-navigation', function () {
+    $selectedWebsite = (object) [
+        'id' => 15, 
+        'name' => 'Test Website', 
+        'slug' => 'test1',
+        'status' => 'draft'
+    ];
+    $activeWebsites = collect([$selectedWebsite]);
+    $settings = [
+        'general' => ['brand_name' => 'Test', 'admin_email' => 'admin@test.com'],
+        'navbar' => ['brand_name' => 'Test'],
+        'branding' => ['primary_color' => '#667eea'],
+        'homepage' => ['hero_title' => 'Test'],
+        'student' => [],
+        'professor' => [],
+        'admin' => [],
+        'auth' => ['login_title' => 'Welcome Back'],
+        'advanced' => []
+    ];
+    $previewUrl = 'http://127.0.0.1:8000/t/test1';
+    
+    return view('smartprep.dashboard.customize-website', compact('selectedWebsite', 'activeWebsites', 'settings', 'previewUrl'));
+})->name('test.navigation');
+
 // Broadcasting Authentication (for Laravel Echo + Pusher)
 Broadcast::routes(['middleware' => ['web']]);
 

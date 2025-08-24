@@ -1,4 +1,4 @@
-@php
+<?php
     // Ensure auth context variables exist before head is rendered
     $user = Auth::guard('smartprep_admin')->user() ?: Auth::guard('smartprep')->user() ?: Auth::user();
     $isLoggedIn = Auth::guard('smartprep_admin')->check() || Auth::guard('smartprep')->check() || Auth::check();
@@ -12,7 +12,7 @@
             $userRole = $user->role ?? 'user';
         }
     }
-@endphp
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -22,13 +22,13 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
     <!-- App context for JS (avoid Blade echoes inside scripts for linting) -->
-    <meta name="x-my-id" content="{{ $isLoggedIn && isset($user) ? $user->id : '' }}">
-    <meta name="x-my-name" content="{{ $isLoggedIn && isset($user) ? ($user->name ?? 'User') : 'Guest' }}">
-    <meta name="x-is-authenticated" content="{{ $isLoggedIn && isset($user) ? '1' : '0' }}">
-    <meta name="x-user-role" content="{{ $userRole ?? 'guest' }}">
-    <meta name="x-selected-website-id" content="{{ $selectedWebsite->id ?? '' }}">
+    <meta name="x-my-id" content="<?php echo e($isLoggedIn && isset($user) ? $user->id : ''); ?>">
+    <meta name="x-my-name" content="<?php echo e($isLoggedIn && isset($user) ? ($user->name ?? 'User') : 'Guest'); ?>">
+    <meta name="x-is-authenticated" content="<?php echo e($isLoggedIn && isset($user) ? '1' : '0'); ?>">
+    <meta name="x-user-role" content="<?php echo e($userRole ?? 'guest'); ?>">
+    <meta name="x-selected-website-id" content="<?php echo e($selectedWebsite->id ?? ''); ?>">
     <style>
         :root {
             --primary-color: #1e40af;
@@ -412,7 +412,7 @@
     </style>
 </head>
 <body>
-    @php
+    <?php
         // Get user info for global variables - check all relevant guards
         $user = Auth::guard('smartprep_admin')->user() ?: Auth::guard('smartprep')->user() ?: Auth::user();
         
@@ -430,7 +430,7 @@
                 $userRole = $user->role ?? 'user';
             }
         }
-    @endphp
+    ?>
 
     <!-- Global Variables for JavaScript -->
     <script>
@@ -468,35 +468,36 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ Auth::guard('smartprep_admin')->check() ? route('smartprep.admin.dashboard') : route('smartprep.dashboard') }}">
+                        <a class="nav-link" href="<?php echo e(Auth::guard('smartprep_admin')->check() ? route('smartprep.admin.dashboard') : route('smartprep.dashboard')); ?>">
                             <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="{{ route('smartprep.dashboard.customize') }}">
+                        <a class="nav-link active" href="<?php echo e(route('smartprep.dashboard.customize')); ?>">
                             <i class="fas fa-palette me-2"></i>Customize Website
                         </a>
                     </li>
-                    @if(isset($activeWebsites) && $activeWebsites->count() > 0)
+                    <?php if(isset($activeWebsites) && $activeWebsites->count() > 0): ?>
                     <li class="nav-item">
                         <a class="nav-link" href="#">
                             <i class="fas fa-globe me-2"></i>My Websites
                         </a>
                     </li>
-                    @endif
+                    <?php endif; ?>
                 </ul>
                 
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-2"></i>{{ Auth::guard('smartprep_admin')->user()->name ?? Auth::guard('smartprep')->user()->name ?? 'User' }}
+                            <i class="fas fa-user-circle me-2"></i><?php echo e(Auth::guard('smartprep_admin')->user()->name ?? Auth::guard('smartprep')->user()->name ?? 'User'); ?>
+
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="/"><i class="fas fa-home me-2"></i>Home</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <form method="POST" action="{{ route('smartprep.logout') }}" class="d-inline w-100">
-                                    @csrf
+                                <form method="POST" action="<?php echo e(route('smartprep.logout')); ?>" class="d-inline w-100">
+                                    <?php echo csrf_field(); ?>
                                     <button type="submit" class="dropdown-item">
                                         <i class="fas fa-sign-out-alt me-2"></i>Logout
                                     </button>
@@ -554,11 +555,11 @@
                             <i class="fas fa-save me-2"></i>Save Changes
                         </button>
                         <button class="btn btn-success" onclick="submitWebsiteRequest()">
-                            @if($userRole === 'admin')
+                            <?php if($userRole === 'admin'): ?>
                                 <i class="fas fa-save me-2"></i>Save Settings
-                            @else
+                            <?php else: ?>
                                 <i class="fas fa-paper-plane me-2"></i>Submit Website Request
-                            @endif
+                            <?php endif; ?>
                         </button>
                     </div>
                 </div>
@@ -581,31 +582,31 @@
                             <button type="button" class="btn btn-sm btn-outline-primary" onclick="openCreateWebsite()" title="Create Draft"><i class="fas fa-plus"></i></button>
                         </div>
                         <div class="list-group small mb-2 border" id="websiteList" style="max-height:140px;overflow:auto;">
-                            @foreach(($activeWebsites ?? collect()) as $website)
-                                @php $isActive = isset($selectedWebsite) && $selectedWebsite && $selectedWebsite->id === $website->id; @endphp
-                                <button type="button" class="list-group-item list-group-item-action py-2 website-item d-flex justify-content-between align-items-center {{ $isActive ? 'active' : '' }}" data-id="{{ $website->id }}">
-                                    <span class="text-truncate" style="max-width:130px">{{ $website->name }}</span>
-                                    @if($website->status === 'draft')<span class="badge bg-warning text-dark">Draft</span>@endif
+                            <?php $__currentLoopData = ($activeWebsites ?? collect()); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $website): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php $isActive = isset($selectedWebsite) && $selectedWebsite && $selectedWebsite->id === $website->id; ?>
+                                <button type="button" class="list-group-item list-group-item-action py-2 website-item d-flex justify-content-between align-items-center <?php echo e($isActive ? 'active' : ''); ?>" data-id="<?php echo e($website->id); ?>">
+                                    <span class="text-truncate" style="max-width:130px"><?php echo e($website->name); ?></span>
+                                    <?php if($website->status === 'draft'): ?><span class="badge bg-warning text-dark">Draft</span><?php endif; ?>
                                 </button>
-                            @endforeach
-                            @if(($activeWebsites ?? collect())->isEmpty())
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            <?php if(($activeWebsites ?? collect())->isEmpty()): ?>
                                 <div class="text-muted small px-2 py-1">No drafts yet.</div>
-                            @endif
+                            <?php endif; ?>
                         </div>
-                        @if(isset($selectedWebsite))
+                        <?php if(isset($selectedWebsite)): ?>
                             <div class="d-flex flex-wrap align-items-center gap-2 mb-3 small">
-                                <span><strong>Editing:</strong> {{ $selectedWebsite->name }}</span>
-                                <code>/t/{{ $selectedWebsite->slug }}</code>
+                                <span><strong>Editing:</strong> <?php echo e($selectedWebsite->name); ?></span>
+                                <code>/t/<?php echo e($selectedWebsite->slug); ?></code>
                                 <button type="button" class="btn btn-xs btn-outline-success" onclick="saveDraftSettings()" style="font-size:11px;padding:3px 8px"><i class="fas fa-save"></i></button>
-                                <form method="POST" action="{{ route('smartprep.dashboard.websites.destroy', $selectedWebsite->id) }}" onsubmit="return confirm('Delete this website? This cannot be undone.');" class="m-0 p-0">
-                                    @csrf @method('DELETE')
+                                <form method="POST" action="<?php echo e(route('smartprep.dashboard.websites.destroy', $selectedWebsite->id)); ?>" onsubmit="return confirm('Delete this website? This cannot be undone.');" class="m-0 p-0">
+                                    <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
                                     <button type="submit" class="btn btn-xs btn-outline-danger" style="font-size:11px;padding:3px 8px"><i class="fas fa-trash"></i></button>
                                 </form>
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                     <form id="generalForm" onsubmit="updateGeneral(event)">
-                        @csrf
+                        <?php echo csrf_field(); ?>
                         <!-- Admin Account Settings -->
                         <div class="form-group mb-4">
                             <div class="d-flex align-items-center mb-2">
@@ -616,7 +617,7 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Admin Email</label>
-                                    <input type="email" class="form-control" name="admin_email" value="{{ $settings['general']['admin_email'] ?? '' }}" placeholder="e.g. admin@training.com">
+                                    <input type="email" class="form-control" name="admin_email" value="<?php echo e($settings['general']['admin_email'] ?? ''); ?>" placeholder="e.g. admin@training.com">
                                     <small class="form-text text-muted">Format: admin@(website-name).com</small>
                                 </div>
                                 <div class="col-md-6">
@@ -630,30 +631,30 @@
                         <!-- Brand Name (Connected to Navigation) -->
                         <div class="form-group mb-3">
                             <label class="form-label">Brand Name</label>
-                            <input type="text" class="form-control" name="brand_name" value="{{ $settings['general']['brand_name'] ?? $settings['navbar']['brand_name'] ?? '' }}" placeholder="Enter brand name">
+                            <input type="text" class="form-control" name="brand_name" value="<?php echo e($settings['general']['brand_name'] ?? $settings['navbar']['brand_name'] ?? ''); ?>" placeholder="Enter brand name">
                             <small class="form-text text-muted">This will appear in the navigation bar and browser tab</small>
                         </div>
 
                         <!-- Contact Information -->
                         <div class="form-group mb-3">
                             <label class="form-label">Contact Email (Optional)</label>
-                            <input type="email" class="form-control" name="contact_email" value="{{ $settings['general']['contact_email'] ?? '' }}" placeholder="Contact email">
+                            <input type="email" class="form-control" name="contact_email" value="<?php echo e($settings['general']['contact_email'] ?? ''); ?>" placeholder="Contact email">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Phone Number (Optional)</label>
-                            <input type="text" class="form-control" name="contact_phone" value="{{ $settings['general']['contact_phone'] ?? '' }}" placeholder="Phone number">
+                            <input type="text" class="form-control" name="contact_phone" value="<?php echo e($settings['general']['contact_phone'] ?? ''); ?>" placeholder="Phone number">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Address (Optional)</label>
-                            <textarea class="form-control" name="contact_address" rows="3" placeholder="Physical address">{{ $settings['general']['contact_address'] ?? '' }}</textarea>
+                            <textarea class="form-control" name="contact_address" rows="3" placeholder="Physical address"><?php echo e($settings['general']['contact_address'] ?? ''); ?></textarea>
                         </div>
 
                         <!-- Terms and Conditions -->
                         <div class="form-group mb-3">
                             <label class="form-label">Terms and Conditions (Optional)</label>
-                            <textarea class="form-control" name="terms_conditions" rows="4" placeholder="Enter terms and conditions">{{ $settings['general']['terms_conditions'] ?? '' }}</textarea>
+                            <textarea class="form-control" name="terms_conditions" rows="4" placeholder="Enter terms and conditions"><?php echo e($settings['general']['terms_conditions'] ?? ''); ?></textarea>
                         </div>
 
                         <!-- Social Media Links -->
@@ -664,26 +665,26 @@
                             </div>
                             <p class="small text-muted mb-3">Add social media links for your website footer</p>
                             <div id="socialLinksContainer">
-                                @php
+                                <?php
                                     $socialLinks = json_decode($settings['general']['social_links'] ?? '[]', true) ?: [];
-                                @endphp
-                                @foreach($socialLinks as $index => $link)
+                                ?>
+                                <?php $__currentLoopData = $socialLinks; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $link): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <div class="row g-2 mb-2 social-link-row">
                                     <div class="col-md-4">
-                                        <select class="form-control" name="social_links[{{ $index }}][platform]">
+                                        <select class="form-control" name="social_links[<?php echo e($index); ?>][platform]">
                                             <option value="">Select Platform</option>
-                                            <option value="facebook" {{ $link['platform'] == 'facebook' ? 'selected' : '' }}>Facebook</option>
-                                            <option value="youtube" {{ $link['platform'] == 'youtube' ? 'selected' : '' }}>YouTube</option>
-                                            <option value="twitter" {{ $link['platform'] == 'twitter' ? 'selected' : '' }}>Twitter</option>
-                                            <option value="instagram" {{ $link['platform'] == 'instagram' ? 'selected' : '' }}>Instagram</option>
-                                            <option value="linkedin" {{ $link['platform'] == 'linkedin' ? 'selected' : '' }}>LinkedIn</option>
-                                            <option value="tiktok" {{ $link['platform'] == 'tiktok' ? 'selected' : '' }}>TikTok</option>
-                                            <option value="telegram" {{ $link['platform'] == 'telegram' ? 'selected' : '' }}>Telegram</option>
-                                            <option value="whatsapp" {{ $link['platform'] == 'whatsapp' ? 'selected' : '' }}>WhatsApp</option>
+                                            <option value="facebook" <?php echo e($link['platform'] == 'facebook' ? 'selected' : ''); ?>>Facebook</option>
+                                            <option value="youtube" <?php echo e($link['platform'] == 'youtube' ? 'selected' : ''); ?>>YouTube</option>
+                                            <option value="twitter" <?php echo e($link['platform'] == 'twitter' ? 'selected' : ''); ?>>Twitter</option>
+                                            <option value="instagram" <?php echo e($link['platform'] == 'instagram' ? 'selected' : ''); ?>>Instagram</option>
+                                            <option value="linkedin" <?php echo e($link['platform'] == 'linkedin' ? 'selected' : ''); ?>>LinkedIn</option>
+                                            <option value="tiktok" <?php echo e($link['platform'] == 'tiktok' ? 'selected' : ''); ?>>TikTok</option>
+                                            <option value="telegram" <?php echo e($link['platform'] == 'telegram' ? 'selected' : ''); ?>>Telegram</option>
+                                            <option value="whatsapp" <?php echo e($link['platform'] == 'whatsapp' ? 'selected' : ''); ?>>WhatsApp</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6">
-                                        <input type="url" class="form-control" name="social_links[{{ $index }}][url]" value="{{ $link['url'] ?? '' }}" placeholder="https://...">
+                                        <input type="url" class="form-control" name="social_links[<?php echo e($index); ?>][url]" value="<?php echo e($link['url'] ?? ''); ?>" placeholder="https://...">
                                     </div>
                                     <div class="col-md-2">
                                         <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeSocialLink(this)">
@@ -691,7 +692,7 @@
                                         </button>
                                     </div>
                                 </div>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </div>
                             <button type="button" class="btn btn-outline-primary btn-sm" onclick="addSocialLink()">
                                 <i class="fas fa-plus me-1"></i>Add Social Link
@@ -711,7 +712,7 @@
                     </div>
                     
                     <form id="brandingForm" onsubmit="updateBranding(event)" enctype="multipart/form-data">
-                        @csrf
+                        <?php echo csrf_field(); ?>
                         <div class="form-group mb-3">
                             <label class="form-label">Primary Color</label>
                             <div class="color-picker-group">
@@ -776,10 +777,10 @@
                     </div>
                     
                     <form id="navbarForm" onsubmit="updateNavbar(event)">
-                        @csrf
+                        <?php echo csrf_field(); ?>
                         <div class="form-group mb-3">
                             <label class="form-label">Brand Name</label>
-                            <input type="text" class="form-control" name="brand_name" value="{{ $settings['navbar']['brand_name'] ?? 'Ascendo Review and Training Center' }}" placeholder="Brand name">
+                            <input type="text" class="form-control" name="brand_name" value="<?php echo e($settings['navbar']['brand_name'] ?? 'Ascendo Review and Training Center'); ?>" placeholder="Brand name">
                         </div>
                         
                         <div class="form-group mb-3">
@@ -847,15 +848,15 @@
                     </div>
                     
                     <form id="homepageForm" onsubmit="updateHomepage(event)" enctype="multipart/form-data">
-                        @csrf
+                        <?php echo csrf_field(); ?>
                         <div class="form-group mb-3">
                             <label class="form-label">Hero Title</label>
-                            <input type="text" class="form-control" name="hero_title" value="{{ $settings['homepage']['hero_title'] ?? 'Review Smarter. Learn Better. Succeed Faster.' }}" placeholder="Main headline">
+                            <input type="text" class="form-control" name="hero_title" value="<?php echo e($settings['homepage']['hero_title'] ?? 'Review Smarter. Learn Better. Succeed Faster.'); ?>" placeholder="Main headline">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Hero Subtitle</label>
-                            <textarea class="form-control" name="hero_subtitle" rows="3" placeholder="Hero description">{{ $settings['homepage']['hero_subtitle'] ?? 'Your premier destination for comprehensive review programs and professional training.' }}</textarea>
+                            <textarea class="form-control" name="hero_subtitle" rows="3" placeholder="Hero description"><?php echo e($settings['homepage']['hero_subtitle'] ?? 'Your premier destination for comprehensive review programs and professional training.'); ?></textarea>
                         </div>
                         
                         <div class="form-group mb-3">
@@ -961,7 +962,7 @@
                     </div>
                     
                     <form id="studentForm" onsubmit="updateStudent(event)">
-                        @csrf
+                        <?php echo csrf_field(); ?>
                         <div class="form-group mb-3">
                             <label class="form-label">Student Dashboard Title</label>
                             <input type="text" class="form-control" name="student_dashboard_title" value="Student Dashboard" placeholder="Dashboard title">
@@ -1027,7 +1028,7 @@
                     </div>
                     
                     <form id="professorForm" onsubmit="updateProfessor(event)">
-                        @csrf
+                        <?php echo csrf_field(); ?>
                         <div class="form-group mb-3">
                             <label class="form-label">Professor Dashboard Title</label>
                             <input type="text" class="form-control" name="professor_dashboard_title" value="Instructor Dashboard" placeholder="Dashboard title">
@@ -1103,7 +1104,7 @@
                     </div>
                     
                     <form id="adminForm" onsubmit="updateAdmin(event)">
-                        @csrf
+                        <?php echo csrf_field(); ?>
                         <div class="form-group mb-3">
                             <label class="form-label">Admin Dashboard Title</label>
                             <input type="text" class="form-control" name="admin_dashboard_title" value="Administrative Dashboard" placeholder="Dashboard title">
@@ -1169,8 +1170,8 @@
                     </div>
                     
                     <!-- Login Customization Section -->
-                    <form id="loginForm" method="POST" action="{{ route('smartprep.dashboard.settings.update.auth', $selectedWebsite->id ?? 1) }}" enctype="multipart/form-data" onsubmit="updateAuth(event)">
-                        @csrf
+                    <form id="loginForm" method="POST" action="<?php echo e(route('smartprep.dashboard.settings.update.auth', $selectedWebsite->id ?? 1)); ?>" enctype="multipart/form-data" onsubmit="updateAuth(event)">
+                        <?php echo csrf_field(); ?>
                         <div class="card mb-4">
                             <div class="card-header">
                                 <h6 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>LOGIN CUSTOMIZATION</h6>
@@ -1178,17 +1179,17 @@
                             <div class="card-body">
                                 <div class="form-group mb-3">
                                     <label class="form-label">Login Page Title</label>
-                                    <input type="text" class="form-control" name="login_title" value="{{ $settings['auth']['login_title'] ?? 'Welcome Back' }}" placeholder="Login page main title">
+                                    <input type="text" class="form-control" name="login_title" value="<?php echo e($settings['auth']['login_title'] ?? 'Welcome Back'); ?>" placeholder="Login page main title">
                                 </div>
                                 
                                 <div class="form-group mb-3">
                                     <label class="form-label">Login Page Subtitle</label>
-                                    <input type="text" class="form-control" name="login_subtitle" value="{{ $settings['auth']['login_subtitle'] ?? 'Sign in to your account to continue' }}" placeholder="Login page subtitle">
+                                    <input type="text" class="form-control" name="login_subtitle" value="<?php echo e($settings['auth']['login_subtitle'] ?? 'Sign in to your account to continue'); ?>" placeholder="Login page subtitle">
                                 </div>
                                 
                                 <div class="form-group mb-3">
                                     <label class="form-label">Login Button Text</label>
-                                    <input type="text" class="form-control" name="login_button_text" value="{{ $settings['auth']['login_button_text'] ?? 'Sign In' }}" placeholder="Login button text">
+                                    <input type="text" class="form-control" name="login_button_text" value="<?php echo e($settings['auth']['login_button_text'] ?? 'Sign In'); ?>" placeholder="Login button text">
                                 </div>
                                 
                                 <div class="row">
@@ -1196,14 +1197,14 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Background Color (Top of Gradient)</label>
                                             <small class="form-text text-muted">Main background color for the left panel</small>
-                                            <input type="color" class="form-control form-control-color" name="login_bg_top_color" value="{{ $settings['auth']['login_bg_top_color'] ?? '#667eea' }}">
+                                            <input type="color" class="form-control form-control-color" name="login_bg_top_color" value="<?php echo e($settings['auth']['login_bg_top_color'] ?? '#667eea'); ?>">
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group mb-3">
                                             <label class="form-label">Gradient Color (Bottom of Gradient)</label>
                                             <small class="form-text text-muted">Bottom color for the gradient background</small>
-                                            <input type="color" class="form-control form-control-color" name="login_bg_bottom_color" value="{{ $settings['auth']['login_bg_bottom_color'] ?? '#764ba2' }}">
+                                            <input type="color" class="form-control form-control-color" name="login_bg_bottom_color" value="<?php echo e($settings['auth']['login_bg_bottom_color'] ?? '#764ba2'); ?>">
                                         </div>
                                     </div>
                                 </div>
@@ -1218,8 +1219,8 @@
                     </form>
                     
                     <!-- Registration Form Fields Section -->
-                    <form id="registrationForm" method="POST" action="{{ route('smartprep.dashboard.settings.update.registration', $selectedWebsite->id ?? 1) }}" enctype="multipart/form-data" onsubmit="updateRegistration(event)">
-                        @csrf
+                    <form id="registrationForm" method="POST" action="<?php echo e(route('smartprep.dashboard.settings.update.registration', $selectedWebsite->id ?? 1)); ?>" enctype="multipart/form-data" onsubmit="updateRegistration(event)">
+                        <?php echo csrf_field(); ?>
                         <div class="card mb-4">
                             <div class="card-header">
                                 <h6 class="mb-0"><i class="fas fa-user-plus me-2"></i>Registration Form Fields</h6>
@@ -1230,23 +1231,23 @@
                                 
                                 <div class="form-group mb-3">
                                     <label class="form-label">Registration Page Title</label>
-                                    <input type="text" class="form-control" name="register_title" value="{{ $settings['auth']['register_title'] ?? 'Create Account' }}" placeholder="Registration page main title">
+                                    <input type="text" class="form-control" name="register_title" value="<?php echo e($settings['auth']['register_title'] ?? 'Create Account'); ?>" placeholder="Registration page main title">
                                 </div>
                                 
                                 <div class="form-group mb-3">
                                     <label class="form-label">Registration Page Subtitle</label>
-                                    <input type="text" class="form-control" name="register_subtitle" value="{{ $settings['auth']['register_subtitle'] ?? 'Join us to start your learning journey' }}" placeholder="Registration page subtitle">
+                                    <input type="text" class="form-control" name="register_subtitle" value="<?php echo e($settings['auth']['register_subtitle'] ?? 'Join us to start your learning journey'); ?>" placeholder="Registration page subtitle">
                                 </div>
                                 
                                 <div class="form-group mb-3">
                                     <label class="form-label">Register Button Text</label>
-                                    <input type="text" class="form-control" name="register_button_text" value="{{ $settings['auth']['register_button_text'] ?? 'Create Account' }}" placeholder="Register button text">
+                                    <input type="text" class="form-control" name="register_button_text" value="<?php echo e($settings['auth']['register_button_text'] ?? 'Create Account'); ?>" placeholder="Register button text">
                                 </div>
                                 
                                 <div class="form-group mb-3">
                                     <label class="form-label">Registration Enabled</label>
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" name="registration_enabled" id="registrationEnabled" {{ ($settings['auth']['registration_enabled'] ?? true) ? 'checked' : '' }}>
+                                        <input class="form-check-input" type="checkbox" name="registration_enabled" id="registrationEnabled" <?php echo e(($settings['auth']['registration_enabled'] ?? true) ? 'checked' : ''); ?>>
                                         <label class="form-check-label" for="registrationEnabled">
                                             Allow new user registrations
                                         </label>
@@ -1311,8 +1312,8 @@
                         <i class="fas fa-user-tie me-2"></i>Director Features
                     </h3>
 
-                    <form id="directorFeaturesForm" action="{{ route('smartprep.dashboard.settings.update.director', $selectedWebsite->id ?? 1) }}" method="POST" onsubmit="updateDirectorFeatures(event)">
-                        @csrf
+                    <form id="directorFeaturesForm" action="<?php echo e(route('smartprep.dashboard.settings.update.director', $selectedWebsite->id ?? 1)); ?>" method="POST" onsubmit="updateDirectorFeatures(event)">
+                        <?php echo csrf_field(); ?>
                         <p class="text-muted small mb-3">Control which features are available to directors in their admin dashboard.</p>
                         
                         <div class="row g-3">
@@ -1354,8 +1355,8 @@
                         <i class="fas fa-chalkboard-teacher me-2"></i>Professor Features
                     </h3>
 
-                    <form id="professorFeaturesForm" action="{{ route('smartprep.dashboard.settings.update.professor-features', $selectedWebsite->id ?? 1) }}" method="POST" onsubmit="updateProfessorFeatures(event)">
-                        @csrf
+                    <form id="professorFeaturesForm" action="<?php echo e(route('smartprep.dashboard.settings.update.professor-features', $selectedWebsite->id ?? 1)); ?>" method="POST" onsubmit="updateProfessorFeatures(event)">
+                        <?php echo csrf_field(); ?>
                         <p class="text-muted small mb-3">Control which features are available to professors in their dashboard.</p>
                         
                         <div class="row g-3">
@@ -1398,7 +1399,7 @@
                     </div>
                     
                     <form id="advancedForm" onsubmit="updateAdvanced(event)">
-                        @csrf
+                        <?php echo csrf_field(); ?>
                         <div class="form-group mb-3">
                             <label class="form-label">Custom CSS</label>
                             <textarea class="form-control" name="custom_css" rows="8" placeholder="/* Add your custom CSS here */" style="font-family: monospace; font-size: 12px;">/* Custom styles for your training center */
@@ -1474,7 +1475,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <button class="preview-btn" onclick="refreshPreview()">
                                 <i class="fas fa-sync-alt me-1"></i>Refresh
                             </button>
-                            <a href="{{ $previewUrl ?? url('/artc') }}" class="preview-btn" target="_blank" id="openInNewTabLink">
+                            <a href="<?php echo e($previewUrl ?? url('/artc')); ?>" class="preview-btn" target="_blank" id="openInNewTabLink">
                                 <i class="fas fa-external-link-alt me-1"></i>Open in New Tab
                             </a>
                         </div>
@@ -1489,8 +1490,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <iframe 
                         class="preview-iframe" 
                         id="previewFrame"
-                        src="{{ $previewUrl ?? url('/artc') }}" 
-                        data-preview-url="{{ $previewUrl ?? url('/artc') }}"
+                        src="<?php echo e($previewUrl ?? url('/artc')); ?>" 
+                        data-preview-url="<?php echo e($previewUrl ?? url('/artc')); ?>"
                         loading="lazy" 
                         referrerpolicy="no-referrer" 
                         sandbox="allow-same-origin allow-scripts allow-forms allow-popups" 
@@ -1622,8 +1623,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if(!name) return;
             const form = document.createElement('form');
             form.method='POST';
-            form.action="{{ route('smartprep.dashboard.websites.store') }}";
-            form.innerHTML = `@csrf<input type="hidden" name="name" value="${name.replace(/"/g,'&quot;')}">`;
+            form.action="<?php echo e(route('smartprep.dashboard.websites.store')); ?>";
+            form.innerHTML = `<?php echo csrf_field(); ?><input type="hidden" name="name" value="${name.replace(/"/g,'&quot;')}">`;
             document.body.appendChild(form);form.submit();
         }
 
@@ -1635,7 +1636,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('#generalForm input[name], #generalForm textarea[name]').forEach(el=>{
                 if(el.name){ payload.settings.general[el.name]=el.value; }
             });
-            fetch("{{ url('/smartprep/dashboard/websites') }}/"+websiteId, {
+            fetch("<?php echo e(url('/smartprep/dashboard/websites')); ?>/"+websiteId, {
                 method:'PATCH',
                 headers:{'X-CSRF-TOKEN':window.csrfToken,'Accept':'application/json','Content-Type':'application/json'},
                 body: JSON.stringify(payload)
@@ -1780,7 +1781,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Include mode to inform backend intent
                 formData.append('website_mode', websiteMode);
-                formData.append('_token', '{{ csrf_token() }}');
+                formData.append('_token', '<?php echo e(csrf_token()); ?>');
                 formData.append('selected_website', selectedWebsite);
 
                 await fetch(endpoint, { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
@@ -2209,7 +2210,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const formData = new FormData();
-            formData.append('_token', '{{ csrf_token() }}');
+            formData.append('_token', '<?php echo e(csrf_token()); ?>');
             formData.append(fieldName, fieldValue);
 
             fetch(endpoint, {
@@ -2262,7 +2263,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Add missing loadProgramsModal function to prevent errors
         function loadProgramsModal() {
-            const apiUrl = '{{ url("smartprep/api/programs") }}';
+            const apiUrl = '<?php echo e(url("smartprep/api/programs")); ?>';
             fetch(apiUrl)
                 .then(async response => {
                     const ct = response.headers.get('content-type') || '';
@@ -2293,18 +2294,18 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal fade" id="websiteRequestModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <form method="POST" action="{{ $userRole === 'admin' ? route('smartprep.admin.settings.save') : route('smartprep.dashboard.submit-customized-website') }}" id="customizedWebsiteForm">
-                    @csrf
+                <form method="POST" action="<?php echo e($userRole === 'admin' ? route('smartprep.admin.settings.save') : route('smartprep.dashboard.submit-customized-website')); ?>" id="customizedWebsiteForm">
+                    <?php echo csrf_field(); ?>
                     <!-- Hidden fields to store customization data -->
                     <input type="hidden" name="customization_data" id="customizationData">
                     
                     <div class="modal-header">
                         <h5 class="modal-title">
-                            @if($userRole === 'admin')
+                            <?php if($userRole === 'admin'): ?>
                                 <i class="fas fa-cog me-2"></i>Save Settings
-                            @else
+                            <?php else: ?>
                                 <i class="fas fa-rocket me-2"></i>Submit Website Request
-                            @endif
+                            <?php endif; ?>
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
@@ -2312,11 +2313,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="mb-4">
                             <div class="alert alert-info">
                                 <i class="fas fa-info-circle me-2"></i>
-                                @if($userRole === 'admin')
+                                <?php if($userRole === 'admin'): ?>
                                     <strong>Save template settings!</strong> Your customizations will be saved to the database and applied to the website template.
-                                @else
+                                <?php else: ?>
                                     <strong>Ready to create your website!</strong> Your customizations have been saved and will be applied to your new website once approved.
-                                @endif
+                                <?php endif; ?>
                             </div>
                         </div>
                         
@@ -2352,7 +2353,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Contact Email *</label>
-                                <input type="email" class="form-control form-control-modern" name="contact_email" required value="{{ Auth::guard('smartprep_admin')->user()->email ?? Auth::guard('smartprep')->user()->email ?? '' }}">
+                                <input type="email" class="form-control form-control-modern" name="contact_email" required value="<?php echo e(Auth::guard('smartprep_admin')->user()->email ?? Auth::guard('smartprep')->user()->email ?? ''); ?>">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Contact Phone</label>
@@ -2374,11 +2375,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             <i class="fas fa-times me-2"></i>Cancel
                         </button>
                         <button type="submit" class="btn btn-success">
-                            @if($userRole === 'admin')
+                            <?php if($userRole === 'admin'): ?>
                                 <i class="fas fa-save me-2"></i>Save Settings
-                            @else
+                            <?php else: ?>
                                 <i class="fas fa-paper-plane me-2"></i>Submit Website Request
-                            @endif
+                            <?php endif; ?>
                         </button>
                     </div>
                 </form>
@@ -2390,3 +2391,4 @@ document.addEventListener('DOMContentLoaded', function() {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/smartprep/dashboard/customize-website.blade.php ENDPATH**/ ?>
