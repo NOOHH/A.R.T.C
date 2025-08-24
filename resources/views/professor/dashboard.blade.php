@@ -606,6 +606,7 @@ html, body {
         $gradingEnabled = \App\Models\AdminSetting::where('setting_key', 'grading_enabled')->value('setting_value') !== 'false';
         $moduleManagementEnabled = \App\Models\AdminSetting::where('setting_key', 'professor_module_management_enabled')->value('setting_value') === '1';
         $announcementManagementEnabled = \App\Models\AdminSetting::where('setting_key', 'professor_announcement_management_enabled')->value('setting_value') === '1';
+        $aiQuizEnabled = \App\Models\AdminSetting::where('setting_key', 'ai_quiz_enabled')->value('setting_value') === 'true';
     @endphp
     
     <div class="action-grid fade-in-up">

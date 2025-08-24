@@ -118,6 +118,18 @@ class CustomizeWebsiteController extends Controller
                             'professor_features' => Setting::getGroup('professor_features')->toArray(),
                         ];
                         
+                        // Also load from AdminSetting table for consistency
+                        $adminSettings = \App\Models\AdminSetting::all()->pluck('setting_value', 'setting_key')->toArray();
+                        $settings['professor_features'] = array_merge($settings['professor_features'], [
+                            'ai_quiz_enabled' => ($adminSettings['ai_quiz_enabled'] ?? 'true') === 'true',
+                            'grading_enabled' => ($adminSettings['grading_enabled'] ?? 'true') !== 'false',
+                            'upload_videos_enabled' => ($adminSettings['upload_videos_enabled'] ?? 'true') !== 'false',
+                            'attendance_enabled' => ($adminSettings['attendance_enabled'] ?? 'true') !== 'false',
+                            'meeting_creation_enabled' => ($adminSettings['meeting_creation_enabled'] ?? '0') === '1',
+                            'professor_module_management_enabled' => ($adminSettings['professor_module_management_enabled'] ?? '0') === '1',
+                            'professor_announcement_management_enabled' => ($adminSettings['professor_announcement_management_enabled'] ?? '0') === '1',
+                        ]);
+                        
                         // Switch back to main database
                         $this->tenantService->switchToMain();
                         
@@ -878,18 +890,62 @@ class CustomizeWebsiteController extends Controller
             
             $this->tenantService->switchToTenant($tenant);
             
+            // Get the actual form data
+            $aiQuizEnabled = $request->has('ai_quiz_enabled');
+            $gradingEnabled = $request->has('grading_enabled');
+            $uploadVideosEnabled = $request->has('upload_videos_enabled');
+            $attendanceEnabled = $request->has('attendance_enabled');
+            $meetingCreationEnabled = $request->has('meeting_creation_enabled');
+            $moduleManagementEnabled = $request->has('professor_module_management_enabled');
+            $announcementManagementEnabled = $request->has('professor_announcement_management_enabled');
+            
+            // Save to AdminSetting table (this is what the professor dashboard checks)
+            \App\Models\AdminSetting::updateOrCreate(
+                ['setting_key' => 'ai_quiz_enabled'],
+                ['setting_value' => $aiQuizEnabled ? 'true' : 'false', 'is_active' => 1]
+            );
+            
+            \App\Models\AdminSetting::updateOrCreate(
+                ['setting_key' => 'grading_enabled'],
+                ['setting_value' => $gradingEnabled ? 'true' : 'false', 'is_active' => 1]
+            );
+            
+            \App\Models\AdminSetting::updateOrCreate(
+                ['setting_key' => 'upload_videos_enabled'],
+                ['setting_value' => $uploadVideosEnabled ? 'true' : 'false', 'is_active' => 1]
+            );
+            
+            \App\Models\AdminSetting::updateOrCreate(
+                ['setting_key' => 'attendance_enabled'],
+                ['setting_value' => $attendanceEnabled ? 'true' : 'false', 'is_active' => 1]
+            );
+            
+            \App\Models\AdminSetting::updateOrCreate(
+                ['setting_key' => 'meeting_creation_enabled'],
+                ['setting_value' => $meetingCreationEnabled ? '1' : '0', 'is_active' => 1]
+            );
+            
+            \App\Models\AdminSetting::updateOrCreate(
+                ['setting_key' => 'professor_module_management_enabled'],
+                ['setting_value' => $moduleManagementEnabled ? '1' : '0', 'is_active' => 1]
+            );
+            
+            \App\Models\AdminSetting::updateOrCreate(
+                ['setting_key' => 'professor_announcement_management_enabled'],
+                ['setting_value' => $announcementManagementEnabled ? '1' : '0', 'is_active' => 1]
+            );
+            
+            // Also save to tenant database for consistency
             $professorFeatures = [
-                'ai_quiz_enabled' => $request->has('ai_quiz_enabled'),
-                'grading_enabled' => $request->has('grading_enabled'),
-                'progress_tracking' => $request->has('progress_tracking'),
-                'communication_tools' => $request->has('communication_tools'),
-                'content_management' => $request->has('content_management'),
-                'analytics_access' => $request->has('analytics_access'),
-                'assignment_creation' => $request->has('assignment_creation'),
-                'student_management' => $request->has('student_management'),
+                'ai_quiz_enabled' => $aiQuizEnabled,
+                'grading_enabled' => $gradingEnabled,
+                'upload_videos_enabled' => $uploadVideosEnabled,
+                'attendance_enabled' => $attendanceEnabled,
+                'meeting_creation_enabled' => $meetingCreationEnabled,
+                'professor_module_management_enabled' => $moduleManagementEnabled,
+                'professor_announcement_management_enabled' => $announcementManagementEnabled,
             ];
             
-            // Save to tenant database
             Setting::setGroup('professor_features', $professorFeatures);
             
             $this->tenantService->switchToMain();
