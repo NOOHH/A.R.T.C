@@ -141,7 +141,7 @@
     </div>
 
     <!-- Error Messages -->
-    @if($errors->any())
+    @if($errors && $errors->any())
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <h5><i class="bi bi-exclamation-triangle me-2"></i>Please fix the following errors:</h5>
             <ul class="mb-0">

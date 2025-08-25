@@ -86,7 +86,7 @@ class TenantAdminAnnouncementController extends Controller
             // Switch back to main database
             $this->tenantService->switchToMain();
 
-            return view('admin.announcements.create', compact('tenantModel', 'programs', 'batches'))->with('errors', session('errors'));
+            return view('admin.announcements.create', compact('tenantModel', 'programs', 'batches'));
 
         } catch (\Exception $e) {
             Log::error('Tenant announcement create error: ' . $e->getMessage());
