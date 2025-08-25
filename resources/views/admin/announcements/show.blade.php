@@ -120,7 +120,7 @@
                     <li class="breadcrumb-item">
                         @php
                             $indexUrl = $tenantSlug 
-                                ? route('tenant.draft.admin.announcements', ['tenant' => $tenantSlug]) . $urlParams
+                                ? route('tenant.admin.announcements.index', ['tenant' => $tenantSlug]) . $urlParams
                                 : route('admin.announcements.index');
                         @endphp
                         <a href="{{ $indexUrl }}">Announcements</a>
@@ -132,11 +132,11 @@
         <div class="btn-group">
             @php
                 $editUrl = $tenantSlug 
-                    ? route('tenant.draft.admin.announcements.edit', ['tenant' => $tenantSlug, 'id' => $announcement->announcement_id]) . $urlParams
+                    ? route('tenant.admin.announcements.edit', ['tenant' => $tenantSlug, 'id' => $announcement->announcement_id]) . $urlParams
                     : route('admin.announcements.edit', $announcement->announcement_id);
                     
                 $backUrl = $tenantSlug 
-                    ? route('tenant.draft.admin.announcements', ['tenant' => $tenantSlug]) . $urlParams
+                    ? route('tenant.admin.announcements.index', ['tenant' => $tenantSlug]) . $urlParams
                     : route('admin.announcements.index');
             @endphp
             <a href="{{ $editUrl }}" 

@@ -121,7 +121,7 @@
                     <li class="breadcrumb-item">
                         @php
                             $indexUrl = $tenantSlug 
-                                ? route('tenant.draft.admin.announcements', ['tenant' => $tenantSlug]) . $urlParams
+                                ? route('tenant.admin.announcements.index', ['tenant' => $tenantSlug]) . $urlParams
                                 : route('admin.announcements.index');
                         @endphp
                         <a href="{{ $indexUrl }}">Announcements</a>
@@ -132,7 +132,7 @@
         </div>
         @php
             $backUrl = $tenantSlug 
-                ? route('tenant.draft.admin.announcements', ['tenant' => $tenantSlug]) . $urlParams
+                ? route('tenant.admin.announcements.index', ['tenant' => $tenantSlug]) . $urlParams
                 : route('admin.announcements.index');
         @endphp
         <a href="{{ $backUrl }}" class="btn btn-secondary">
@@ -450,11 +450,11 @@
                     </button>
                     @php
                         $showUrl = $tenantSlug 
-                            ? route('tenant.draft.admin.announcements.show', ['tenant' => $tenantSlug, 'id' => $announcement->announcement_id]) . $urlParams
+                            ? route('tenant.admin.announcements.show', ['tenant' => $tenantSlug, 'id' => $announcement->announcement_id]) . $urlParams
                             : route('admin.announcements.show', $announcement->announcement_id);
                             
                         $cancelUrl = $tenantSlug 
-                            ? route('tenant.draft.admin.announcements', ['tenant' => $tenantSlug]) . $urlParams
+                            ? route('tenant.admin.announcements.index', ['tenant' => $tenantSlug]) . $urlParams
                             : route('admin.announcements.index');
                     @endphp
                     <a href="{{ $showUrl }}" class="btn btn-info">

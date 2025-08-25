@@ -1083,6 +1083,40 @@ Route::prefix('t')->group(function() {
     Route::get('/draft/{tenant}/admin/packages/program-modules', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'getProgramModules'])->name('tenant.admin.packages.program-modules');
     Route::get('/draft/{tenant}/admin/packages/module-courses', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'getModuleCourses'])->name('tenant.admin.packages.module-courses');
 
+    // Modules routes
+    Route::get('/draft/{tenant}/admin/modules', [App\Http\Controllers\Tenant\TenantAdminModuleController::class, 'index'])->name('tenant.admin.modules.index');
+    Route::post('/draft/{tenant}/admin/modules', [App\Http\Controllers\Tenant\TenantAdminModuleController::class, 'store'])->name('tenant.admin.modules.store');
+    Route::get('/draft/{tenant}/admin/modules/{id}/edit', [App\Http\Controllers\Tenant\TenantAdminModuleController::class, 'edit'])->name('tenant.admin.modules.edit');
+    Route::put('/draft/{tenant}/admin/modules/{id}', [App\Http\Controllers\Tenant\TenantAdminModuleController::class, 'update'])->name('tenant.admin.modules.update');
+    Route::post('/draft/{tenant}/admin/modules/{id}/toggle-archive', [App\Http\Controllers\Tenant\TenantAdminModuleController::class, 'toggleArchive'])->name('tenant.admin.modules.toggle-archive');
+    Route::delete('/draft/{tenant}/admin/modules/{id}', [App\Http\Controllers\Tenant\TenantAdminModuleController::class, 'destroy'])->name('tenant.admin.modules.destroy');
+    Route::get('/draft/{tenant}/admin/modules/archived', [App\Http\Controllers\Tenant\TenantAdminModuleController::class, 'archived'])->name('tenant.admin.modules.archived');
+
+    // Announcements routes
+    Route::get('/draft/{tenant}/admin/announcements', [App\Http\Controllers\Tenant\TenantAdminAnnouncementController::class, 'index'])->name('tenant.admin.announcements.index');
+    Route::get('/draft/{tenant}/admin/announcements/create', [App\Http\Controllers\Tenant\TenantAdminAnnouncementController::class, 'create'])->name('tenant.admin.announcements.create');
+    Route::post('/draft/{tenant}/admin/announcements', [App\Http\Controllers\Tenant\TenantAdminAnnouncementController::class, 'store'])->name('tenant.admin.announcements.store');
+    Route::get('/draft/{tenant}/admin/announcements/{id}', [App\Http\Controllers\Tenant\TenantAdminAnnouncementController::class, 'show'])->name('tenant.admin.announcements.show');
+    Route::get('/draft/{tenant}/admin/announcements/{id}/edit', [App\Http\Controllers\Tenant\TenantAdminAnnouncementController::class, 'edit'])->name('tenant.admin.announcements.edit');
+    Route::put('/draft/{tenant}/admin/announcements/{id}', [App\Http\Controllers\Tenant\TenantAdminAnnouncementController::class, 'update'])->name('tenant.admin.announcements.update');
+    Route::delete('/draft/{tenant}/admin/announcements/{id}', [App\Http\Controllers\Tenant\TenantAdminAnnouncementController::class, 'destroy'])->name('tenant.admin.announcements.destroy');
+
+    // Settings routes
+    Route::get('/draft/{tenant}/admin/settings', [App\Http\Controllers\Tenant\TenantAdminSettingsController::class, 'index'])->name('tenant.admin.settings.index');
+    Route::post('/draft/{tenant}/admin/settings/homepage', [App\Http\Controllers\Tenant\TenantAdminSettingsController::class, 'updateHomepage'])->name('tenant.admin.settings.update.homepage');
+    Route::post('/draft/{tenant}/admin/settings/navbar', [App\Http\Controllers\Tenant\TenantAdminSettingsController::class, 'updateNavbar'])->name('tenant.admin.settings.update.navbar');
+    Route::post('/draft/{tenant}/admin/settings/footer', [App\Http\Controllers\Tenant\TenantAdminSettingsController::class, 'updateFooter'])->name('tenant.admin.settings.update.footer');
+    Route::post('/draft/{tenant}/admin/settings/enrollment', [App\Http\Controllers\Tenant\TenantAdminSettingsController::class, 'updateEnrollment'])->name('tenant.admin.settings.update.enrollment');
+    Route::post('/draft/{tenant}/admin/settings/payment-terms', [App\Http\Controllers\Tenant\TenantAdminSettingsController::class, 'updatePaymentTerms'])->name('tenant.admin.settings.update.payment-terms');
+
+    // Students routes
+    Route::get('/draft/{tenant}/admin/students', [App\Http\Controllers\Tenant\TenantAdminStudentController::class, 'index'])->name('tenant.admin.students.index');
+    Route::get('/draft/{tenant}/admin/students/enrollments', [App\Http\Controllers\Tenant\TenantAdminStudentController::class, 'enrollments'])->name('tenant.admin.students.enrollments');
+    Route::get('/draft/{tenant}/admin/students/registrations', [App\Http\Controllers\Tenant\TenantAdminStudentController::class, 'registrations'])->name('tenant.admin.students.registrations');
+    Route::post('/draft/{tenant}/admin/students/registrations/{id}/approve', [App\Http\Controllers\Tenant\TenantAdminStudentController::class, 'approveRegistration'])->name('tenant.admin.students.approve-registration');
+    Route::post('/draft/{tenant}/admin/students/registrations/{id}/reject', [App\Http\Controllers\Tenant\TenantAdminStudentController::class, 'rejectRegistration'])->name('tenant.admin.students.reject-registration');
+    Route::get('/draft/{tenant}/admin/students/{id}', [App\Http\Controllers\Tenant\TenantAdminStudentController::class, 'show'])->name('tenant.admin.students.show');
+
 });
 
 // ADMIN ROUTES - Outside the 't' prefix group to avoid the t/ prefix

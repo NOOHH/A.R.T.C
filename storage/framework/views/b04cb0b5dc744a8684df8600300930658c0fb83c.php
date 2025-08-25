@@ -1,8 +1,8 @@
-@extends('admin.admin-dashboard.admin-dashboard-layout')
 
-@section('title', 'Create Announcement')
 
-@php
+<?php $__env->startSection('title', 'Create Announcement'); ?>
+
+<?php
     // Detect tenant mode for preview
     $tenantSlug = request()->route('tenant') ?? null;
     $urlParams = '';
@@ -14,9 +14,9 @@
             $urlParams = '?' . http_build_query($queryParams);
         }
     }
-@endphp
+?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 <style>
 .form-card {
@@ -103,9 +103,9 @@
     padding: 0.75rem;
 }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="container-fluid px-4">
     <!-- Header Section -->
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -116,45 +116,45 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <a href="{{ route('admin.dashboard') }}">Dashboard</a>
+                        <a href="<?php echo e(route('admin.dashboard')); ?>">Dashboard</a>
                     </li>
                     <li class="breadcrumb-item">
-                        @php
+                        <?php
                             $indexUrl = $tenantSlug 
                                 ? route('tenant.admin.announcements.index', ['tenant' => $tenantSlug]) . $urlParams
                                 : route('admin.announcements.index');
-                        @endphp
-                        <a href="{{ $indexUrl }}">Announcements</a>
+                        ?>
+                        <a href="<?php echo e($indexUrl); ?>">Announcements</a>
                     </li>
                     <li class="breadcrumb-item active">Create</li>
                 </ol>
             </nav>
         </div>
-        @php
+        <?php
             $backUrl = $tenantSlug 
                 ? route('tenant.admin.announcements.index', ['tenant' => $tenantSlug]) . $urlParams
                 : route('admin.announcements.index');
-        @endphp
-        <a href="{{ $backUrl }}" class="btn btn-secondary">
+        ?>
+        <a href="<?php echo e($backUrl); ?>" class="btn btn-secondary">
             <i class="bi bi-arrow-left me-2"></i>Back to List
         </a>
     </div>
 
     <!-- Error Messages -->
-    @if($errors->any())
+    <?php if($errors->any()): ?>
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <h5><i class="bi bi-exclamation-triangle me-2"></i>Please fix the following errors:</h5>
             <ul class="mb-0">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
+                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <li><?php echo e($error); ?></li>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </ul>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    @endif
+    <?php endif; ?>
 
-    <form action="{{ route('admin.announcements.store') }}" method="POST" id="announcementForm">
-        @csrf
+    <form action="<?php echo e(route('admin.announcements.store')); ?>" method="POST" id="announcementForm">
+        <?php echo csrf_field(); ?>
         
         <div class="row">
             <!-- Main Form -->
@@ -171,7 +171,7 @@
                             <div class="col-md-8">
                                 <div class="form-floating mb-3">
                                     <input type="text" class="form-control" id="title" name="title" 
-                                           value="{{ old('title') }}" required>
+                                           value="<?php echo e(old('title')); ?>" required>
                                     <label for="title">Announcement Title <span class="required-field">*</span></label>
                                 </div>
                             </div>
@@ -179,10 +179,10 @@
                                 <div class="form-floating mb-3">
                                     <select class="form-control" id="type" name="type" required>
                                         <option value="">Select Type</option>
-                                        <option value="general" {{ old('type') === 'general' ? 'selected' : '' }}>General</option>
-                                        <option value="urgent" {{ old('type') === 'urgent' ? 'selected' : '' }}>Urgent</option>
-                                        <option value="event" {{ old('type') === 'event' ? 'selected' : '' }}>Event</option>
-                                        <option value="system" {{ old('type') === 'system' ? 'selected' : '' }}>System</option>
+                                        <option value="general" <?php echo e(old('type') === 'general' ? 'selected' : ''); ?>>General</option>
+                                        <option value="urgent" <?php echo e(old('type') === 'urgent' ? 'selected' : ''); ?>>Urgent</option>
+                                        <option value="event" <?php echo e(old('type') === 'event' ? 'selected' : ''); ?>>Event</option>
+                                        <option value="system" <?php echo e(old('type') === 'system' ? 'selected' : ''); ?>>System</option>
                                     </select>
                                     <label for="type">Type <span class="required-field">*</span></label>
                                 </div>
@@ -191,18 +191,18 @@
 
                         <div class="form-floating mb-3">
                             <textarea class="form-control" id="description" name="description" 
-                                      style="height: 100px">{{ old('description') }}</textarea>
+                                      style="height: 100px"><?php echo e(old('description')); ?></textarea>
                             <label for="description">Short Description (optional)</label>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Content <span class="required-field">*</span></label>
-                            <textarea class="form-control" id="content" name="content" rows="8" required>{{ old('content') }}</textarea>
+                            <textarea class="form-control" id="content" name="content" rows="8" required><?php echo e(old('content')); ?></textarea>
                         </div>
 
                         <div class="form-floating mb-3">
                             <input type="url" class="form-control" id="video_link" name="video_link" 
-                                   value="{{ old('video_link') }}">
+                                   value="<?php echo e(old('video_link')); ?>">
                             <label for="video_link">Video Link (optional)</label>
                         </div>
                     </div>
@@ -220,14 +220,14 @@
                             <label class="form-label">Audience Scope <span class="required-field">*</span></label>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="target_scope" id="scope_all" 
-                                       value="all" {{ old('target_scope', 'all') === 'all' ? 'checked' : '' }}>
+                                       value="all" <?php echo e(old('target_scope', 'all') === 'all' ? 'checked' : ''); ?>>
                                 <label class="form-check-label" for="scope_all">
                                     <strong>All Users</strong> - Send to everyone in the system
                                 </label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="target_scope" id="scope_specific" 
-                                       value="specific" {{ old('target_scope') === 'specific' ? 'checked' : '' }}>
+                                       value="specific" <?php echo e(old('target_scope') === 'specific' ? 'checked' : ''); ?>>
                                 <label class="form-check-label" for="scope_specific">
                                     <strong>Specific Groups</strong> - Target specific users and programs
                                 </label>
@@ -243,7 +243,7 @@
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" name="target_users[]" 
                                                    value="students" id="target_students"
-                                                   {{ in_array('students', old('target_users', [])) ? 'checked' : '' }}>
+                                                   <?php echo e(in_array('students', old('target_users', [])) ? 'checked' : ''); ?>>
                                             <label class="form-check-label" for="target_students">
                                                 <i class="bi bi-person-badge me-2"></i>Students
                                             </label>
@@ -253,7 +253,7 @@
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" name="target_users[]" 
                                                    value="professors" id="target_professors"
-                                                   {{ in_array('professors', old('target_users', [])) ? 'checked' : '' }}>
+                                                   <?php echo e(in_array('professors', old('target_users', [])) ? 'checked' : ''); ?>>
                                             <label class="form-check-label" for="target_professors">
                                                 <i class="bi bi-person-workspace me-2"></i>Professors
                                             </label>
@@ -263,7 +263,7 @@
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" name="target_users[]" 
                                                    value="directors" id="target_directors"
-                                                   {{ in_array('directors', old('target_users', [])) ? 'checked' : '' }}>
+                                                   <?php echo e(in_array('directors', old('target_users', [])) ? 'checked' : ''); ?>>
                                             <label class="form-check-label" for="target_directors">
                                                 <i class="bi bi-person-fill me-2"></i>Directors
                                             </label>
@@ -276,18 +276,19 @@
                             <div class="mb-4">
                                 <label class="form-label fw-bold">Target Programs (optional):</label>
                                 <div class="checkbox-group">
-                                    @foreach($programs as $program)
+                                    <?php $__currentLoopData = $programs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $program): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <div class="checkbox-item">
                                             <div class="form-check">
                                                 <input class="form-check-input" type="checkbox" name="target_programs[]" 
-                                                       value="{{ $program->program_id }}" id="program_{{ $program->program_id }}"
-                                                       {{ in_array($program->program_id, old('target_programs', [])) ? 'checked' : '' }}>
-                                                <label class="form-check-label" for="program_{{ $program->program_id }}">
-                                                    {{ $program->program_name }}
+                                                       value="<?php echo e($program->program_id); ?>" id="program_<?php echo e($program->program_id); ?>"
+                                                       <?php echo e(in_array($program->program_id, old('target_programs', [])) ? 'checked' : ''); ?>>
+                                                <label class="form-check-label" for="program_<?php echo e($program->program_id); ?>">
+                                                    <?php echo e($program->program_name); ?>
+
                                                 </label>
                                             </div>
                                         </div>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </div>
                             </div>
 
@@ -307,7 +308,7 @@
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" name="target_plans[]" 
                                                    value="full" id="plan_full"
-                                                   {{ in_array('full', old('target_plans', [])) ? 'checked' : '' }}>
+                                                   <?php echo e(in_array('full', old('target_plans', [])) ? 'checked' : ''); ?>>
                                             <label class="form-check-label" for="plan_full">
                                                 <i class="bi bi-mortarboard me-2"></i>Full Program
                                             </label>
@@ -317,7 +318,7 @@
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" name="target_plans[]" 
                                                    value="modular" id="plan_modular"
-                                                   {{ in_array('modular', old('target_plans', [])) ? 'checked' : '' }}>
+                                                   <?php echo e(in_array('modular', old('target_plans', [])) ? 'checked' : ''); ?>>
                                             <label class="form-check-label" for="plan_modular">
                                                 <i class="bi bi-puzzle me-2"></i>Modular Program
                                             </label>
@@ -343,7 +344,7 @@
                         <div class="form-check form-switch mb-3">
                             <input type="hidden" name="is_published" value="0">
                             <input class="form-check-input" type="checkbox" id="is_published" name="is_published" value="1"
-                                   {{ old('is_published', true) ? 'checked' : '' }}>
+                                   <?php echo e(old('is_published', true) ? 'checked' : ''); ?>>
                             <label class="form-check-label" for="is_published">
                                 Publish immediately
                             </label>
@@ -351,13 +352,13 @@
 
                         <div class="form-floating mb-3">
                             <input type="datetime-local" class="form-control" id="publish_date" name="publish_date" 
-                                   value="{{ old('publish_date') }}">
+                                   value="<?php echo e(old('publish_date')); ?>">
                             <label for="publish_date">Publish Date (optional)</label>
                         </div>
 
                         <div class="form-floating mb-3">
                             <input type="datetime-local" class="form-control" id="expire_date" name="expire_date" 
-                                   value="{{ old('expire_date') }}">
+                                   value="<?php echo e(old('expire_date')); ?>">
                             <label for="expire_date">Expiry Date (optional)</label>
                         </div>
                     </div>
@@ -381,7 +382,7 @@
                             <hr>
                             <small class="text-muted">
                                 <i class="bi bi-clock me-1"></i>
-                                <span id="previewDate">{{ date('M d, Y g:i A') }}</span>
+                                <span id="previewDate"><?php echo e(date('M d, Y g:i A')); ?></span>
                             </small>
                         </div>
                     </div>
@@ -392,12 +393,12 @@
                     <button type="submit" class="btn btn-primary btn-lg">
                         <i class="bi bi-check-circle me-2"></i>Create Announcement
                     </button>
-                    @php
+                    <?php
                         $cancelUrl = $tenantSlug 
                             ? route('tenant.admin.announcements.index', ['tenant' => $tenantSlug]) . $urlParams
                             : route('admin.announcements.index');
-                    @endphp
-                    <a href="{{ $cancelUrl }}" class="btn btn-secondary">
+                    ?>
+                    <a href="<?php echo e($cancelUrl); ?>" class="btn btn-secondary">
                         <i class="bi bi-x-circle me-2"></i>Cancel
                     </a>
                 </div>
@@ -405,14 +406,14 @@
         </div>
     </form>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // All batches data for filtering
-    const allBatches = @json($batches);
+    const allBatches = <?php echo json_encode($batches, 15, 512) ?>;
     
     // Toggle targeting options
     const scopeAll = document.getElementById('scope_all');
@@ -475,7 +476,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let html = '';
         Object.keys(batchesByProgram).forEach(programId => {
-            const program = @json($programs).find(p => p.program_id == programId);
+            const program = <?php echo json_encode($programs, 15, 512) ?>.find(p => p.program_id == programId);
             const batches = batchesByProgram[programId];
             
             html += `<div class="program-batches mb-3">
@@ -483,7 +484,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="row">`;
             
             batches.forEach(batch => {
-                const oldBatches = @json(old('target_batches', []));
+                const oldBatches = <?php echo json_encode(old('target_batches', []), 512) ?>;
                 const isChecked = oldBatches.includes(batch.batch_id) ? 'checked' : '';
                 
                 html += `<div class="col-md-6 mb-2">
@@ -574,4 +575,6 @@ document.addEventListener('DOMContentLoaded', function() {
 .announcement-type-event { background-color: #f39c12 !important; }
 .announcement-type-system { background-color: #9b59b6 !important; }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('admin.admin-dashboard.admin-dashboard-layout', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/admin/announcements/create.blade.php ENDPATH**/ ?>

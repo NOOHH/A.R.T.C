@@ -63,6 +63,17 @@
 @endpush
 
 @section('content')
+@php
+    $tenantSlug = $tenantModel->slug ?? null;
+    $urlParams = request()->getQueryString() ? '?' . request()->getQueryString() : '';
+    
+    // Helper function to get admin setting value
+    if (!function_exists('getAdminSettingValue')) {
+        function getAdminSettingValue($adminSettings, $key, $default = '') {
+            return $adminSettings[$key] ?? $default;
+        }
+    }
+@endphp
 <div class="settings-container">
         <div class="settings-header text-center mb-5">
             <h1 class="display-4 fw-bold text-dark mb-0">
@@ -300,7 +311,7 @@
                                                             <strong>Full Enrollment Terms & Conditions</strong>
                                                         </label>
                                                         <textarea class="form-control" id="fullEnrollmentTerms" name="full_enrollment_terms" rows="12" 
-                                                                  placeholder="Enter terms and conditions for full enrollment...">{{ \App\Models\AdminSetting::getValue('full_enrollment_terms', 'Terms and Conditions for Full Enrollment:
+                                                                  placeholder="Enter terms and conditions for full enrollment...">{{ getAdminSettingValue($adminSettings, 'full_enrollment_terms', 'Terms and Conditions for Full Enrollment:
 
 1. Enrollment Agreement
 By enrolling in this full program, you agree to follow all institutional policies and procedures.
@@ -332,7 +343,7 @@ By proceeding with enrollment, you acknowledge that you have read, understood, a
                                                             <strong>Modular Enrollment Terms & Conditions</strong>
                                                         </label>
                                                         <textarea class="form-control" id="modularEnrollmentTerms" name="modular_enrollment_terms" rows="12" 
-                                                                  placeholder="Enter terms and conditions for modular enrollment...">{{ \App\Models\AdminSetting::getValue('modular_enrollment_terms', 'Terms and Conditions for Modular Enrollment:
+                                                                  placeholder="Enter terms and conditions for modular enrollment...">{{ getAdminSettingValue($adminSettings, 'modular_enrollment_terms', 'Terms and Conditions for Modular Enrollment:
 
 1. Module-Based Learning
 You are enrolling in selected modules of our program. Each module is a standalone unit with its own requirements.
@@ -366,7 +377,7 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                                             <div class="d-flex justify-content-between align-items-center mt-3">
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" id="requireTermsAcceptance" name="require_terms_acceptance" 
-                                                           {{ \App\Models\AdminSetting::getValue('require_terms_acceptance', '1') === '1' ? 'checked' : '' }}>
+                                                           {{ getAdminSettingValue($adminSettings, 'require_terms_acceptance', '1') === '1' ? 'checked' : '' }}>
                                                     <label class="form-check-label" for="requireTermsAcceptance">
                                                         <strong>Require students to accept terms before enrollment</strong>
                                                     </label>
@@ -817,40 +828,29 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                                     <label class="form-label fw-bold">Whitelisted Professors</label>
                                     <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
                                         @php
-                                            // Use mock data in preview mode, real data otherwise
-                                            if (isset($isPreview) && $isPreview && isset($professors)) {
-                                                $professorsData = $professors;
-                                                $whitelistedProfessors = ['1', '2']; // Mock whitelist
-                                            } else {
-                                                $professorsData = \App\Models\Professor::where('professor_archived', 0)->get();
-                                                $whitelistedProfessors = explode(',', \App\Models\AdminSetting::getValue('meeting_whitelist_professors', ''));
-                                            }
+                                            // Use professors data passed from controller
+                                            $professorsData = $professors ?? collect();
+                                            $whitelistedProfessors = ['1', '2']; // Mock whitelist for now
                                         @endphp
                                         @forelse($professorsData as $professor)
                                             <div class="form-check mb-2">
                                                 <input class="form-check-input" type="checkbox" 
-                                                       id="professor_{{ $professor->id }}" 
+                                                       id="professor_{{ $professor->professor_id }}" 
                                                        name="whitelist_professors[]" 
-                                                       value="{{ $professor->id }}"
-                                                       {{ in_array($professor->id, $whitelistedProfessors) ? 'checked' : '' }}>
-                                                <label class="form-check-label" for="professor_{{ $professor->id }}">
+                                                       value="{{ $professor->professor_id }}"
+                                                       {{ in_array($professor->professor_id, $whitelistedProfessors) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="professor_{{ $professor->professor_id }}">
                                                     <div class="d-flex align-items-center">
                                                         <div class="me-3">
                                                             <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                                                {{ substr($professor->first_name ?? 'P', 0, 1) }}{{ substr($professor->last_name ?? 'P', 0, 1) }}
+                                                                {{ substr($professor->professor_first_name ?? 'P', 0, 1) }}{{ substr($professor->professor_last_name ?? 'P', 0, 1) }}
                                                             </div>
                                                         </div>
                                                         <div>
-                                                            <strong>{{ $professor->first_name ?? 'Unknown' }} {{ $professor->last_name ?? 'Professor' }}</strong>
+                                                            <strong>{{ $professor->professor_first_name ?? 'Unknown' }} {{ $professor->professor_last_name ?? 'Professor' }}</strong>
                                                             <br>
-                                                            <small class="text-muted">{{ $professor->email ?? 'No email' }}</small>
-                                                            @if($professor->programs && $professor->programs->count() > 0)
-                                                                <br>
-                                                                <small class="text-success">
-                                                                    <i class="fas fa-graduation-cap me-1"></i>
-                                                                    {{ $professor->programs->pluck('program_name')->join(', ') }}
-                                                                </small>
-                                                            @endif
+                                                            <small class="text-muted">{{ $professor->professor_email ?? 'No email' }}</small>
+                                                            {{-- Programs relationship not loaded in tenant context --}}
                                                         </div>
                                                     </div>
                                                 </label>
@@ -912,14 +912,9 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                                     <label class="form-label fw-bold">Whitelisted Professors</label>
                                     <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
                                         @php
-                                            // Use mock data in preview mode, real data otherwise
-                                            if (isset($isPreview) && $isPreview && isset($professors)) {
-                                                $professorsData = $professors;
-                                                $whitelistedModuleProfessors = ['1', '2']; // Mock whitelist
-                                            } else {
-                                                $professorsData = \App\Models\Professor::where('professor_archived', 0)->get();
-                                                $whitelistedModuleProfessors = explode(',', \App\Models\AdminSetting::getValue('professor_module_management_whitelist', ''));
-                                            }
+                                            // Use professors data passed from controller
+                                            $professorsData = $professors ?? collect();
+                                            $whitelistedModuleProfessors = explode(',', getAdminSettingValue($adminSettings, 'professor_module_management_whitelist', ''));
                                         @endphp
                                         @forelse($professorsData as $professor)
                                             <div class="form-check mb-2">
@@ -936,15 +931,10 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                                                             </div>
                                                         </div>
                                                         <div>
-                                                            <strong>{{ $professor->first_name ?? 'Unknown' }} {{ $professor->last_name ?? 'Professor' }}</strong>
+                                                            <strong>{{ $professor->professor_first_name ?? 'Unknown' }} {{ $professor->professor_last_name ?? 'Professor' }}</strong>
                                                             <br>
-                                                            <small class="text-muted">{{ $professor->email ?? 'No email' }}</small>
-                                                            @if($professor->programs && $professor->programs->count() > 0)
-                                                                <br>
-                                                                <small class="text-primary">
-                                                                    Programs: {{ $professor->programs->pluck('program_name')->join(', ') }}
-                                                                </small>
-                                                            @endif
+                                                            <small class="text-muted">{{ $professor->professor_email ?? 'No email' }}</small>
+                                                            {{-- Programs relationship not loaded in tenant context --}}
                                                         </div>
                                                     </div>
                                                 </label>
@@ -1006,7 +996,7 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                                     <label class="form-label fw-bold">Whitelisted Professors</label>
                                     <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
                                         @php
-                                            $whitelistedAnnouncementProfessors = explode(',', \App\Models\AdminSetting::getValue('professor_announcement_management_whitelist', ''));
+                                            $whitelistedAnnouncementProfessors = explode(',', getAdminSettingValue($adminSettings, 'professor_announcement_management_whitelist', ''));
                                         @endphp
                                         @forelse($professors as $professor)
                                             <div class="form-check mb-2">
@@ -1019,19 +1009,14 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                                                     <div class="d-flex align-items-center">
                                                         <div class="me-3">
                                                             <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                                                {{ substr($professor->first_name ?? 'P', 0, 1) }}{{ substr($professor->last_name ?? 'P', 0, 1) }}
+                                                                {{ substr($professor->professor_first_name ?? 'P', 0, 1) }}{{ substr($professor->professor_last_name ?? 'P', 0, 1) }}
                                                             </div>
                                                         </div>
                                                         <div>
-                                                            <strong>{{ $professor->first_name ?? 'Unknown' }} {{ $professor->last_name ?? 'Professor' }}</strong>
+                                                            <strong>{{ $professor->professor_first_name ?? 'Unknown' }} {{ $professor->professor_last_name ?? 'Professor' }}</strong>
                                                             <br>
-                                                            <small class="text-muted">{{ $professor->email ?? 'No email' }}</small>
-                                                            @if($professor->programs && $professor->programs->count() > 0)
-                                                                <br>
-                                                                <small class="text-primary">
-                                                                    Programs: {{ $professor->programs->pluck('program_name')->join(', ') }}
-                                                                </small>
-                                                            @endif
+                                                            <small class="text-muted">{{ $professor->professor_email ?? 'No email' }}</small>
+                                                            {{-- Programs relationship not loaded in tenant context --}}
                                                         </div>
                                                     </div>
                                                 </label>
@@ -1533,7 +1518,7 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                                             <div class="mb-3">
                                                 <label for="paymentTermsContent" class="form-label">Payment Terms and Conditions <span class="text-danger">*</span></label>
                                                 <textarea class="form-control" id="paymentTermsContent" name="payment_terms_content" rows="10" 
-                                                          placeholder="Enter the terms and conditions for payments...">{{ \App\Models\AdminSetting::getValue('payment_terms_content', 'By submitting this payment, you agree to the following terms and conditions:
+                                                          placeholder="Enter the terms and conditions for payments...">{{ getAdminSettingValue($adminSettings, 'payment_terms_content', 'By submitting this payment, you agree to the following terms and conditions:
 
 1. All payments are final and non-refundable once processed.
 2. Payment confirmation may take 1-3 business days to process.
@@ -1548,7 +1533,7 @@ Please read and understand these terms before proceeding with your payment.') }}
                                             <div class="mb-3">
                                                 <label for="paymentAbortTermsContent" class="form-label">Payment Abort Terms <span class="text-danger">*</span></label>
                                                 <textarea class="form-control" id="paymentAbortTermsContent" name="payment_abort_terms_content" rows="10" 
-                                                          placeholder="Enter the terms shown when students abort payments...">{{ \App\Models\AdminSetting::getValue('payment_abort_terms_content', 'Are you sure you want to abort this payment?
+                                                          placeholder="Enter the terms shown when students abort payments...">{{ getAdminSettingValue($adminSettings, 'payment_abort_terms_content', 'Are you sure you want to abort this payment?
 
 By aborting this payment:
 - Your enrollment will be cancelled
@@ -1566,7 +1551,7 @@ This action cannot be undone.') }}</textarea>
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" id="enablePaymentTerms" name="enable_payment_terms" 
-                                                   {{ \App\Models\AdminSetting::getValue('enable_payment_terms', '1') === '1' ? 'checked' : '' }}>
+                                                   {{ getAdminSettingValue($adminSettings, 'enable_payment_terms', '1') === '1' ? 'checked' : '' }}>
                                             <label class="form-check-label" for="enablePaymentTerms">
                                                 <strong>Require students to accept terms before payment</strong>
                                             </label>
