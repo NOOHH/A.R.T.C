@@ -157,8 +157,8 @@
         console.log('Account option selected:', hasAccount ? 'has account' : 'no account');
         
         if (hasAccount) {
-            // Redirect to login page
-            window.location.href = "{{ route('login') }}";
+            // Redirect to tenant-aware login page
+            window.location.href = "{{ tenant_enrollment_url('login') }}";
             return;
         } else {
             // Continue to step 2 (packages) - transition from step-content-1 to step-content-2
@@ -2619,7 +2619,7 @@
                     @endif
                 </div>
                 <div class="login-prompt">
-                    <p>Already have an account? <a href="{{ route('login') }}">Click here to login</a></p>
+                    <p>Already have an account? <a href="{{ tenant_enrollment_url('login') }}">Click here to login</a></p>
                 </div>
                 <div class="form-navigation">
                     <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg">
@@ -2796,8 +2796,27 @@
                     <option value="">Select Education Level</option>
                     @if(isset($educationLevels) && $educationLevels->count() > 0)
                         @foreach($educationLevels as $level)
+                            @php
+                                // Process file requirements for stdClass object from DB::connection
+                                $fileRequirements = [];
+                                if (!empty($level->file_requirements)) {
+                                    $requirements = is_string($level->file_requirements) 
+                                        ? json_decode($level->file_requirements, true) 
+                                        : $level->file_requirements;
+                                    
+                                    if (is_array($requirements)) {
+                                        foreach ($requirements as $req) {
+                                            // Check if requirement is available for the current plan type
+                                            $planKey = 'available_' . ($enrollmentType ?? 'full') . '_plan';
+                                            if (isset($req[$planKey]) && $req[$planKey]) {
+                                                $fileRequirements[] = $req;
+                                            }
+                                        }
+                                    }
+                                }
+                            @endphp
                             <option value="{{ $level->level_name }}" 
-                                    data-file-requirements="{{ json_encode($level->getFileRequirementsForPlan($enrollmentType ?? 'full')) }}">
+                                    data-file-requirements="{{ json_encode($fileRequirements) }}">
                                 {{ $level->level_name }}
                             </option>
                         @endforeach

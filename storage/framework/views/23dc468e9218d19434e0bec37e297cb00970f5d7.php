@@ -1,16 +1,16 @@
-@extends('admin.admin-dashboard.admin-dashboard-layout')
 
-@section('title', 'Package Management')
 
-@section('head')
+<?php $__env->startSection('title', 'Package Management'); ?>
+
+<?php $__env->startSection('head'); ?>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="{{ asset('css/admin/admin-packages.css') }}">
-<meta name="csrf-token" content="{{ csrf_token() }}">
+<link rel="stylesheet" href="<?php echo e(asset('css/admin/admin-packages.css')); ?>">
+<meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
 <meta name="page-id" content="admin-packages">
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
   /* Bootstrap 5 Admin Dashboard Styling */
   .border-left-primary {
@@ -722,9 +722,9 @@
 
 
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="container-fluid px-4">
     <div class="row">
         <div class="col-12">
@@ -739,18 +739,20 @@
             </div>
 
             <!-- Alerts -->
-            @if(session('success'))
+            <?php if(session('success')): ?>
                 <div class="alert alert-success alert-dismissible fade show">
-                    <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                    <i class="fas fa-check-circle me-2"></i><?php echo e(session('success')); ?>
+
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-            @endif
-            @if(session('error'))
+            <?php endif; ?>
+            <?php if(session('error')): ?>
                 <div class="alert alert-danger alert-dismissible fade show">
-                    <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
+                    <i class="fas fa-exclamation-circle me-2"></i><?php echo e(session('error')); ?>
+
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-            @endif
+            <?php endif; ?>
 
             <!-- Analytics Cards -->
             <div class="row mb-4">
@@ -763,7 +765,8 @@
                                         Total Packages
                                     </div>
                                     <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        {{ count($packages) }}
+                                        <?php echo e(count($packages)); ?>
+
                                     </div>
                                 </div>
                                 <div class="col-auto">
@@ -783,7 +786,8 @@
                                         Active Enrollments
                                     </div>
                                     <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        {{ $packages->sum('enrollments_count') ?? 0 }}
+                                        <?php echo e($packages->sum('enrollments_count') ?? 0); ?>
+
                                     </div>
                                 </div>
                                 <div class="col-auto">
@@ -803,7 +807,8 @@
                                         Total Value
                                     </div>
                                     <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        ₱{{ number_format($packages->sum('amount') ?? 0, 2) }}
+                                        ₱<?php echo e(number_format($packages->sum('amount') ?? 0, 2)); ?>
+
                                     </div>
                                 </div>
                                 <div class="col-auto">
@@ -823,7 +828,8 @@
                                         Modular Packages
                                     </div>
                                     <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        {{ $packages->where('package_type', 'modular')->count() }}
+                                        <?php echo e($packages->where('package_type', 'modular')->count()); ?>
+
                                     </div>
                                 </div>
                                 <div class="col-auto">
@@ -841,32 +847,34 @@
                     <h6 class="m-0 font-weight-bold text-primary">Package List</h6>
                 </div>
                 <div class="card-body">
-                    @if(count($packages) > 0)
+                    <?php if(count($packages) > 0): ?>
                         <div class="row">
-                            @foreach($packages as $package)
+                            <?php $__currentLoopData = $packages; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $package): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
                                     <div class="card border-left-primary shadow h-100">
                                         <div class="card-header d-flex justify-content-between align-items-center">
-                                            <h5 class="card-title mb-0">{{ $package->package_name }}</h5>
-                                            <span class="badge bg-{{ $package->package_type === 'modular' ? 'warning' : 'primary' }}">
-                                                {{ ucfirst($package->package_type ?? 'Standard') }}
+                                            <h5 class="card-title mb-0"><?php echo e($package->package_name); ?></h5>
+                                            <span class="badge bg-<?php echo e($package->package_type === 'modular' ? 'warning' : 'primary'); ?>">
+                                                <?php echo e(ucfirst($package->package_type ?? 'Standard')); ?>
+
                                             </span>
                                         </div>
                                         <div class="card-body">
                                             <p class="card-text text-muted small mb-3">
-                                                {{ Str::limit($package->description ?? 'No description available', 100) }}
+                                                <?php echo e(Str::limit($package->description ?? 'No description available', 100)); ?>
+
                                             </p>
                                             
                                             <div class="row text-center mb-3">
                                                 <div class="col-6">
                                                     <div class="border-end">
                                                         <div class="text-xs text-muted">TYPE</div>
-                                                        <div class="small fw-bold">{{ ucfirst($package->package_type ?? 'Standard') }}</div>
+                                                        <div class="small fw-bold"><?php echo e(ucfirst($package->package_type ?? 'Standard')); ?></div>
                                                     </div>
                                                 </div>
                                                 <div class="col-6">
                                                     <div class="text-xs text-muted">SELECTION</div>
-                                                    <div class="small fw-bold">{{ ucfirst($package->selection_type ?? 'Module') }}</div>
+                                                    <div class="small fw-bold"><?php echo e(ucfirst($package->selection_type ?? 'Module')); ?></div>
                                                 </div>
                                             </div>
                                             
@@ -875,53 +883,55 @@
                                                     <div class="border-end">
                                                         <div class="text-xs text-muted">COUNT MODE</div>
                                                         <div class="small fw-bold">
-                                                            @if($package->selection_mode === 'courses')
+                                                            <?php if($package->selection_mode === 'courses'): ?>
                                                                 <i class="fas fa-book me-1"></i>Course Based
-                                                            @else
+                                                            <?php else: ?>
                                                                 <i class="fas fa-layer-group me-1"></i>Module Based
-                                                            @endif
+                                                            <?php endif; ?>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div class="col-6">
                                                     <div class="text-xs text-muted">
-                                                        @if($package->selection_mode === 'courses')
+                                                        <?php if($package->selection_mode === 'courses'): ?>
                                                             COURSE COUNT
-                                                        @else
+                                                        <?php else: ?>
                                                             MODULE COUNT
-                                                        @endif
+                                                        <?php endif; ?>
                                                     </div>
                                                     <div class="small fw-bold">
-                                                        @if($package->selection_mode === 'courses')
-                                                            {{ $package->course_count ?? 'All' }}
-                                                        @else
-                                                            {{ $package->module_count ?? 'All' }}
-                                                        @endif
+                                                        <?php if($package->selection_mode === 'courses'): ?>
+                                                            <?php echo e($package->course_count ?? 'All'); ?>
+
+                                                        <?php else: ?>
+                                                            <?php echo e($package->module_count ?? 'All'); ?>
+
+                                                        <?php endif; ?>
                                                     </div>
                                                 </div>
                                             </div>
                                             
                                             <div class="text-center mb-3">
-                                                <h4 class="text-success fw-bold">₱{{ number_format($package->amount ?? 0, 2) }}</h4>
+                                                <h4 class="text-success fw-bold">₱<?php echo e(number_format($package->amount ?? 0, 2)); ?></h4>
                                             </div>
-                                            @php
+                                            <?php
                                                 $periodParts = [];
                                                 if (!empty($package->access_period_years)) $periodParts[] = $package->access_period_years . ' Year' . ($package->access_period_years > 1 ? 's' : '');
                                                 if (!empty($package->access_period_months)) $periodParts[] = $package->access_period_months . ' Month' . ($package->access_period_months > 1 ? 's' : '');
                                                 if (!empty($package->access_period_days)) $periodParts[] = $package->access_period_days . ' Day' . ($package->access_period_days > 1 ? 's' : '');
-                                            @endphp
-                                            @if(count($periodParts) > 0)
+                                            ?>
+                                            <?php if(count($periodParts) > 0): ?>
                                                 <div class="text-center mb-2">
-                                                    <span class="badge bg-info text-dark">Access Period: {{ implode(' ', $periodParts) }}</span>
+                                                    <span class="badge bg-info text-dark">Access Period: <?php echo e(implode(' ', $periodParts)); ?></span>
                                                 </div>
-                                            @endif
+                                            <?php endif; ?>
                                             
                                             <div class="d-grid gap-2">
                                                 <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-success btn-sm" onclick="editPackage({{ $package->package_id }})">
+                                                    <button type="button" class="btn btn-success btn-sm" onclick="editPackage(<?php echo e($package->package_id); ?>)">
                                                         <i class="fas fa-edit me-1"></i>Edit
                                                     </button>
-                                                    <button type="button" class="btn btn-danger btn-sm" onclick="deletePackage({{ $package->package_id }})">
+                                                    <button type="button" class="btn btn-danger btn-sm" onclick="deletePackage(<?php echo e($package->package_id); ?>)">
                                                         <i class="fas fa-trash me-1"></i>Delete
                                                     </button>
                                                 </div>
@@ -929,9 +939,9 @@
                                         </div>
                                     </div>
                                 </div>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </div>
-                    @else
+                    <?php else: ?>
                         <div class="text-center py-5">
                             <i class="fas fa-box-open fa-3x text-gray-300 mb-3"></i>
                             <h5 class="text-gray-600">No packages found</h5>
@@ -940,7 +950,7 @@
                                 <i class="fas fa-plus me-2"></i>Add New Package
                             </button>
                         </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -953,8 +963,8 @@
         <div class="modal-header">
             <h2><i class="fas fa-plus-circle me-2"></i>Create New Package</h2>
         </div>
-        <form id="addPackageForm" method="POST" action="{{ route('admin.packages.store') }}">
-            @csrf
+        <form id="addPackageForm" method="POST" action="<?php echo e(route('admin.packages.store')); ?>">
+            <?php echo csrf_field(); ?>
             
             <!-- Basic Information -->
             <div class="form-group">
@@ -1004,9 +1014,9 @@
                     <label for="program_id" class="required">Program</label>
                     <select id="program_id" name="program_id" required onchange="loadProgramData()">
                         <option value="">Select Program</option>
-                        @foreach($programs as $program)
-                            <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
-                        @endforeach
+                        <?php $__currentLoopData = $programs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $program): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($program->program_id); ?>"><?php echo e($program->program_name); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                 </div>
             </div>
@@ -1110,8 +1120,8 @@
             <h2><i class="fas fa-edit me-2"></i>Edit Package</h2>
         </div>
         <form id="editPackageForm" method="POST">
-            @csrf
-            @method('PUT')
+            <?php echo csrf_field(); ?>
+            <?php echo method_field('PUT'); ?>
             
             <!-- Same form structure as add modal but with edit_ prefixes -->
             <div class="form-group">
@@ -1143,9 +1153,9 @@
                 <div class="form-group">
                     <label for="edit_program_id" class="required">Program</label>
                     <select id="edit_program_id" name="program_id" required onchange="loadEditProgramData()">
-                        @foreach($programs as $program)
-                            <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
-                        @endforeach
+                        <?php $__currentLoopData = $programs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $program): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($program->program_id); ?>"><?php echo e($program->program_name); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                 </div>
             </div>
@@ -1247,10 +1257,12 @@
     </div>
 </div>
 
-{{-- Inline script removed: logic moved to admin-packages.page.js (colocated) and bundled via app.js using meta[page-id]. --}}
 
-@push('scripts')
-<script src="{{ asset('js/admin/admin-packages.js') }}"></script>
-@endpush
 
-@endsection
+<?php $__env->startPush('scripts'); ?>
+<script src="<?php echo e(asset('js/admin/admin-packages.js')); ?>"></script>
+<?php $__env->stopPush(); ?>
+
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('admin.admin-dashboard.admin-dashboard-layout', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/admin/admin-packages/admin-packages.blade.php ENDPATH**/ ?>

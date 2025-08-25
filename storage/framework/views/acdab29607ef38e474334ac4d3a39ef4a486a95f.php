@@ -1,34 +1,34 @@
-@extends('admin.admin-dashboard.admin-dashboard-layout')
 
-@section('title', 'Programs')
 
-@push('styles')
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<link rel="stylesheet" href="{{ asset('css/admin/admin-programs/admin-programs.css') }}?v={{ time() }}">
-@endpush
+<?php $__env->startSection('title', 'Programs'); ?>
 
-@push('scripts')
+<?php $__env->startPush('styles'); ?>
+<meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+<link rel="stylesheet" href="<?php echo e(asset('css/admin/admin-programs/admin-programs.css')); ?>?v=<?php echo e(time()); ?>">
+<?php $__env->stopPush(); ?>
+
+<?php $__env->startPush('scripts'); ?>
 <script>
     // Pass session data to JavaScript
-    window.sessionSuccess = @json(session('success'));
-    window.sessionError = @json(session('error'));
+    window.sessionSuccess = <?php echo json_encode(session('success'), 15, 512) ?>;
+    window.sessionError = <?php echo json_encode(session('error'), 15, 512) ?>;
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 <!-- Analytics Cards Section -->
 <div class="analytics-cards">
     <div class="analytics-card" style="background: #e3f2fd;">
         <div class="card-icon">🎓</div>
         <div class="card-content">
-            <div class="card-number">{{ $totalPrograms ?? 0 }}</div>
+            <div class="card-number"><?php echo e($totalPrograms ?? 0); ?></div>
             <div class="card-label">Total Programs</div>
             <div class="card-trend">
-                @if(($newProgramsThisMonth ?? 0) > 0)
-                    <span class="trend-up">↗ +{{ $newProgramsThisMonth }} this month</span>
-                @else
+                <?php if(($newProgramsThisMonth ?? 0) > 0): ?>
+                    <span class="trend-up">↗ +<?php echo e($newProgramsThisMonth); ?> this month</span>
+                <?php else: ?>
                     <span class="trend-neutral">→ No change</span>
-                @endif
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -36,14 +36,14 @@
     <div class="analytics-card" style="background: #f3e5f5;">
         <div class="card-icon">👥</div>
         <div class="card-content">
-            <div class="card-number">{{ $totalEnrollments ?? 0 }}</div>
+            <div class="card-number"><?php echo e($totalEnrollments ?? 0); ?></div>
             <div class="card-label">Total Enrollments</div>
             <div class="card-trend">
-                @if(($newEnrollmentsThisWeek ?? 0) > 0)
-                    <span class="trend-up">↗ +{{ $newEnrollmentsThisWeek }} this week</span>
-                @else
+                <?php if(($newEnrollmentsThisWeek ?? 0) > 0): ?>
+                    <span class="trend-up">↗ +<?php echo e($newEnrollmentsThisWeek); ?> this week</span>
+                <?php else: ?>
                     <span class="trend-neutral">→ No change</span>
-                @endif
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -51,14 +51,14 @@
     <div class="analytics-card" style="background: #e8f5e8;">
         <div class="card-icon">📚</div>
         <div class="card-content">
-            <div class="card-number">{{ $activePrograms ?? 0 }}</div>
+            <div class="card-number"><?php echo e($activePrograms ?? 0); ?></div>
             <div class="card-label">Active Programs</div>
             <div class="card-trend">
-                @if(($archivedPrograms ?? 0) > 0)
-                    <span class="trend-down">📁 {{ $archivedPrograms }} archived</span>
-                @else
+                <?php if(($archivedPrograms ?? 0) > 0): ?>
+                    <span class="trend-down">📁 <?php echo e($archivedPrograms); ?> archived</span>
+                <?php else: ?>
                     <span class="trend-neutral">→ All active</span>
-                @endif
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -66,14 +66,14 @@
     <div class="analytics-card" style="background: #fff3e0;">
         <div class="card-icon">📈</div>
         <div class="card-content">
-            <div class="card-number">{{ number_format($avgEnrollmentPerProgram ?? 0, 1) }}</div>
+            <div class="card-number"><?php echo e(number_format($avgEnrollmentPerProgram ?? 0, 1)); ?></div>
             <div class="card-label">Avg Enrollment/Program</div>
             <div class="card-trend">
-                @if(($completionRate ?? 0) > 0)
-                    <span class="trend-up">✓ {{ $completionRate }}% completion</span>
-                @else
+                <?php if(($completionRate ?? 0) > 0): ?>
+                    <span class="trend-up">✓ <?php echo e($completionRate); ?>% completion</span>
+                <?php else: ?>
                     <span class="trend-neutral">→ No data</span>
-                @endif
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -90,45 +90,46 @@
                     <button type="button" class="add-program-btn" id="showAddModal">
                         <i class="fas fa-plus me-2"></i>Add Program
                     </button>
-                    @if(session('preview_tenant') && request('website'))
-                        <a href="/t/draft/{{ session('preview_tenant') }}/admin/programs/archived?website={{ request('website') }}" class="view-archived-btn">
+                    <?php if(session('preview_tenant') && request('website')): ?>
+                        <a href="/t/draft/<?php echo e(session('preview_tenant')); ?>/admin/programs/archived?website=<?php echo e(request('website')); ?>" class="view-archived-btn">
                             📁 View Archived
                         </a>
-                    @else
-                        <a href="{{ route('admin.programs.archived') }}" class="view-archived-btn">
+                    <?php else: ?>
+                        <a href="<?php echo e(route('admin.programs.archived')); ?>" class="view-archived-btn">
                             📁 View Archived
                         </a>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
 
             <!-- Programs Grid -->
             <div class="programs-grid">
-                @forelse($programs as $program)
+                <?php $__empty_1 = true; $__currentLoopData = $programs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $program): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                     <div class="program-card">
-                        <div class="program-title">{{ $program->program_name }}</div>
+                        <div class="program-title"><?php echo e($program->program_name); ?></div>
                         
                         <div class="program-stats">
                             <div class="enrollment-count">
-                                Enrolled Students: {{ $program->enrollments->count() }}
+                                Enrolled Students: <?php echo e($program->enrollments->count()); ?>
+
                             </div>
                         </div>
 
                         <div class="program-actions">
-                            <button type="button" class="view-enrollees-btn" data-program-id="{{ $program->program_id }}">
+                            <button type="button" class="view-enrollees-btn" data-program-id="<?php echo e($program->program_id); ?>">
                                 👥 <span style="color: black;">View Enrollees</span>
                             </button>
-                            <button type="button" class="archive-btn" data-program-id="{{ $program->program_id }}">
+                            <button type="button" class="archive-btn" data-program-id="<?php echo e($program->program_id); ?>">
                                 📁 Archive
                             </button>
                         </div>
                     </div>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <div class="no-programs">
                         No programs found.<br>
                         <small>Click "Add Program" to create your first program.</small>
                     </div>
-                @endforelse
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -142,19 +143,19 @@
             </div>
             <div class="stats-grid">
                 <div class="stat-item">
-                    <div class="stat-value">{{ $mostPopularProgram->program_name ?? 'N/A' }}</div>
+                    <div class="stat-value"><?php echo e($mostPopularProgram->program_name ?? 'N/A'); ?></div>
                     <div class="stat-label">Most Popular Program</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-value">{{ $mostPopularProgram->enrollments_count ?? 0 }}</div>
+                    <div class="stat-value"><?php echo e($mostPopularProgram->enrollments_count ?? 0); ?></div>
                     <div class="stat-label">Enrollments</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-value">{{ $recentProgramsCount ?? 0 }}</div>
+                    <div class="stat-value"><?php echo e($recentProgramsCount ?? 0); ?></div>
                     <div class="stat-label">Added This Week</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-value">{{ number_format($avgProgramRating ?? 0, 1) }}</div>
+                    <div class="stat-value"><?php echo e(number_format($avgProgramRating ?? 0, 1)); ?></div>
                     <div class="stat-label">Avg Rating</div>
                 </div>
             </div>
@@ -177,12 +178,12 @@
         <!-- Activities -->
         <div class="activities-panel">
             <div class="panel-header">
-        {{-- Inline script removed: moved to admin-programs.page.js --}}
+        
     <div class="modal-bg" id="addModalBg">
         <div class="custom-modal">
         <h3>Create New Program</h3>
-        <form action="{{ route('admin.programs.store') }}" method="POST" enctype="multipart/form-data">
-            @csrf
+        <form action="<?php echo e(route('admin.programs.store')); ?>" method="POST" enctype="multipart/form-data">
+            <?php echo csrf_field(); ?>
             <input type="text" name="program_name" placeholder="Program Name" required>
             <textarea name="program_description" placeholder="Program Description" rows="4" style="width: 100%; margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
             
@@ -229,11 +230,11 @@
 
 
 
-@endsection
-@push('scripts')
+<?php $__env->stopSection(); ?>
+<?php $__env->startPush('scripts'); ?>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script src="{{ asset('js/admin/admin-programs.js') }}?v={{ time() }}"></script>
+        <script src="<?php echo e(asset('js/admin/admin-programs.js')); ?>?v=<?php echo e(time()); ?>"></script>
 
 <script>
 // Image preview functionality
@@ -283,5 +284,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
 
+
+<?php echo $__env->make('admin.admin-dashboard.admin-dashboard-layout', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/admin/admin-programs/admin-programs.blade.php ENDPATH**/ ?>

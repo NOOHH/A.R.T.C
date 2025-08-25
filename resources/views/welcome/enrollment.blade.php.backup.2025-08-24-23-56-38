@@ -1,21 +1,17 @@
+@extends('layouts.navbar')
 
+@section('title', 'Enrollment')
+@section('hide_footer', true)
 
-<?php $__env->startSection('title', 'Enrollment'); ?>
-<?php $__env->startSection('hide_footer', true); ?>
+@push('styles')
 
-<?php $__env->startPush('styles'); ?>
-
-
-<?php echo App\Helpers\UIHelper::getNavbarStyles(); ?>
-
+{{-- Global UI Styles --}}
+{!! App\Helpers\UIHelper::getNavbarStyles() !!}
 
 <style>
-<?php echo App\Helpers\SettingsHelper::getEnrollmentStyles(); ?>
-
-<?php echo App\Helpers\SettingsHelper::getProgramCardStyles(); ?>
-
-<?php echo App\Helpers\SettingsHelper::getButtonStyles(); ?>
-
+{!! App\Helpers\SettingsHelper::getEnrollmentStyles() !!}
+{!! App\Helpers\SettingsHelper::getProgramCardStyles() !!}
+{!! App\Helpers\SettingsHelper::getButtonStyles() !!}
 
 body {
     padding-top: 0 !important;
@@ -240,9 +236,9 @@ body {
     }
 }
 </style>
-<?php $__env->stopPush(); ?>
+@endpush
 
-<?php $__env->startSection('content'); ?>
+@section('content')
 <div class="container-fluid">
     <div class="enrollment-hero">
         <div class="container">
@@ -256,7 +252,7 @@ body {
                     <div class="enrollment-card program-card enrollment-program-card h-100 w-100">
                         <h3>Complete Plan</h3>
                         <p class="text-muted mb-4">Comprehensive program covering all essential topics</p>
-                        <a href="<?php echo e(tenant_enrollment_url('full')); ?>" 
+                        <a href="{{ route('enrollment.full') }}" 
                                 class="btn enrollment-btn enroll-btn">
                             <i class="bi bi-mortarboard"></i> Enroll Now
                         </a>
@@ -267,13 +263,13 @@ body {
                     <div class="enrollment-card program-card enrollment-program-card h-100 w-100">
                         <h3>Modular Plan</h3>
                         <p class="text-muted mb-4">Flexible modules tailored to your specific needs</p>
-                        <!-- Tenant-aware enrollment link -->
-                        <a href="<?php echo e(tenant_enrollment_url('modular')); ?>" 
+                        <!-- Direct link with both route() helper and explicit URL -->
+                        <a href="{{ route('enrollment.modular') }}" 
                                 class="btn enrollment-btn enroll-btn" 
                                 id="modular-enroll-btn"
-                                data-url="<?php echo e(tenant_enrollment_url('modular')); ?>"
+                                data-url="/enrollment/modular"
                                 data-target="modular_enrollment"
-                                onclick="window.location.href='<?php echo e(tenant_enrollment_url('modular')); ?>'; return false;">
+                                onclick="window.location.href='/enrollment/modular'; return false;">
                             <i class="bi bi-puzzle"></i> Enroll Now
                         </a>
 
@@ -291,7 +287,7 @@ body {
                                         
                                         // Method 1: Direct assignment to location.href
                                         try {
-                                            window.location.href = '<?php echo e(tenant_enrollment_url('modular')); ?>';
+                                            window.location.href = '/enrollment/modular';
                                             return false;
                                         } catch (err) {
                                             console.error('Method 1 failed:', err);
@@ -299,7 +295,7 @@ body {
                                         
                                         // Method 2: Open in same window
                                         try {
-                                            window.open('<?php echo e(tenant_enrollment_url('modular')); ?>', '_self');
+                                            window.open('/enrollment/modular', '_self');
                                             return false;
                                         } catch (err) {
                                             console.error('Method 2 failed:', err);
@@ -317,7 +313,7 @@ body {
                                         try {
                                             var form = document.createElement('form');
                                             form.method = 'GET';
-                                            form.action = '<?php echo e(tenant_enrollment_url('modular')); ?>';
+                                            form.action = '/enrollment/modular';
                                             document.body.appendChild(form);
                                             form.submit();
                                             return false;
@@ -340,7 +336,7 @@ body {
                                 
                                 // Try each route in sequence
                                 const tryRoutes = [
-                                    '<?php echo e(tenant_enrollment_url('modular')); ?>',
+                                    '/enrollment/modular',
                                     '/modular-enrollment',
                                     '/emergency-modular',
                                     '/go-to-modular.php',
@@ -378,8 +374,8 @@ body {
         </div>
     </div>
 </div>
-<?php $__env->stopSection(); ?>
-<?php $__env->startPush('scripts'); ?>
+@endsection
+@push('scripts')
 <script>
 // ENROLLMENT PAGE SPECIFIC DROPDOWN FIXES
 document.addEventListener('DOMContentLoaded', function() {
@@ -458,7 +454,5 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Enrollment page dropdown fixes applied');
 });
 </script>
-<?php $__env->stopPush(); ?>
+@endpush
 
-
-<?php echo $__env->make('layouts.navbar', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/welcome/enrollment.blade.php ENDPATH**/ ?>
