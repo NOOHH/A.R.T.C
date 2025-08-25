@@ -199,7 +199,7 @@
                     <?php $__currentLoopData = $registrations->take(3); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $registration): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <div class="registration-item">
                         <div class="student-info">
-                            <div class="student-name"><?php echo e($registration->firstname); ?> <?php echo e($registration->lastname); ?></div>
+                            <div class="student-name"><?php echo e($registration->user_firstname ?? $registration->firstname ?? 'First'); ?> <?php echo e($registration->user_lastname ?? $registration->lastname ?? 'Last'); ?></div>
                             <div class="student-date"><?php echo e($registration->created_at ? $registration->created_at->format('M d, Y') : 'Jul 02, 2025'); ?></div>
                         </div>
                         <a href="<?php echo e(route('admin.student.registration.pending')); ?>" class="review-btn view-btn">Review</a>

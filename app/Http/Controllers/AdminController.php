@@ -2809,8 +2809,18 @@ class AdminController extends Controller
 
         $dbError = null;
 
-        // Simple preview response for admin dashboard
-        return response()->view('admin.simple-preview', compact('registrations', 'analytics'));
+        // Render full admin dashboard layout instead of minimal simple preview
+        // Provide additional variables expected by the full view (even if placeholder values)
+        $recentAnnouncements = collect([]);
+        $recentActivity = collect([]);
+
+        return view('admin.admin-dashboard.admin-dashboard', [
+            'registrations' => $registrations,
+            'analytics' => $analytics,
+            'dbError' => $dbError,
+            'recentAnnouncements' => $recentAnnouncements,
+            'recentActivity' => $recentActivity,
+        ]);
     }
 
     /**

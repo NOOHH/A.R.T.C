@@ -160,20 +160,39 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 
+    @php
+        // Unified admin sidebar colors via SettingsHelper (already merges defaults + tenant settings)
+        $adminColors = \App\Helpers\SettingsHelper::getSidebarColors('admin');
+    @endphp
     <!-- Admin-specific CSS -->
     <style>
+    /* Admin sidebar dynamic vars */
+    {!! \App\Helpers\SettingsHelper::getSidebarCSS('admin') !!}
     :root {
+        /* Base sizing */
         --sidebar-width: 280px;
         --sidebar-collapsed-width: 70px;
-        --sidebar-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        --sidebar-text: #ffffff;
+        /* Theme source colors (separate so gradient + others can be recomputed live) */
+        --sidebar-primary: {{ $adminColors['primary_color'] }};
+        --sidebar-secondary: {{ $adminColors['secondary_color'] }};
+        /* Derived theme tokens */
+        --sidebar-bg: linear-gradient(135deg, var(--sidebar-primary) 0%, var(--sidebar-secondary) 100%);
+        --sidebar-text: {{ $adminColors['text_color'] }};
         --sidebar-text-muted: #9ca3af;
-        --sidebar-hover: rgba(255, 255, 255, 0.1);
-        --sidebar-active: rgba(255, 255, 255, 0.2);
+        --sidebar-hover: {{ Str::startsWith($adminColors['hover_color'],'#') ? $adminColors['hover_color'] : 'rgba(255,255,255,0.1)' }};
+        --sidebar-active: {{ Str::startsWith($adminColors['accent_color'],'#') ? $adminColors['accent_color'] : 'rgba(255,255,255,0.2)' }}33;
         --sidebar-border: rgba(255, 255, 255, 0.1);
         --sidebar-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
         --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         --border-radius: 12px;
+        /* Map admin-specific vars to ensure any legacy usage picks them up */
+        --admin-sidebar-primary: var(--sidebar-primary);
+        --admin-sidebar-secondary: var(--sidebar-secondary);
+        --admin-sidebar-bg: var(--sidebar-bg);
+        --admin-sidebar-text: var(--sidebar-text);
+        --admin-sidebar-hover: var(--sidebar-hover);
+        --admin-sidebar-active: var(--sidebar-active);
+        --admin-sidebar-accent: {{ $adminColors['accent_color'] }};
     }
 
     /* Global container */
@@ -210,7 +229,7 @@
         top: 0;
         width: var(--sidebar-width);
         height: 100vh;
-        background: var(--sidebar-bg);
+        background: var(--admin-sidebar-bg, var(--sidebar-bg));
         border-right: 1px solid var(--sidebar-border);
         box-shadow: var(--sidebar-shadow);
         transform: translateX(0);
@@ -406,7 +425,7 @@
         display: flex;
         align-items: center;
         padding: 0.75rem 1rem;
-        color: var(--sidebar-text);
+        color: var(--admin-sidebar-text, var(--sidebar-text));
         text-decoration: none;
         border-radius: var(--border-radius);
         transition: var(--transition-smooth);
@@ -418,14 +437,14 @@
     }
 
     .nav-link:hover {
-        background: var(--sidebar-hover);
-        color: var(--sidebar-text);
+        background: var(--admin-sidebar-hover, var(--sidebar-hover));
+        color: var(--admin-sidebar-text, var(--sidebar-text));
         text-decoration: none;
     }
 
     .nav-link.active {
-        background: var(--sidebar-active);
-        color: var(--sidebar-text);
+        background: var(--admin-sidebar-active, var(--sidebar-active));
+        color: var(--admin-sidebar-text, var(--sidebar-text));
     }
 
     .nav-link i {
@@ -516,7 +535,7 @@
         display: flex;
         align-items: center;
         padding: 0.5rem 1rem;
-        color: var(--sidebar-text);
+        color: var(--admin-sidebar-text, var(--sidebar-text));
         text-decoration: none;
         border-radius: var(--border-radius);
         transition: var(--transition-smooth);
@@ -528,14 +547,14 @@
     }
 
     .submenu-link:hover {
-        background: var(--sidebar-hover);
-        color: var(--sidebar-text);
+        background: var(--admin-sidebar-hover, var(--sidebar-hover));
+        color: var(--admin-sidebar-text, var(--sidebar-text));
         text-decoration: none;
     }
 
     .submenu-link.active {
-        background: var(--sidebar-active);
-        color: var(--sidebar-text);
+        background: var(--admin-sidebar-active, var(--sidebar-active));
+        color: var(--admin-sidebar-text, var(--sidebar-text));
     }
 
     .submenu-link i {
@@ -563,7 +582,7 @@
         width: 100%;
         text-align: left;
         padding: 0.75rem 1rem;
-        color: inherit;
+        color: var(--admin-sidebar-text, var(--sidebar-text));
         display: flex;
         align-items: center;
         text-decoration: none;
@@ -576,8 +595,8 @@
     }
 
     .logout-btn:hover {
-        background: var(--sidebar-hover);
-        color: var(--sidebar-text);
+        background: var(--admin-sidebar-hover, var(--sidebar-hover));
+        color: var(--admin-sidebar-text, var(--sidebar-text));
     }
 
     .logout-btn i {
@@ -873,6 +892,39 @@
         color: #6c757d;
     }
     </style>
+    <script>
+        // Apply runtime CSS vars from admin_sidebar settings if present (ensures iframe preview picks up after AJAX saves without full reload)
+        window.applyAdminSidebarVars = function(vars){
+            if(!vars) return; 
+            const root=document.documentElement; 
+            for(const [k,v] of Object.entries(vars)){
+                // Support both legacy --sidebar-* and new --admin-sidebar-* namespaces
+                if(k === 'sidebarPrimary'){
+                    root.style.setProperty('--sidebar-primary', v);
+                    root.style.setProperty('--admin-sidebar-primary', v);
+                } else if(k === 'sidebarSecondary') {
+                    root.style.setProperty('--sidebar-secondary', v);
+                    root.style.setProperty('--admin-sidebar-secondary', v);
+                } else {
+                    root.style.setProperty('--'+k, v);
+                }
+            }
+            // Recompute gradients
+            const p = getComputedStyle(root).getPropertyValue('--admin-sidebar-primary').trim() || getComputedStyle(root).getPropertyValue('--sidebar-primary').trim();
+            const s = getComputedStyle(root).getPropertyValue('--admin-sidebar-secondary').trim() || getComputedStyle(root).getPropertyValue('--sidebar-secondary').trim();
+            if(p && s){
+                root.style.setProperty('--sidebar-bg', `linear-gradient(135deg, ${p} 0%, ${s} 100%)`);
+                root.style.setProperty('--admin-sidebar-bg', `linear-gradient(135deg, ${p} 0%, ${s} 100%)`);
+            }
+        };
+        // Expose initial values
+        window.applyAdminSidebarVars({
+            sidebarPrimary: "{{ $adminColors['primary_color'] }}",
+            sidebarSecondary: "{{ $adminColors['secondary_color'] }}"
+        });
+        console.log('[AdminSidebar][Init]', @json($adminColors));
+    console.log('[AdminSidebar][DB Section Raw]', @json(\App\Models\UiSetting::getSection('admin_sidebar')->toArray()));
+    </script>
 
     {{-- Global UI Styles (e.g. from your helper) --}}
     {!! App\Helpers\UIHelper::getNavbarStyles() !!}
@@ -1201,5 +1253,69 @@ function displaySearchResults(data) {
 
 <!-- Include Real-time Chat Component -->
 @include('components.realtime-chat')
+<script>
+// Live admin sidebar theming listener (receives postMessage from settings page iframe parent)
+(function(){
+    window.addEventListener('message', function(e){
+        const d = e.data;
+        if(!d || d.type !== 'adminSidebarUpdate' || !d.colors) return;
+        try {
+            const c = d.colors; // keys: primary_color, secondary_color, accent_color, text_color, hover_color
+            const root = document.documentElement;
+            if(c.primary_color){
+                root.style.setProperty('--sidebar-primary', c.primary_color);
+                root.style.setProperty('--admin-sidebar-primary', c.primary_color);
+            }
+            if(c.secondary_color){
+                root.style.setProperty('--sidebar-secondary', c.secondary_color);
+                root.style.setProperty('--admin-sidebar-secondary', c.secondary_color);
+            }
+            if(c.primary_color || c.secondary_color){
+                const p = (c.primary_color || getComputedStyle(root).getPropertyValue('--admin-sidebar-primary') || getComputedStyle(root).getPropertyValue('--sidebar-primary')).trim();
+                const s = (c.secondary_color || getComputedStyle(root).getPropertyValue('--admin-sidebar-secondary') || getComputedStyle(root).getPropertyValue('--sidebar-secondary')).trim();
+                const grad = `linear-gradient(135deg, ${p} 0%, ${s} 100%)`;
+                root.style.setProperty('--sidebar-bg', grad);
+                root.style.setProperty('--admin-sidebar-bg', grad);
+            }
+            if(c.text_color){
+                root.style.setProperty('--sidebar-text', c.text_color);
+                root.style.setProperty('--admin-sidebar-text', c.text_color);
+            }
+            if(c.hover_color){
+                const hv = (c.hover_color.startsWith('#') ? c.hover_color : 'rgba(255,255,255,0.1)');
+                root.style.setProperty('--sidebar-hover', hv);
+                root.style.setProperty('--admin-sidebar-hover', hv);
+            }
+            if(c.accent_color){
+                root.style.setProperty('--sidebar-active', c.accent_color + '33');
+                root.style.setProperty('--admin-sidebar-active', c.accent_color + '33');
+                root.style.setProperty('--admin-sidebar-accent', c.accent_color);
+            }
+            // Direct element style updates as a safety net (in case some CSS still uses static values)
+            const sidebarEl = document.getElementById('modernSidebar');
+            if(sidebarEl) {
+                const p = getComputedStyle(root).getPropertyValue('--admin-sidebar-primary').trim() || c.primary_color;
+                const s = getComputedStyle(root).getPropertyValue('--admin-sidebar-secondary').trim() || c.secondary_color;
+                if(p && s) sidebarEl.style.background = `linear-gradient(135deg, ${p} 0%, ${s} 100%)`;
+                if(c.text_color) sidebarEl.style.color = c.text_color;
+            }
+            console.log('[AdminSidebar] Applied live update (admin + legacy vars)', c, {
+                primary: getComputedStyle(root).getPropertyValue('--admin-sidebar-primary').trim(),
+                secondary: getComputedStyle(root).getPropertyValue('--admin-sidebar-secondary').trim(),
+                bg: getComputedStyle(root).getPropertyValue('--admin-sidebar-bg').trim()
+            });
+        } catch(err){
+            console.warn('Failed applying admin sidebar live update', err);
+        }
+    });
+    // Light preview-mode suppression for Echo/Pusher noise
+    if(window.location.search.includes('preview')){
+        window.__ADMIN_PREVIEW__ = true;
+        if(!window.Echo){
+            window.Echo = { channel: ()=>({ listen: ()=>{} }), private: ()=>({ listen: ()=>{} }), join: ()=>({ listen: ()=>{}, here: ()=>{}, joining: ()=>{}, leaving: ()=>{} }) };
+        }
+    }
+})();
+</script>
 </body>
 </html>

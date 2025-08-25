@@ -761,7 +761,7 @@ Route::prefix('t')->group(function() {
     Route::get('/{tenant}/admin-dashboard', function($tenant) {
         $tenantModel = \App\Models\Tenant::where('slug',$tenant)->firstOrFail();
         $tenantService = app(\App\Services\TenantService::class);
-        $tenantService->switchToTenant($tenantModel);
+        $tenantService->switchToTenant($tenantModel); // KEEP tenant connection active for view rendering so UiSetting reads tenant DB
         try {
             $analytics = [
                 'total_students' => \Illuminate\Support\Facades\DB::table('students')->count(),
@@ -778,11 +778,14 @@ Route::prefix('t')->group(function() {
         } catch (\Throwable $e) {
             $analytics = [];$registrations=collect();$dbError='Tenant DB error: '.$e->getMessage();
         }
-        $tenantService->switchToMain();
         // Temporarily seed session for layout then immediately forget after rendering
         session(['user_name'=>'Tenant Admin','user_role'=>'admin','logged_in'=>true]);
-        $html = view('admin.admin-dashboard.admin-dashboard', compact('analytics','registrations','dbError'))->render();
-        session()->forget(['user_name','user_role','logged_in']);
+        try {
+            $html = view('admin.admin-dashboard.admin-dashboard', compact('analytics','registrations','dbError'))->render();
+        } finally {
+            session()->forget(['user_name','user_role','logged_in']);
+            $tenantService->switchToMain(); // switch back AFTER rendering
+        }
         return response($html);
     })->name('tenant.admin.dashboard');
     Route::get('/draft/{tenant}/admin-dashboard', function($tenant) {
@@ -798,11 +801,13 @@ Route::prefix('t')->group(function() {
                             $tenantObj = \App\Models\Tenant::where('slug', $client->slug)->first();
                             if ($tenantObj) {
                                 $tenantService = app(\App\Services\TenantService::class);
-                                $tenantService->switchToTenant($tenantObj);
+                                $tenantService->switchToTenant($tenantObj); // Keep tenant connection for rest of request; DON'T switch back until after view
                                 
                                 // Load tenant-specific settings
                                 $navbarSettings = \App\Models\Setting::getGroup('navbar');
                                 $adminSettings = \App\Models\Setting::getGroup('admin_panel');
+                                // Sidebar colors (UiSetting stored) read while tenant connection active
+                                $adminSidebar = \App\Models\UiSetting::getSection('admin_sidebar')->toArray();
                                 
                                 $settings = [
                                     'navbar' => [
@@ -813,10 +818,8 @@ Route::prefix('t')->group(function() {
                                         'brand_name' => $adminSettings ? $adminSettings->get('brand_name', 'Ascendo Review and Training Center') : 'Ascendo Review and Training Center',
                                         'brand_logo' => $adminSettings ? $adminSettings->get('brand_logo', null) : null,
                                     ],
+                                    'admin_sidebar' => $adminSidebar,
                                 ];
-                                
-                                $tenantService->switchToMain();
-                                
                                 // Share settings with the view
                                 view()->share('settings', $settings);
                                 view()->share('navbar', $settings['navbar'] ?? []);
@@ -864,7 +867,8 @@ Route::prefix('t')->group(function() {
             $dbError = null;
 
             $html = view('admin.admin-dashboard.admin-dashboard', compact('analytics','registrations','dbError'))->render();
-
+            // After rendering revert to main connection if we are still on tenant
+            try { app(\App\Services\TenantService::class)->switchToMain(); } catch(\Throwable $ignore) {}
             return response($html);
 
         } catch (\Exception $e) {

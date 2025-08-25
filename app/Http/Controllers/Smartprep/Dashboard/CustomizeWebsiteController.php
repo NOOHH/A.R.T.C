@@ -185,6 +185,7 @@ class CustomizeWebsiteController extends Controller
         return view('smartprep.dashboard.cache-test');
     }
 
+
     public function store(Request $request)
     {
         $user = Auth::guard('smartprep')->user();

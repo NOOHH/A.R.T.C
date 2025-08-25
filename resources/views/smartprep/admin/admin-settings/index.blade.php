@@ -691,13 +691,15 @@
                             </div>
                         @endif
                         
-                        @if($errors->any())
+                        @if(isset($errors) && is_object($errors) && method_exists($errors,'any') && $errors->any())
                             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                                 <i class="fas fa-exclamation-circle me-2"></i>
                                 <ul class="mb-0">
+                                    @if(isset($errors) && is_object($errors) && method_exists($errors,'all'))
                                     @foreach($errors->all() as $error)
                                         <li>{{ $error }}</li>
                                     @endforeach
+                                    @endif
                                 </ul>
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
@@ -1959,6 +1961,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script type="text/javascript">
+        // Ensure client slug available globally for scripts
+    window.SMARTPREP_CLIENT_SLUG = '{{ $clientSlug ?? "" }}';
         // Settings tab navigation with enhanced functionality
         document.addEventListener('DOMContentLoaded', function() {
             const navTabs = document.querySelectorAll('.settings-nav-tab');
@@ -1991,8 +1995,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // Enable auto-save for important changes
             enableAutoSave();
             
-            // Initialize preview URL from settings
-            initializePreviewUrl();
+            // Initialize preview: if Admin Panel tab is default active AND we have a client slug, force admin section preview (draft route)
+            const defaultActive = document.querySelector('.settings-nav-tab.active');
+            if (defaultActive && defaultActive.getAttribute('data-section') === 'admin' && window.SMARTPREP_CLIENT_SLUG) {
+                updatePreviewForSection('admin');
+            } else {
+                initializePreviewUrl();
+            }
             
             // Refresh homepage form with current data
             setTimeout(() => {
@@ -2214,44 +2223,50 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
+            // Base preview URL defaults to homepage
             let previewUrl = 'http://127.0.0.1:8000/';
             let titleText = 'Live Preview';
+            // If a client slug is present (tenant context), build tenant base
+            const clientSlug = '{{ $clientSlug ?? "" }}';
+            const tenantBase = clientSlug ? `http://127.0.0.1:8000/t/${clientSlug}` : 'http://127.0.0.1:8000';
+            const tenantDraftBase = clientSlug ? `http://127.0.0.1:8000/t/draft/${clientSlug}` : tenantBase;
             
             switch(section) {
                 case 'student':
-                    previewUrl = 'http://127.0.0.1:8000/student/dashboard';
+                    previewUrl = clientSlug ? `${tenantBase}/student/dashboard` : 'http://127.0.0.1:8000/student/dashboard';
                     titleText = 'Student Portal Preview';
                     break;
                 case 'professor':
-                    previewUrl = 'http://127.0.0.1:8000/professor/dashboard';
+                    previewUrl = clientSlug ? `${tenantBase}/professor/dashboard` : 'http://127.0.0.1:8000/professor/dashboard';
                     titleText = 'Professor Panel Preview';
                     break;
                 case 'admin':
-                    previewUrl = 'http://127.0.0.1:8000/admin-dashboard';
+                    // Use draft tenant admin dashboard preview; include client_slug for server-side filtering if needed
+                    previewUrl = clientSlug ? `${tenantDraftBase}/admin-dashboard?client_slug=${clientSlug}` : 'http://127.0.0.1:8000/admin-dashboard';
                     titleText = 'Admin Panel Preview';
                     break;
                 case 'homepage':
-                    previewUrl = 'http://127.0.0.1:8000/';
+                    previewUrl = clientSlug ? `${tenantBase}` : 'http://127.0.0.1:8000/';
                     titleText = 'Homepage Preview';
                     break;
                 case 'navbar':
                 case 'branding':
-                    previewUrl = 'http://127.0.0.1:8000/';
+                    previewUrl = clientSlug ? `${tenantBase}` : 'http://127.0.0.1:8000/';
                     titleText = 'Live Preview';
                     break;
                 default:
-                    previewUrl = 'http://127.0.0.1:8000/';
+                    previewUrl = clientSlug ? `${tenantBase}` : 'http://127.0.0.1:8000/';
                     titleText = 'Live Preview';
             }
             
             // Add preview parameter and timestamp to bypass cache
-            const finalUrl = previewUrl + '?preview=true&t=' + Date.now();
+            const finalUrl = previewUrl + (previewUrl.includes('?') ? '&' : '?') + 'preview=true&t=' + Date.now();
 
             // Persist chosen section + base so refreshPreview() can reuse
             try {
                 iframe.dataset.previewSection = section;
                 iframe.dataset.previewBase = previewUrl;
-                const siteKey = '{{ $selectedWebsite->id ?? "site" }}';
+                const siteKey = '{{ $selectedWebsite->id ?? ((isset($activeWebsites) && $activeWebsites->count()) ? $activeWebsites->first()->id : "site") }}';
                 localStorage.setItem('preview_base_admin_' + siteKey, previewUrl);
                 localStorage.setItem('preview_section_admin_' + siteKey, section);
             } catch(e) { /* noop */ }
@@ -2887,6 +2902,19 @@ document.addEventListener('DOMContentLoaded', function() {
             preview.style.setProperty('--preview-accent', accentColor);
             preview.style.setProperty('--preview-text', textColor);
             preview.style.setProperty('--preview-hover', hoverColor);
+
+            // Live broadcast (pre-save) to any preview iframe (admin only section)
+            try {
+                const message = { type: 'adminSidebarUpdate', colors: {
+                    primary_color: primaryColor,
+                    secondary_color: secondaryColor,
+                    accent_color: accentColor,
+                    text_color: textColor,
+                    hover_color: hoverColor
+                }};
+                window.postMessage(message,'*');
+                document.querySelectorAll('iframe').forEach(f=>{ try { f.contentWindow.postMessage(message,'*'); } catch(e){} });
+            } catch(e) { /* ignore */ }
         }
 
         function saveAdminSidebarColors() {
@@ -2915,21 +2943,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Shared function for saving sidebar colors
         function saveSidebarColorsForRole(role, colors) {
+            const clientSlug = window.SMARTPREP_CLIENT_SLUG || null;
+            const payload = { role: role, colors: colors };
+            if(clientSlug) payload.client_slug = clientSlug;
             fetch('/smartprep/admin/settings/sidebar', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
-                body: JSON.stringify({
-                    role: role,
-                    colors: colors
-                })
+                body: JSON.stringify(payload)
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     showNotification(`${role.charAt(0).toUpperCase() + role.slice(1)} sidebar colors saved successfully!`, 'success');
+                    if(role === 'admin') {
+                        // Broadcast to any admin dashboard iframe for instant preview
+                        try {
+                            const message = { type: 'adminSidebarUpdate', colors };
+                            // Top-level
+                            window.postMessage(message, '*');
+                            // Any iframes on the page
+                            document.querySelectorAll('iframe').forEach(f=>{ try { f.contentWindow.postMessage(message,'*'); } catch(e){} });
+                        } catch(e) { console.warn('Failed to broadcast admin sidebar update', e); }
+                    }
                 } else {
                     showNotification('Error saving sidebar colors', 'danger');
                 }
