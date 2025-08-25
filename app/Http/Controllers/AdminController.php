@@ -2842,22 +2842,9 @@ class AdminController extends Controller
                 'preview_mode' => true
             ]);
 
-            // Mock analytics data for preview
-            $analytics = [
-                'total_students' => 156,
-                'total_programs' => 8,
-                'total_modules' => 24,
-                'total_enrollments' => 342,
-                'pending_registrations' => 12,
-                'new_students_this_month' => 28,
-                'modules_this_week' => 3,
-                'archived_programs' => 2,
-            ];
-            
-            $registrations = collect();
-            $dbError = null;
-
-            return view('admin.admin-dashboard.admin-dashboard', compact('analytics','registrations','dbError'));
+            // Delegate to the tenant-aware dashboard controller
+            $tenantDashboardController = app(\App\Http\Controllers\Tenant\TenantAdminDashboardController::class);
+            return $tenantDashboardController->index($tenant);
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("Preview dashboard error for tenant $tenant", [

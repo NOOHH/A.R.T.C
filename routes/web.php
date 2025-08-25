@@ -1117,6 +1117,9 @@ Route::prefix('t')->group(function() {
     Route::post('/draft/{tenant}/admin/students/registrations/{id}/reject', [App\Http\Controllers\Tenant\TenantAdminStudentController::class, 'rejectRegistration'])->name('tenant.admin.students.reject-registration');
     Route::get('/draft/{tenant}/admin/students/{id}', [App\Http\Controllers\Tenant\TenantAdminStudentController::class, 'show'])->name('tenant.admin.students.show');
 
+    // Analytics API routes
+    Route::get('/draft/{tenant}/admin/analytics/api', [App\Http\Controllers\Tenant\TenantAdminDashboardController::class, 'analyticsApi'])->name('tenant.admin.analytics.api');
+
 });
 
 // ADMIN ROUTES - Outside the 't' prefix group to avoid the t/ prefix
