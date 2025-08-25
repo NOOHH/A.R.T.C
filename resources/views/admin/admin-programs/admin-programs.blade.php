@@ -87,6 +87,9 @@
             <div class="programs-header">
                 <h1>Programs Management</h1>
                 <div class="header-buttons">
+                    <button type="button" class="add-program-btn" id="showAddModal">
+                        <i class="fas fa-plus me-2"></i>Add Program
+                    </button>
                     @if(session('preview_tenant') && request('website'))
                         <a href="/t/draft/{{ session('preview_tenant') }}/admin/programs/archived?website={{ request('website') }}" class="view-archived-btn">
                             📁 View Archived
@@ -175,7 +178,8 @@
         <div class="activities-panel">
             <div class="panel-header">
         {{-- Inline script removed: moved to admin-programs.page.js --}}
-    <div class="custom-modal">
+    <div class="modal-bg" id="addModalBg">
+        <div class="custom-modal">
         <h3>Create New Program</h3>
         <form action="{{ route('admin.programs.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
@@ -206,6 +210,7 @@
                 <button type="submit" class="add-btn">Add Program</button>
             </div>
         </form>
+        </div>
     </div>
 </div>
 

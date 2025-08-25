@@ -62,7 +62,7 @@
             
             <div class="col-md-6">
                 <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="professorModuleManagementEnabled" name="module_management_enabled" {{ ($settings['professor_features']['module_management_enabled'] ?? false) ? 'checked' : '' }}>
+                    <input class="form-check-input" type="checkbox" id="professorModuleManagementEnabled" name="professor_module_management_enabled" {{ ($settings['professor_features']['professor_module_management_enabled'] ?? false) ? 'checked' : '' }}>
                     <label class="form-check-label" for="professorModuleManagementEnabled">
                         <strong>Module Management</strong><br>
                         <small class="text-muted">Allow professors to create and manage modules</small>
@@ -72,7 +72,7 @@
             
             <div class="col-md-6">
                 <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="professorAnnouncementManagementEnabled" name="announcement_management_enabled" {{ ($settings['professor_features']['announcement_management_enabled'] ?? false) ? 'checked' : '' }}>
+                    <input class="form-check-input" type="checkbox" id="professorAnnouncementManagementEnabled" name="professor_announcement_management_enabled" {{ ($settings['professor_features']['professor_announcement_management_enabled'] ?? false) ? 'checked' : '' }}>
                     <label class="form-check-label" for="professorAnnouncementManagementEnabled">
                         <strong>Announcement Management</strong><br>
                         <small class="text-muted">Allow professors to create and manage announcements</small>
@@ -80,15 +80,7 @@
                 </div>
             </div>
             
-            <div class="col-md-6">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="professorChatManagementEnabled" name="chat_management_enabled" {{ ($settings['professor_features']['chat_management_enabled'] ?? false) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="professorChatManagementEnabled">
-                        <strong>Chat Management</strong><br>
-                        <small class="text-muted">Allow professors to access and manage chat features</small>
-                    </label>
-                </div>
-            </div>
+
         </div>
 
         <div class="settings-footer mt-4">

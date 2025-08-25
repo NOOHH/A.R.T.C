@@ -502,7 +502,7 @@
                 </div>
 
                 <div class="login-prompt">
-                    <p>Already have an account? <a href="{{ route('login') }}">Click here to login</a></p>
+                    <p>Already have an account? <a href="{{ tenant_enrollment_url('login') }}">Click here to login</a></p>
                 </div>
 
                 <div class="form-navigation">
@@ -527,7 +527,7 @@
                 <p>Fill in your personal and academic information.</p>
                 @endif
             </div>
-            <form action="{{ route('enrollment.modular.submit') }}" method="POST" enctype="multipart/form-data" class="registration-form" id="modularEnrollmentForm" novalidate>
+            <form action="{{ tenant_enrollment_url('modular.submit') }}" method="POST" enctype="multipart/form-data" class="registration-form" id="modularEnrollmentForm" novalidate>
                 @csrf
                 <!-- Hidden inputs for form data -->
                 <input type="hidden" name="enrollment_type" value="Modular">
@@ -708,8 +708,27 @@
                         <option value="">Select Education Level</option>
                         @if(isset($educationLevels) && $educationLevels->count() > 0)
                             @foreach($educationLevels as $level)
+                                @php
+                                    // Process file requirements for stdClass object from DB::connection
+                                    $fileRequirements = [];
+                                    if (!empty($level->file_requirements)) {
+                                        $requirements = is_string($level->file_requirements) 
+                                            ? json_decode($level->file_requirements, true) 
+                                            : $level->file_requirements;
+                                        
+                                        if (is_array($requirements)) {
+                                            foreach ($requirements as $req) {
+                                                // Check if requirement is available for the current plan type
+                                                $planKey = 'available_' . ($enrollmentType ?? 'modular') . '_plan';
+                                                if (isset($req[$planKey]) && $req[$planKey]) {
+                                                    $fileRequirements[] = $req;
+                                                }
+                                            }
+                                        }
+                                    }
+                                @endphp
                                 <option value="{{ $level->level_name }}" 
-                                        data-file-requirements="{{ json_encode($level->getFileRequirementsForPlan($enrollmentType ?? 'modular')) }}">
+                                        data-file-requirements="{{ json_encode($fileRequirements) }}">
                                     {{ $level->level_name }}
                                 </option>
                             @endforeach
@@ -945,8 +964,8 @@
         console.log('Account option selected:', hasAccount ? 'has account' : 'no account');
         
         if (hasAccount) {
-            // Redirect to login page
-            window.location.href = "{{ route('login') }}";
+            // Redirect to tenant-aware login page
+            window.location.href = "{{ tenant_enrollment_url('login') }}";
             return;
         } else {
             // Continue to step 2 (packages)
@@ -3028,15 +3047,21 @@ function copyStepperDataToFinalForm() {
         passwordConfirmation = document.getElementById('password_confirmation')?.value || '';
         referralCode = document.getElementById('referral_code')?.value || '';
         
-        // Store the form data in sessionStorage for later use
-        const formDataToStore = {
-            user_firstname: userFirstname,
-            user_lastname: userLastname,
-            user_email: userEmail,
-            referral_code: referralCode
-        };
-        sessionStorage.setItem('enrollmentFormData', JSON.stringify(formDataToStore));
-        console.log('💾 Stored form data in sessionStorage:', formDataToStore);
+        // FIXED: Only store form data for logged-in users, not for account creation
+        if (isUserLoggedIn) {
+            const formDataToStore = {
+                user_firstname: userFirstname,
+                user_lastname: userLastname,
+                user_email: userEmail,
+                referral_code: referralCode
+            };
+            sessionStorage.setItem('enrollmentFormData', JSON.stringify(formDataToStore));
+            console.log('💾 Stored form data in sessionStorage:', formDataToStore);
+        } else {
+            // For account creation, clear any existing form data
+            sessionStorage.removeItem('enrollmentFormData');
+            console.log('💾 Cleared form data for account creation');
+        }
         
         // Debug logging (only show when fields actually have problematic values)
         const hasProblematicValues = userFirstname === userEmail && userEmail !== '' && userFirstname !== '';
@@ -4475,8 +4500,10 @@ window.selectProgram = selectProgram;
 
 <script>
 // Data persistence functions to maintain data when navigating between steps
+// FIXED: Only save form data for logged-in users, not for account creation
 function saveFormData() {
-    if (!isUserLoggedIn) {
+    // Only save form data if user is logged in (not during account creation)
+    if (isUserLoggedIn) {
         const formData = {
             user_firstname: document.getElementById('user_firstname')?.value || '',
             user_lastname: document.getElementById('user_lastname')?.value || '',
@@ -4489,11 +4516,16 @@ function saveFormData() {
         // Save to sessionStorage
         sessionStorage.setItem('enrollmentFormData', JSON.stringify(formData));
         console.log('📱 Saved form data to session:', formData);
+    } else {
+        // For non-logged-in users (account creation), clear any existing form data
+        sessionStorage.removeItem('enrollmentFormData');
+        console.log('📱 Cleared form data for account creation');
     }
 }
 
 function restoreFormData() {
-    if (!isUserLoggedIn) {
+    // FIXED: Only restore form data for logged-in users, not for account creation
+    if (isUserLoggedIn) {
         const savedData = sessionStorage.getItem('enrollmentFormData');
         if (savedData) {
             try {
@@ -4524,12 +4556,23 @@ function restoreFormData() {
                 console.error('Error restoring form data:', e);
             }
         }
+    } else {
+        // For non-logged-in users, ensure form fields are empty
+        const fieldsToClear = ['user_firstname', 'user_lastname', 'user_email', 'password', 'password_confirmation', 'referral_code'];
+        fieldsToClear.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.value = '';
+            }
+        });
+        console.log('📱 Cleared form fields for account creation');
     }
 }
 
 // Add event listeners to save data when fields change
 document.addEventListener('DOMContentLoaded', function() {
-    if (!isUserLoggedIn) {
+    // FIXED: Only save/restore data for logged-in users
+    if (isUserLoggedIn) {
         // Restore data when page loads
         restoreFormData();
         
@@ -4542,6 +4585,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 field.addEventListener('change', saveFormData);
             }
         });
+    } else {
+        // For non-logged-in users, clear any existing form data on page load
+        sessionStorage.removeItem('enrollmentFormData');
+        console.log('📱 Cleared form data on page load for account creation');
     }
 });
 

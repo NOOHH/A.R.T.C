@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Services\TenantService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,7 @@ use App\Models\Program;
 use App\Models\Package;
 use App\Models\FormRequirement;
 use App\Models\StudentBatch;
+use App\Models\EducationLevel;
 
 class StudentRegistrationController extends Controller
 {
@@ -84,7 +86,7 @@ class StudentRegistrationController extends Controller
         
         try {
             // AUTO-CREATE BATCH LOGIC: Check if we need to create a batch for this program BEFORE validation
-            $program = Program::find($request->program_id);
+            $program = DB::connection('tenant')->table('programs')->find($request->program_id);
             $learningMode = strtolower($request->input('learning_mode'));
             
             // Only auto-create batches for synchronous mode and if program has auto_create_batch enabled
@@ -153,9 +155,9 @@ class StudentRegistrationController extends Controller
             $programType = $enrollmentType === 'Full' ? 'full' : 'modular';
             
             // Get active form requirements for the selected program type
-            $formRequirements = FormRequirement::active()
+            $formRequirements = DB::connection('tenant')->table('form_requirements')->where('is_active', 1)
                 ->forProgram($programType)
-                ->ordered()
+                ->orderBy('sort_order', 'asc')
                 ->get();
 
             // Base validation rules for final registration
@@ -197,7 +199,7 @@ class StudentRegistrationController extends Controller
             
             if ($selectedEducationLevel) {
                 // Find the education level in database
-                $educationLevel = \App\Models\EducationLevel::where('level_name', $selectedEducationLevel)->first();
+                $educationLevel = DB::connection('tenant')->table('education_levels')->where('level_name', $selectedEducationLevel)->first();
                 
                 if (!$educationLevel) {
                     Log::warning('Full enrollment - Education level not found', ['education_level' => $selectedEducationLevel]);
@@ -295,7 +297,7 @@ class StudentRegistrationController extends Controller
 
             // DUPLICATE PREVENTION: Check for recent registration with same data
             try {
-                $duplicateCheck = Registration::where('email', $request->email ?? $request->user_email)
+                $duplicateCheck = DB::connection('tenant')->table('registrations')->where('email', $request->email ?? $request->user_email)
                     ->where('program_id', $request->program_id)
                     ->where('package_id', $request->package_id)
                     ->where('created_at', '>=', now()->subMinutes(5)) // Within last 5 minutes
@@ -335,7 +337,7 @@ class StudentRegistrationController extends Controller
                 $user = auth()->user();
                 Log::info('Using authenticated user', ['user_id' => $user->user_id]);
             } elseif (session('user_id')) {
-                $user = User::find(session('user_id'));
+                $user = DB::connection('tenant')->table('users')->find(session('user_id'));
                 if ($user) {
                     Log::info('Using session user', ['user_id' => $user->user_id]);
                 }
@@ -452,7 +454,7 @@ class StudentRegistrationController extends Controller
                 
                 // Check if the column exists in the registrations table
                 try {
-                    if (FormRequirement::columnExists($fieldName) && $request->has($fieldName)) {
+                    if (DB::connection('tenant')->getSchemaBuilder()->hasColumn('form_requirements', $fieldName) && $request->has($fieldName)) {
                         if ($field->field_type === 'file' && $request->hasFile($fieldName)) {
                             // Enhanced file upload handling with validation
                             $uploadedFile = $request->file($fieldName);
@@ -539,7 +541,7 @@ class StudentRegistrationController extends Controller
 
             // ADDITIONAL FILE PROCESSING: Handle education level files directly (similar to modular enrollment)
             if ($selectedEducationLevel) {
-                $educationLevel = \App\Models\EducationLevel::where('level_name', $selectedEducationLevel)->first();
+                $educationLevel = DB::connection('tenant')->table('education_levels')->where('level_name', $selectedEducationLevel)->first();
                 
                 if ($educationLevel && $educationLevel->file_requirements) {
                     $fileRequirements = is_string($educationLevel->file_requirements) 
@@ -615,10 +617,10 @@ class StudentRegistrationController extends Controller
 
             // Map common user fields to registration columns if they exist
             try {
-                if (FormRequirement::columnExists('firstname')) {
+                if (DB::connection('tenant')->getSchemaBuilder()->hasColumn('form_requirements', 'firstname')) {
                     $registration->firstname = $user->user_firstname;
                 }
-                if (FormRequirement::columnExists('lastname')) {
+                if (DB::connection('tenant')->getSchemaBuilder()->hasColumn('form_requirements', 'lastname')) {
                     $registration->lastname = $user->user_lastname;
                 }
             } catch (\Exception $e) {
@@ -682,7 +684,7 @@ class StudentRegistrationController extends Controller
                 
                 // Check if the column exists in the students table and if we have data for it
                 try {
-                    if (FormRequirement::columnExists($fieldName, 'students') && $request->has($fieldName)) {
+                    if (DB::connection('tenant')->getSchemaBuilder()->hasColumn('students', $fieldName) && $request->has($fieldName)) {
                         if ($field->field_type === 'file' && $request->hasFile($fieldName)) {
                             // Handle file uploads - store same file path as registration
                             $studentData[$fieldName] = $registration->{$fieldName} ?? null;
@@ -711,7 +713,7 @@ class StudentRegistrationController extends Controller
             }
             
             // Create or update student record
-            $existingStudent = Student::where('user_id', $user->user_id)->first();
+            $existingStudent = DB::connection('tenant')->table('students')->where('user_id', $user->user_id)->first();
             
             if ($existingStudent) {
                 // Update existing student record - IMPORTANT: Don't update student_id to avoid foreign key violations
@@ -722,7 +724,7 @@ class StudentRegistrationController extends Controller
                 Log::info('Updated existing student record', ['student_id' => $student->student_id]);
             } else {
                 // Create new student record
-                $student = Student::create($studentData);
+                $student = DB::connection('tenant')->table('students')->insertGetId($studentData);
                 Log::info('Created new student record', ['student_id' => $student->student_id]);
             }
             
@@ -749,7 +751,7 @@ class StudentRegistrationController extends Controller
                 ]);
             }
             
-            Enrollment::create($enrollmentData);
+            DB::connection('tenant')->table('enrollments')->insert($enrollmentData);
             
             Log::info('Initial enrollment created during registration', [
                 'registration_id' => $registration->registration_id,
@@ -818,11 +820,11 @@ class StudentRegistrationController extends Controller
     public function showRegistrationForm(Request $request)
     {
         $enrollmentType = 'full'; // Set to full since this is the full enrollment route
-        $packages = Package::where('package_type', 'full')->get();
+        $packages = DB::connection('tenant')->table('packages')->where('package_type', 'full')->get();
         
         // Auto-generate default package if none exist
         if ($packages->isEmpty()) {
-            $defaultPackage = Package::create([
+            $defaultPackage = DB::connection('tenant')->table('packages')->insertGetId([
                 'package_name' => 'Standard Full Program',
                 'description' => 'Complete full program package with all courses included',
                 'amount' => 0.00,
@@ -834,25 +836,25 @@ class StudentRegistrationController extends Controller
         }
         
         // Get requirements for "full" program
-        $formRequirements = FormRequirement::active()
-            ->forProgram('full')
-            ->ordered()
+        $formRequirements = DB::connection('tenant')->table('form_requirements')->where('is_active', 1)
+            ->where('program_type', 'full')->orWhere('program_type', 'both')
+            ->orderBy('sort_order', 'asc')
             ->get();
 
         // Get plan data with learning mode settings
-        $fullPlan = \App\Models\Plan::where('plan_id', 1)->first(); // Full Plan
-        $modularPlan = \App\Models\Plan::where('plan_id', 2)->first(); // Modular Plan
+        $fullPlan = DB::connection('tenant')->table('plan')->where('plan_id', 1)->first(); // Full Plan
+        $modularPlan = DB::connection('tenant')->table('plan')->where('plan_id', 2)->first(); // Modular Plan
         
         // Get existing student data if user is logged in
         $student = null;
         $enrolledProgramIds = [];
         
         if (session('user_id')) {
-            $student = Student::where('user_id', session('user_id'))->first();
+            $student = DB::connection('tenant')->table('students')->where('user_id', session('user_id'))->first();
             
             // Get all program IDs that the student is already enrolled in
             // Check enrollments directly by user_id (don't require student record)
-            $enrolledProgramIds = \App\Models\Enrollment::where('user_id', session('user_id'))
+            $enrolledProgramIds = DB::connection('tenant')->table('enrollments')->where('user_id', session('user_id'))
                 ->where(function($query) {
                     $query->whereIn('enrollment_status', ['pending', 'approved', 'completed'])
                           ->orWhere(function($subQuery) {
@@ -872,14 +874,19 @@ class StudentRegistrationController extends Controller
         }
         
         // Filter out programs that the student is already enrolled in
-        $programs = Program::where('is_archived', false)
+        $programs = DB::connection('tenant')->table('programs')->where('is_archived', false)
             ->whereNotIn('program_id', $enrolledProgramIds)
             ->get();
 
         // Get education levels for the current plan type
         // Map enrollment types to education level plan types
         $planType = $enrollmentType === 'modular' ? 'general' : 'professional'; // Full enrollment -> professional, Modular -> general
-        $educationLevels = \App\Models\EducationLevel::forPlan($planType)->get();
+        
+        // Get education levels using EducationLevel model to ensure proper Eloquent objects
+        $educationLevels = EducationLevel::where('available_for_professional', 1)
+            ->where('is_active', 1)
+            ->orderBy('level_name', 'asc')
+            ->get();
 
         return view('registration.Full_enrollment', compact('enrollmentType', 'programs', 'packages', 'student', 'formRequirements', 'fullPlan', 'modularPlan', 'educationLevels'));
     }
@@ -967,7 +974,7 @@ class StudentRegistrationController extends Controller
             Log::info('Found batches: ' . $batches->count());
 
             // Check if auto-create is enabled for this program
-            $program = \App\Models\Program::find($programId);
+            $program = \App\Models\DB::connection('tenant')->table('programs')->find($programId);
             $autoCreate = $program ? $program->auto_create_batch : false;
 
             return response()->json([
@@ -1020,7 +1027,7 @@ class StudentRegistrationController extends Controller
                 ], 400);
             }
 
-            $exists = User::where('email', $email)->exists();
+            $exists = DB::connection('tenant')->table('users')->where('email', $email)->exists();
             
             return response()->json([
                 'exists' => $exists,
@@ -1046,7 +1053,7 @@ class StudentRegistrationController extends Controller
         $prefix = $currentYear . '-' . $currentMonth . '-';
         
         // Find the highest existing student ID for current year-month
-        $lastStudent = Student::where('student_id', 'LIKE', $prefix . '%')
+        $lastStudent = DB::connection('tenant')->table('students')->where('student_id', 'LIKE', $prefix . '%')
             ->orderBy('student_id', 'desc')
             ->first();
         
@@ -1065,7 +1072,7 @@ class StudentRegistrationController extends Controller
         $studentId = $prefix . $formattedNumber;
         
         // Double-check uniqueness (in case of race condition)
-        while (Student::where('student_id', $studentId)->exists()) {
+        while (DB::connection('tenant')->table('students')->where('student_id', $studentId)->exists()) {
             $nextNumber++;
             $formattedNumber = str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
             $studentId = $prefix . $formattedNumber;
@@ -1155,7 +1162,7 @@ class StudentRegistrationController extends Controller
                 'lastname' => $accountData['lastName'],
                 'program_id' => $validated['program_id'],
                 'package_id' => $validated['package_id'],
-                'program_name' => Program::find($validated['program_id'])->program_name ?? '',
+                'program_name' => DB::connection('tenant')->table('programs')->find($validated['program_id'])->program_name ?? '',
                 'package_name' => $package->package_name ?? '',
                 'learning_mode' => $validated['learning_mode'],
                 'enrollment_type' => 'Modular',
@@ -1180,7 +1187,7 @@ class StudentRegistrationController extends Controller
             }
 
             // Create enrollment record (without student_id since student record will be created later by admin)
-            $enrollment = Enrollment::create([
+            $enrollment = DB::connection('tenant')->table('enrollments')->insert([
                 'user_id' => $user->user_id,
                 'student_id' => null, // Will be set when admin creates student record after approval
                 'program_id' => $validated['program_id'],
@@ -1543,7 +1550,8 @@ class StudentRegistrationController extends Controller
             // Send OTP via email
             try {
                 Mail::raw("Your OTP code for A.R.T.C enrollment is: $otpCode\n\nThis code will expire in 10 minutes.", function ($message) use ($email) {
-                    $message->to($email)
+                    $message->from(config('mail.from.address', 'noreply@artc.com'), config('mail.from.name', 'A.R.T.C'))
+                           ->to($email)
                            ->subject('A.R.T.C Enrollment - OTP Verification Code');
                 });
                 
@@ -1557,6 +1565,15 @@ class StudentRegistrationController extends Controller
                     'error' => $mailException->getMessage(),
                     'email' => $email
                 ]);
+                
+                // For development, return success with debug OTP
+                if (config('app.env') === 'local') {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'OTP sent successfully (development mode)',
+                        'debug_otp' => $otpCode
+                    ]);
+                }
                 
                 return response()->json([
                     'success' => false,
@@ -1977,14 +1994,14 @@ class StudentRegistrationController extends Controller
         ]);
 
         // 1. Full-plan exclusion - check for full enrollments in programs
-        $fullEnrollments = \App\Models\Enrollment::where('user_id', $userId)
+        $fullEnrollments = DB::connection('tenant')->table('enrollments')->where('user_id', $userId)
             ->where('enrollment_type', 'Full')
             ->where('enrollment_status', '!=', 'rejected')
             ->pluck('program_id')
             ->toArray();
 
         // 2. Modular exclusion - get already enrolled modules and courses
-        $modularEnrollments = \App\Models\Enrollment::where('user_id', $userId)
+        $modularEnrollments = DB::connection('tenant')->table('enrollments')->where('user_id', $userId)
             ->where('enrollment_type', 'Modular')
             ->where('enrollment_status', '!=', 'rejected')
             ->get();
@@ -2169,7 +2186,7 @@ class StudentRegistrationController extends Controller
             }
             
             // Get program details
-            $program = \App\Models\Program::find($programId);
+            $program = \App\Models\DB::connection('tenant')->table('programs')->find($programId);
             if (!$program) {
                 return response()->json([
                     'success' => false,

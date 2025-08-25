@@ -923,25 +923,6 @@
         }
     }
 
-        // Hook live (pre-save) admin color input changes to broadcast
-        ['admin_sidebar_primary_color','admin_sidebar_secondary_color','admin_sidebar_accent_color','admin_sidebar_text_color','admin_sidebar_hover_color']
-            .forEach(id=>{
-                const el=document.getElementById(id);
-                if(el){ el.addEventListener('input', ()=>{
-                        try {
-                            const msg={ type:'adminSidebarUpdate', colors:{
-                                primary_color: document.getElementById('admin_sidebar_primary_color')?.value,
-                                secondary_color: document.getElementById('admin_sidebar_secondary_color')?.value,
-                                accent_color: document.getElementById('admin_sidebar_accent_color')?.value,
-                                text_color: document.getElementById('admin_sidebar_text_color')?.value,
-                                hover_color: document.getElementById('admin_sidebar_hover_color')?.value
-                            }};
-                            window.postMessage(msg,'*');
-                            document.querySelectorAll('iframe').forEach(f=>{ try { f.contentWindow.postMessage(msg,'*'); } catch(e){} });
-                        } catch(e) {}
-                }); }
-            });
-
     // Function to save sidebar colors for a specific role
     function saveSidebarColors(role) {
         let colors = {};
@@ -1036,13 +1017,6 @@
         .then(data => {
             if (data.success) {
                 showNotification(`${role.charAt(0).toUpperCase() + role.slice(1)} sidebar colors saved successfully!`, 'success');
-                if(role === 'admin') {
-                    try {
-                        const message = { type: 'adminSidebarUpdate', colors };
-                        window.postMessage(message,'*');
-                        document.querySelectorAll('iframe').forEach(f=>{ try { f.contentWindow.postMessage(message,'*'); } catch(e){} });
-                    } catch(e) { console.warn('Failed to broadcast admin sidebar update from customize page', e); }
-                }
             } else {
                 showNotification('Error saving sidebar colors', 'danger');
             }

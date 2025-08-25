@@ -1,8 +1,8 @@
 
-<div id="permissions-settings" class="sidebar-section">
-    <h3 class="section-title">
-        <i class="fas fa-shield-alt me-2"></i>Permissions
-    </h3>
+<div id="permissions-settings" class="sidebar-section" style="display: none;">
+    <div class="section-header mb-3">
+        <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Permissions Settings</h5>
+    </div>
     <p class="text-muted small mb-3">Configure access permissions for different user roles on your website.</p>
     
     <div class="alert alert-info">
@@ -45,4 +45,4 @@
 
 
 <?php echo $__env->make('smartprep.dashboard.partials.settings.professor-features', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
-<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/smartprep/dashboard/partials/settings/advanced.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/smartprep/dashboard/partials/settings/permissions.blade.php ENDPATH**/ ?>

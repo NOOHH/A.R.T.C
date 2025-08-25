@@ -17,11 +17,12 @@ use App\Models\Director;
 use App\Models\Professor;
 use App\Models\Plan;
 use App\Services\OcrService;
+use App\Services\TenantService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Auth;
 
 class ModularRegistrationController extends Controller
@@ -51,19 +52,24 @@ class ModularRegistrationController extends Controller
                 'time' => now()->toDateTimeString()
             ]);
             
-            // Get all programs with modular packages
-            $allPrograms = Program::with(['modules.courses', 'packages' => function($q) { 
-                $q->where('package_type', 'modular'); 
-            }])
-            // Check if archived column exists, otherwise don't filter by it
-            ->when(Schema::hasColumn('programs', 'archived'), function($q) {
-                return $q->where('archived', false);
-            })
-            ->whereHas('packages', function($q) { $q->where('package_type', 'modular'); })
-            ->get();
+            // Get all programs with modular packages using tenant-aware queries
+            $allPrograms = DB::connection('tenant')->table('programs')
+                ->join('packages', function($join) {
+                    $join->on('programs.program_id', '=', 'packages.program_id')
+                         ->where('packages.package_type', '=', 'modular');
+                })
+                ->when(Schema::hasColumn('programs', 'archived'), function($q) {
+                    return $q->where('programs.archived', false);
+                })
+                ->select('programs.*')
+                ->distinct()
+                ->get();
+
+            // Convert to collection for easier manipulation
+            $allPrograms = collect($allPrograms);
 
             // Get only modular packages
-            $packages = Package::when(Schema::hasColumn('packages', 'archived'), function($q) {
+            $packages = DB::connection('tenant')->table('packages')->when(Schema::hasColumn('packages', 'archived'), function($q) {
                     return $q->where('archived', false);
                 })
                 ->where('package_type', 'modular')
@@ -71,53 +77,41 @@ class ModularRegistrationController extends Controller
 
             // Auto-generate default modular package if none exist
             if ($packages->isEmpty()) {
-                $defaultPackage = Package::create([
+                $packageId = DB::connection('tenant')->table('packages')->insertGetId([
                     'package_name' => 'Standard Modular Package',
                     'description' => 'Flexible modular package allowing course-by-course enrollment',
                     'package_price' => 0,
                     'package_type' => 'modular',
-                    'archived' => false
+                    'archived' => false,
+                    'created_at' => now(),
+                    'updated_at' => now()
                 ]);
-                $packages = collect([$defaultPackage]);
-                Log::info('Auto-generated default modular package', ['package_id' => $defaultPackage->package_id]);
+                
+                $packages = DB::connection('tenant')->table('packages')
+                    ->where('package_id', $packageId)
+                    ->get();
+                    
+                Log::info('Auto-generated default modular package', ['package_id' => $packageId]);
             }
 
             // Get form requirements for modular enrollment
-            $formRequirements = FormRequirement::active()
+            $formRequirements = DB::connection('tenant')->table('form_requirements')->where('active', true)
                 ->forProgram('modular')
                 ->get();
 
-            // Get education levels for modular plan
-            $educationLevels = EducationLevel::where('is_active', true)
+            // Get education levels for modular plan using EducationLevel model
+            $educationLevels = EducationLevel::where('is_active', 1)
+                ->where('available_for_general', 1) // Modular plan uses general education levels
                 ->orderBy('level_order', 'asc')
-                ->get()
-                ->filter(function ($level) {
-                    // Check if this education level is available for modular plan
-                    $fileRequirements = $level->file_requirements;
-                    
-                    // Handle both string and array formats
-                    if (is_string($fileRequirements)) {
-                        $fileRequirements = json_decode($fileRequirements, true);
-                    }
-                    
-                    if (!is_array($fileRequirements)) return true; // If no specific requirements, include it
-                    
-                    // Check if any requirement has available_modular_plan = true
-                    foreach ($fileRequirements as $requirement) {
-                        if (isset($requirement['available_modular_plan']) && $requirement['available_modular_plan'] === true) {
-                            return true;
-                        }
-                    }
-                    return false;
-                });
+                ->get();
 
-            $modularPlan = Plan::where('plan_id', 2)->first(); // Modular Plan
+            $modularPlan = DB::connection('tenant')->table('plans')->where('plan_id', 2)->first(); // Modular Plan
 
             // Get student data if logged in
             $student = null;
             if (SessionManager::isLoggedIn()) {
                 $userId = SessionManager::get('user_id');
-                $user = User::with('student')->find($userId);
+                $user = DB::connection('tenant')->table('users')->with('student')->find($userId);
                 if ($user && $user->student) {
                     $student = $user->student;
                 }
@@ -179,10 +173,10 @@ class ModularRegistrationController extends Controller
                 Log::info('Loading Modular_enrollment view due to error in main view');
                 return view('registration.Modular_enrollment')->with([
                     'error' => $e->getMessage(),
-                    'programs' => \App\Models\Program::when(Schema::hasColumn('programs', 'archived'), function($q) {
+                    'programs' => DB::connection('tenant')->table('programs')->when(Schema::hasColumn('programs', 'archived'), function($q) {
                         return $q->where('archived', false);
                     })->get()->toArray(),
-                    'packages' => \App\Models\Package::when(Schema::hasColumn('packages', 'archived'), function($q) {
+                    'packages' => DB::connection('tenant')->table('packages')->when(Schema::hasColumn('packages', 'archived'), function($q) {
                         return $q->where('archived', false);
                     })->where('package_type', 'modular')->get()
                 ]);
@@ -212,7 +206,7 @@ class ModularRegistrationController extends Controller
             $userEmail = $request->email ?? $request->user_email;
             
             // Join with users table to check email since registrations table doesn't have email column
-            $duplicateCheck = Registration::join('users', 'registrations.user_id', '=', 'users.user_id')
+            $duplicateCheck = DB::connection('tenant')->table('registrations')->join('users', 'registrations.user_id', '=', 'users.user_id')
                 ->where('users.email', $userEmail)
                 ->where('registrations.program_id', $request->program_id)
                 ->where('registrations.package_id', $request->package_id)
@@ -324,8 +318,8 @@ class ModularRegistrationController extends Controller
             $user = $this->createOrGetUser($validated, $directorsId);
 
             // Get package and program details
-            $package = Package::find($validated['package_id']);
-            $program = Program::find($validated['program_id']);
+            $package = DB::connection('tenant')->table('packages')->find($validated['package_id']);
+            $program = DB::connection('tenant')->table('programs')->where('program_id', $validated['program_id'])->first();
 
             // Parse selected modules
             $selectedModules = $this->parseSelectedModules($validated['selected_modules']);
@@ -599,7 +593,7 @@ class ModularRegistrationController extends Controller
             }
 
             $userId = $laravelUserId ?: $phpSessionUserId;
-            $user = User::findOrFail($userId);
+            $user = DB::connection('tenant')->table('users')->findOrFail($userId);
 
             $prefill = [
                 'firstname' => $user->user_firstname,
@@ -787,7 +781,7 @@ class ModularRegistrationController extends Controller
     private function processDynamicFields(Request $request)
     {
         $dynamicFields = [];
-        $formRequirements = FormRequirement::active()
+        $formRequirements = DB::connection('tenant')->table('form_requirements')->where('active', true)
             ->forProgram('modular')
             ->get();
             
@@ -807,7 +801,7 @@ class ModularRegistrationController extends Controller
         
         if (!empty($referralCode)) {
             // Check if referral code is from a director
-            $director = Director::where('referral_code', $referralCode)
+            $director = DB::connection('tenant')->table('directors')->where('referral_code', $referralCode)
                 ->where('directors_archived', false)
                 ->first();
             
@@ -816,7 +810,7 @@ class ModularRegistrationController extends Controller
                 Log::info('Modular referral from director', ['director_id' => $directorsId, 'referral_code' => $referralCode]);
             } else {
                 // Check if referral code is from a professor
-                $professor = Professor::where('referral_code', $referralCode)
+                $professor = DB::connection('tenant')->table('professors')->where('referral_code', $referralCode)
                     ->where('is_archived', false)
                     ->first();
                 
@@ -837,7 +831,7 @@ class ModularRegistrationController extends Controller
             $user = auth()->user();
             Log::info('Using authenticated user for modular enrollment', ['user_id' => $user->user_id]);
         } elseif (session('user_id')) {
-            $user = User::find(session('user_id'));
+            $user = DB::connection('tenant')->table('users')->find(session('user_id'));
             if ($user) {
                 Log::info('Using session user for modular enrollment', ['user_id' => $user->user_id]);
             }
@@ -850,7 +844,7 @@ class ModularRegistrationController extends Controller
                 throw new \Exception('User creation data missing for modular enrollment.');
             }
             
-            $user = User::create([
+            $user = DB::connection('tenant')->table('users')->create([
                 'user_firstname' => $validated['user_firstname'],
                 'user_lastname' => $validated['user_lastname'],
                 'email' => $validated['email'],
@@ -930,7 +924,7 @@ class ModularRegistrationController extends Controller
             }
         }
 
-        return Registration::create($registrationData);
+        return DB::connection('tenant')->table('registrations')->create($registrationData);
     }
 
     private function handleBatchAssignment($validated)
@@ -951,7 +945,7 @@ class ModularRegistrationController extends Controller
 
     private function createEnrollment($validated, $user, $registration, $batchId)
     {
-        return Enrollment::create([
+        return DB::connection('tenant')->table('enrollments')->create([
             'user_id' => $user->user_id,
             'registration_id' => $registration->registration_id,
             'student_id' => null, // Will be set when admin approves
@@ -976,7 +970,7 @@ class ModularRegistrationController extends Controller
         $enrolledCourseIds = [];
         
         // Get already enrolled course IDs for this user
-        $existingEnrolledCourseIds = EnrollmentCourse::whereHas('enrollment', function($query) use ($user) {
+        $existingEnrolledCourseIds = DB::connection('tenant')->table('enrollment_courses')->whereHas('enrollment', function($query) use ($user) {
             $query->where('user_id', $user->user_id)
                   ->where('enrollment_status', '!=', 'rejected');
         })->where('is_active', true)
@@ -995,7 +989,7 @@ class ModularRegistrationController extends Controller
                 try {
                     // Create module registration if model exists
                     if (class_exists('\App\Models\RegistrationModule')) {
-                        \App\Models\RegistrationModule::create([
+                        DB::connection('tenant')->table('registration_modules')->insert([
                             'registration_id' => $registration->registration_id,
                             'module_id' => $moduleId
                         ]);
@@ -1010,7 +1004,7 @@ class ModularRegistrationController extends Controller
                             
                             if ($courseId && !in_array($courseId, $existingEnrolledCourseIds) && !in_array($courseId, $enrolledCourseIds)) {
                                 try {
-                                    EnrollmentCourse::create([
+                                    DB::connection('tenant')->table('enrollment_courses')->create([
                                         'enrollment_id' => $enrollment->enrollment_id,
                                         'course_id' => $courseId,
                                         'module_id' => $moduleId,
@@ -1037,12 +1031,12 @@ class ModularRegistrationController extends Controller
                         }
                     } else {
                         // Enroll in all courses of the module
-                        $module = Module::with('courses')->find($moduleId);
+                        $module = DB::connection('tenant')->table('modules')->with('courses')->find($moduleId);
                         if ($module && $module->courses) {
                             foreach ($module->courses as $course) {
                                 if (!in_array($course->subject_id, $existingEnrolledCourseIds) && !in_array($course->subject_id, $enrolledCourseIds)) {
                                     try {
-                                        EnrollmentCourse::create([
+                                        DB::connection('tenant')->table('enrollment_courses')->create([
                                             'enrollment_id' => $enrollment->enrollment_id,
                                             'course_id' => $course->subject_id,
                                             'module_id' => $moduleId,

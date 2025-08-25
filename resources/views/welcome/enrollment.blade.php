@@ -252,7 +252,7 @@ body {
                     <div class="enrollment-card program-card enrollment-program-card h-100 w-100">
                         <h3>Complete Plan</h3>
                         <p class="text-muted mb-4">Comprehensive program covering all essential topics</p>
-                        <a href="{{ route('enrollment.full') }}" 
+                        <a href="{{ tenant_enrollment_url('full') }}" 
                                 class="btn enrollment-btn enroll-btn">
                             <i class="bi bi-mortarboard"></i> Enroll Now
                         </a>
@@ -263,13 +263,13 @@ body {
                     <div class="enrollment-card program-card enrollment-program-card h-100 w-100">
                         <h3>Modular Plan</h3>
                         <p class="text-muted mb-4">Flexible modules tailored to your specific needs</p>
-                        <!-- Direct link with both route() helper and explicit URL -->
-                        <a href="{{ route('enrollment.modular') }}" 
+                        <!-- Tenant-aware enrollment link -->
+                        <a href="{{ tenant_enrollment_url('modular') }}" 
                                 class="btn enrollment-btn enroll-btn" 
                                 id="modular-enroll-btn"
-                                data-url="/enrollment/modular"
+                                data-url="{{ tenant_enrollment_url('modular') }}"
                                 data-target="modular_enrollment"
-                                onclick="window.location.href='/enrollment/modular'; return false;">
+                                onclick="window.location.href='{{ tenant_enrollment_url('modular') }}'; return false;">
                             <i class="bi bi-puzzle"></i> Enroll Now
                         </a>
 
@@ -287,7 +287,7 @@ body {
                                         
                                         // Method 1: Direct assignment to location.href
                                         try {
-                                            window.location.href = '/enrollment/modular';
+                                            window.location.href = '{{ tenant_enrollment_url('modular') }}';
                                             return false;
                                         } catch (err) {
                                             console.error('Method 1 failed:', err);
@@ -295,7 +295,7 @@ body {
                                         
                                         // Method 2: Open in same window
                                         try {
-                                            window.open('/enrollment/modular', '_self');
+                                            window.open('{{ tenant_enrollment_url('modular') }}', '_self');
                                             return false;
                                         } catch (err) {
                                             console.error('Method 2 failed:', err);
@@ -313,7 +313,7 @@ body {
                                         try {
                                             var form = document.createElement('form');
                                             form.method = 'GET';
-                                            form.action = '/enrollment/modular';
+                                            form.action = '{{ tenant_enrollment_url('modular') }}';
                                             document.body.appendChild(form);
                                             form.submit();
                                             return false;
@@ -336,7 +336,7 @@ body {
                                 
                                 // Try each route in sequence
                                 const tryRoutes = [
-                                    '/enrollment/modular',
+                                    '{{ tenant_enrollment_url('modular') }}',
                                     '/modular-enrollment',
                                     '/emergency-modular',
                                     '/go-to-modular.php',

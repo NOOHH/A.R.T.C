@@ -1248,4 +1248,9 @@
 </div>
 
 {{-- Inline script removed: logic moved to admin-packages.page.js (colocated) and bundled via app.js using meta[page-id]. --}}
+
+@push('scripts')
+<script src="{{ asset('js/admin/admin-packages.js') }}"></script>
+@endpush
+
 @endsection

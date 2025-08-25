@@ -1,0 +1,47 @@
+{{-- Permissions Settings --}}
+<div id="permissions-settings" class="sidebar-section" style="display: none;">
+    <div class="section-header mb-3">
+        <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Permissions Settings</h5>
+    </div>
+    <p class="text-muted small mb-3">Configure access permissions for different user roles on your website.</p>
+    
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Permission Management:</strong> Control what features are available to directors and professors to customize the user experience on your training platform.
+    </div>
+    
+    <div class="permission-overview">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-user-tie fa-2x text-primary mb-2"></i>
+                        <h6>Director Access</h6>
+                        <p class="text-muted small">Configure administrative features for directors</p>
+                        <button class="btn btn-outline-primary btn-sm" onclick="showSection('director-features')">
+                            <i class="fas fa-cog me-1"></i>Configure
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-chalkboard-teacher fa-2x text-success mb-2"></i>
+                        <h6>Professor Access</h6>
+                        <p class="text-muted small">Configure teaching features for professors</p>
+                        <button class="btn btn-outline-success btn-sm" onclick="showSection('professor-features')">
+                            <i class="fas fa-cog me-1"></i>Configure
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Include Director Features Section --}}
+@include('smartprep.dashboard.partials.settings.director-features')
+
+{{-- Include Professor Features Section --}}
+@include('smartprep.dashboard.partials.settings.professor-features')
