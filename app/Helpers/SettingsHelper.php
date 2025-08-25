@@ -730,19 +730,6 @@ class SettingsHelper
     public static function getSidebarColors($role = 'student')
     {
         $section = $role . '_sidebar';
-        
-        // Try to get from database first
-        if (class_exists('\App\Models\UiSetting')) {
-            try {
-                $settings = \App\Models\UiSetting::getSection($section);
-                if (!empty($settings)) {
-                    return $settings;
-                }
-            } catch (\Exception $e) {
-                // Fall back to defaults if database error
-            }
-        }
-
         // Default colors for each role
         $defaults = [
             'student' => [
@@ -767,8 +754,43 @@ class SettingsHelper
                 'hover_color' => '#374151'
             ]
         ];
+        $base = $defaults[$role] ?? $defaults['student'];
 
-        return $defaults[$role] ?? $defaults['student'];
+        // Try to get from database first & merge over defaults
+        if (class_exists('\\App\\Models\\UiSetting')) {
+            try {
+                $settings = \App\Models\UiSetting::getSection($section);
+                // Normalize to array of key=>value
+                if ($settings instanceof \Illuminate\Support\Collection) {
+                    $settings = $settings->toArray();
+                }
+                // Some implementations may return list of arrays with keys setting_key/setting_value
+                if (is_array($settings)) {
+                    // If it's already keyed with primary_color etc, just merge
+                    if (isset($settings['primary_color']) || isset($settings['secondary_color'])) {
+                        foreach ($base as $k => $v) {
+                            if (isset($settings[$k]) && is_string($settings[$k]) && $settings[$k] !== '') {
+                                $base[$k] = $settings[$k];
+                            }
+                        }
+                    } else {
+                        // Attempt to extract from possible list form
+                        foreach ($settings as $item) {
+                            if (is_array($item)) {
+                                $key = $item['setting_key'] ?? $item['key'] ?? null;
+                                $val = $item['setting_value'] ?? $item['value'] ?? null;
+                                if ($key && isset($base[$key]) && is_string($val) && $val !== '') {
+                                    $base[$key] = $val;
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Silently ignore, use defaults
+            }
+        }
+        return $base;
     }
 
     /**
@@ -777,6 +799,14 @@ class SettingsHelper
     public static function getSidebarCSS($role = 'student')
     {
         $colors = self::getSidebarColors($role);
+        // Safety: ensure required keys exist
+        $required = ['primary_color','secondary_color','accent_color','text_color','hover_color'];
+        foreach ($required as $rk) {
+            if (!isset($colors[$rk]) || !is_string($colors[$rk]) || $colors[$rk] === '') {
+                // Re-fetch defaults via student fallback if missing
+                $colors[$rk] = self::getSidebarColors($role)[$rk] ?? '#000000';
+            }
+        }
         
         $css = ":root {\n";
         $css .= "    --{$role}-sidebar-primary: {$colors['primary_color']};\n";

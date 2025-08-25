@@ -6,7 +6,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
     <style>
         :root {
             --primary-color: #1e40af;
@@ -581,22 +581,22 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('smartprep.admin.dashboard') }}">
+                        <a class="nav-link" href="<?php echo e(route('smartprep.admin.dashboard')); ?>">
                             <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('smartprep.admin.website-requests') }}">
+                        <a class="nav-link" href="<?php echo e(route('smartprep.admin.website-requests')); ?>">
                             <i class="fas fa-clock me-2"></i>Requests
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('smartprep.admin.clients') }}">
+                        <a class="nav-link" href="<?php echo e(route('smartprep.admin.clients')); ?>">
                             <i class="fas fa-users me-2"></i>Clients
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="{{ route('smartprep.admin.settings') }}">
+                        <a class="nav-link active" href="<?php echo e(route('smartprep.admin.settings')); ?>">
                             <i class="fas fa-cog me-2"></i>Settings
                         </a>
                     </li>
@@ -611,8 +611,8 @@
                             <li><a class="dropdown-item" href="/"><i class="fas fa-home me-2"></i>View Site</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <form method="POST" action="{{ route('smartprep.logout') }}" class="d-inline w-100">
-                                    @csrf
+                                <form method="POST" action="<?php echo e(route('smartprep.logout')); ?>" class="d-inline w-100">
+                                    <?php echo csrf_field(); ?>
                                     <button type="submit" class="dropdown-item">
                                         <i class="fas fa-sign-out-alt me-2"></i>Logout
                                     </button>
@@ -681,32 +681,33 @@
                         <h5><i class="fas fa-cog me-2"></i>General Settings</h5>
                     </div>
                     
-                    <form id="generalForm" method="POST" action="{{ route('smartprep.admin.settings.update.general') }}">
-                        @csrf
+                    <form id="generalForm" method="POST" action="<?php echo e(route('smartprep.admin.settings.update.general')); ?>">
+                        <?php echo csrf_field(); ?>
                         
-                        @if(session('success'))
+                        <?php if(session('success')): ?>
                             <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                                <i class="fas fa-check-circle me-2"></i><?php echo e(session('success')); ?>
+
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
-                        @endif
+                        <?php endif; ?>
                         
-                        @if(isset($errors) && is_object($errors) && method_exists($errors,'any') && $errors->any())
+                        <?php if(isset($errors) && is_object($errors) && method_exists($errors,'any') && $errors->any()): ?>
                             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                                 <i class="fas fa-exclamation-circle me-2"></i>
                                 <ul class="mb-0">
-                                    @if(isset($errors) && is_object($errors) && method_exists($errors,'all'))
-                                    @foreach($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                    @endif
+                                    <?php if(isset($errors) && is_object($errors) && method_exists($errors,'all')): ?>
+                                    <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <li><?php echo e($error); ?></li>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    <?php endif; ?>
                                 </ul>
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
-                        @endif
+                        <?php endif; ?>
                         
                         <!-- Admin Account Settings -->
-                        @php
+                        <?php
                             // Derive a fallback admin email if not stored in settings
                             $derivedAdminEmail = $settings['general']['admin_email'] ?? '';
                             if (empty($derivedAdminEmail)) {
@@ -718,7 +719,7 @@
                                 if ($domainBase === '') { $domainBase = 'site'; }
                                 $derivedAdminEmail = 'admin@' . $domainBase . '.com';
                             }
-                        @endphp
+                        ?>
                         <div class="form-group mb-4">
                             <div class="d-flex align-items-center mb-2">
                                 <i class="fas fa-user-shield text-primary me-2"></i>
@@ -728,7 +729,7 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Admin Email</label>
-                                    <input type="email" class="form-control" name="admin_email" value="{{ $derivedAdminEmail }}" placeholder="e.g. admin@training.com">
+                                    <input type="email" class="form-control" name="admin_email" value="<?php echo e($derivedAdminEmail); ?>" placeholder="e.g. admin@training.com">
                                     <small class="form-text text-muted">Format: admin@(website-name).com</small>
                                 </div>
                                 <div class="col-md-6">
@@ -742,30 +743,30 @@
                         <!-- Brand Name (Connected to Navigation) -->
                         <div class="form-group mb-3">
                             <label class="form-label">Brand Name</label>
-                            <input type="text" class="form-control" name="brand_name" value="{{ $settings['general']['brand_name'] ?? $settings['navbar']['brand_name'] ?? '' }}" placeholder="Enter brand name">
+                            <input type="text" class="form-control" name="brand_name" value="<?php echo e($settings['general']['brand_name'] ?? $settings['navbar']['brand_name'] ?? ''); ?>" placeholder="Enter brand name">
                             <small class="form-text text-muted">This will appear in the navigation bar and browser tab</small>
                         </div>
 
                         <!-- Contact Information -->
                         <div class="form-group mb-3">
                             <label class="form-label">Contact Email (Optional)</label>
-                            <input type="email" class="form-control" name="contact_email" value="{{ $settings['general']['contact_email'] ?? '' }}" placeholder="Contact email">
+                            <input type="email" class="form-control" name="contact_email" value="<?php echo e($settings['general']['contact_email'] ?? ''); ?>" placeholder="Contact email">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Phone Number (Optional)</label>
-                            <input type="text" class="form-control" name="contact_phone" value="{{ $settings['general']['contact_phone'] ?? '' }}" placeholder="Phone number">
+                            <input type="text" class="form-control" name="contact_phone" value="<?php echo e($settings['general']['contact_phone'] ?? ''); ?>" placeholder="Phone number">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Address (Optional)</label>
-                            <textarea class="form-control" name="contact_address" rows="3" placeholder="Physical address">{{ $settings['general']['contact_address'] ?? '' }}</textarea>
+                            <textarea class="form-control" name="contact_address" rows="3" placeholder="Physical address"><?php echo e($settings['general']['contact_address'] ?? ''); ?></textarea>
                         </div>
 
                         <!-- Terms and Conditions -->
                         <div class="form-group mb-3">
                             <label class="form-label">Terms and Conditions (Optional)</label>
-                            <textarea class="form-control" name="terms_conditions" rows="4" placeholder="Enter terms and conditions">{{ $settings['general']['terms_conditions'] ?? '' }}</textarea>
+                            <textarea class="form-control" name="terms_conditions" rows="4" placeholder="Enter terms and conditions"><?php echo e($settings['general']['terms_conditions'] ?? ''); ?></textarea>
                         </div>
 
                         <!-- Social Media Links -->
@@ -776,26 +777,26 @@
                             </div>
                             <p class="small text-muted mb-3">Add social media links for your website footer</p>
                             <div id="socialLinksContainer">
-                                @php
+                                <?php
                                     $socialLinks = json_decode($settings['general']['social_links'] ?? '[]', true) ?: [];
-                                @endphp
-                                @foreach($socialLinks as $index => $link)
+                                ?>
+                                <?php $__currentLoopData = $socialLinks; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $link): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <div class="row g-2 mb-2 social-link-row">
                                     <div class="col-md-4">
-                                        <select class="form-control" name="social_links[{{ $index }}][platform]">
+                                        <select class="form-control" name="social_links[<?php echo e($index); ?>][platform]">
                                             <option value="">Select Platform</option>
-                                            <option value="facebook" {{ $link['platform'] == 'facebook' ? 'selected' : '' }}>Facebook</option>
-                                            <option value="youtube" {{ $link['platform'] == 'youtube' ? 'selected' : '' }}>YouTube</option>
-                                            <option value="twitter" {{ $link['platform'] == 'twitter' ? 'selected' : '' }}>Twitter</option>
-                                            <option value="instagram" {{ $link['platform'] == 'instagram' ? 'selected' : '' }}>Instagram</option>
-                                            <option value="linkedin" {{ $link['platform'] == 'linkedin' ? 'selected' : '' }}>LinkedIn</option>
-                                            <option value="tiktok" {{ $link['platform'] == 'tiktok' ? 'selected' : '' }}>TikTok</option>
-                                            <option value="telegram" {{ $link['platform'] == 'telegram' ? 'selected' : '' }}>Telegram</option>
-                                            <option value="whatsapp" {{ $link['platform'] == 'whatsapp' ? 'selected' : '' }}>WhatsApp</option>
+                                            <option value="facebook" <?php echo e($link['platform'] == 'facebook' ? 'selected' : ''); ?>>Facebook</option>
+                                            <option value="youtube" <?php echo e($link['platform'] == 'youtube' ? 'selected' : ''); ?>>YouTube</option>
+                                            <option value="twitter" <?php echo e($link['platform'] == 'twitter' ? 'selected' : ''); ?>>Twitter</option>
+                                            <option value="instagram" <?php echo e($link['platform'] == 'instagram' ? 'selected' : ''); ?>>Instagram</option>
+                                            <option value="linkedin" <?php echo e($link['platform'] == 'linkedin' ? 'selected' : ''); ?>>LinkedIn</option>
+                                            <option value="tiktok" <?php echo e($link['platform'] == 'tiktok' ? 'selected' : ''); ?>>TikTok</option>
+                                            <option value="telegram" <?php echo e($link['platform'] == 'telegram' ? 'selected' : ''); ?>>Telegram</option>
+                                            <option value="whatsapp" <?php echo e($link['platform'] == 'whatsapp' ? 'selected' : ''); ?>>WhatsApp</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6">
-                                        <input type="url" class="form-control" name="social_links[{{ $index }}][url]" value="{{ $link['url'] ?? '' }}" placeholder="https://...">
+                                        <input type="url" class="form-control" name="social_links[<?php echo e($index); ?>][url]" value="<?php echo e($link['url'] ?? ''); ?>" placeholder="https://...">
                                     </div>
                                     <div class="col-md-2">
                                         <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeSocialLink(this)">
@@ -803,7 +804,7 @@
                                         </button>
                                     </div>
                                 </div>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </div>
                             <button type="button" class="btn btn-outline-primary btn-sm" onclick="addSocialLink()">
                                 <i class="fas fa-plus me-1"></i>Add Social Link
@@ -822,61 +823,62 @@
                         <h5><i class="fas fa-palette me-2"></i>Branding & Design</h5>
                     </div>
                     
-                    <form id="brandingForm" method="POST" action="{{ route('smartprep.admin.settings.update.branding') }}">
-                        @csrf
+                    <form id="brandingForm" method="POST" action="<?php echo e(route('smartprep.admin.settings.update.branding')); ?>">
+                        <?php echo csrf_field(); ?>
                         
-                        @if(session('success'))
+                        <?php if(session('success')): ?>
                             <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                                <i class="fas fa-check-circle me-2"></i><?php echo e(session('success')); ?>
+
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
-                        @endif
+                        <?php endif; ?>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Primary Color</label>
                             <div class="color-picker-group">
-                                <input type="color" class="color-input" value="{{ $settings['branding']['primary_color'] ?? '#667eea' }}" onchange="updatePreviewColor('primary', this.value)">
-                                <input type="text" class="form-control" name="primary_color" value="{{ $settings['branding']['primary_color'] ?? '#667eea' }}">
+                                <input type="color" class="color-input" value="<?php echo e($settings['branding']['primary_color'] ?? '#667eea'); ?>" onchange="updatePreviewColor('primary', this.value)">
+                                <input type="text" class="form-control" name="primary_color" value="<?php echo e($settings['branding']['primary_color'] ?? '#667eea'); ?>">
                             </div>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Secondary Color</label>
                             <div class="color-picker-group">
-                                <input type="color" class="color-input" value="{{ $settings['branding']['secondary_color'] ?? '#764ba2' }}" onchange="updatePreviewColor('secondary', this.value)">
-                                <input type="text" class="form-control" name="secondary_color" value="{{ $settings['branding']['secondary_color'] ?? '#764ba2' }}">
+                                <input type="color" class="color-input" value="<?php echo e($settings['branding']['secondary_color'] ?? '#764ba2'); ?>" onchange="updatePreviewColor('secondary', this.value)">
+                                <input type="text" class="form-control" name="secondary_color" value="<?php echo e($settings['branding']['secondary_color'] ?? '#764ba2'); ?>">
                             </div>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Background Color</label>
                             <div class="color-picker-group">
-                                <input type="color" class="color-input" value="{{ $settings['branding']['background_color'] ?? '#ffffff' }}" onchange="updatePreviewColor('background', this.value)">
-                                <input type="text" class="form-control" name="background_color" value="{{ $settings['branding']['background_color'] ?? '#ffffff' }}">
+                                <input type="color" class="color-input" value="<?php echo e($settings['branding']['background_color'] ?? '#ffffff'); ?>" onchange="updatePreviewColor('background', this.value)">
+                                <input type="text" class="form-control" name="background_color" value="<?php echo e($settings['branding']['background_color'] ?? '#ffffff'); ?>">
                             </div>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Logo URL</label>
-                            <input type="text" class="form-control" name="logo_url" value="{{ $settings['branding']['logo_url'] ?? '' }}" placeholder="Enter logo URL or path">
+                            <input type="text" class="form-control" name="logo_url" value="<?php echo e($settings['branding']['logo_url'] ?? ''); ?>" placeholder="Enter logo URL or path">
                             <small class="form-text text-muted">Enter the URL or path to your logo image</small>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Favicon URL</label>
-                            <input type="text" class="form-control" name="favicon_url" value="{{ $settings['branding']['favicon_url'] ?? '' }}" placeholder="Enter favicon URL or path">
+                            <input type="text" class="form-control" name="favicon_url" value="<?php echo e($settings['branding']['favicon_url'] ?? ''); ?>" placeholder="Enter favicon URL or path">
                             <small class="form-text text-muted">32x32px ICO or PNG format</small>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Custom Font</label>
                             <select class="form-control" name="font_family">
-                                <option value="Inter" {{ ($settings['branding']['font_family'] ?? 'Inter') == 'Inter' ? 'selected' : '' }}>Inter (Default)</option>
-                                <option value="Roboto" {{ ($settings['branding']['font_family'] ?? '') == 'Roboto' ? 'selected' : '' }}>Roboto</option>
-                                <option value="Open Sans" {{ ($settings['branding']['font_family'] ?? '') == 'Open Sans' ? 'selected' : '' }}>Open Sans</option>
-                                <option value="Lato" {{ ($settings['branding']['font_family'] ?? '') == 'Lato' ? 'selected' : '' }}>Lato</option>
-                                <option value="Poppins" {{ ($settings['branding']['font_family'] ?? '') == 'Poppins' ? 'selected' : '' }}>Poppins</option>
-                                <option value="Montserrat" {{ ($settings['branding']['font_family'] ?? '') == 'Montserrat' ? 'selected' : '' }}>Montserrat</option>
+                                <option value="Inter" <?php echo e(($settings['branding']['font_family'] ?? 'Inter') == 'Inter' ? 'selected' : ''); ?>>Inter (Default)</option>
+                                <option value="Roboto" <?php echo e(($settings['branding']['font_family'] ?? '') == 'Roboto' ? 'selected' : ''); ?>>Roboto</option>
+                                <option value="Open Sans" <?php echo e(($settings['branding']['font_family'] ?? '') == 'Open Sans' ? 'selected' : ''); ?>>Open Sans</option>
+                                <option value="Lato" <?php echo e(($settings['branding']['font_family'] ?? '') == 'Lato' ? 'selected' : ''); ?>>Lato</option>
+                                <option value="Poppins" <?php echo e(($settings['branding']['font_family'] ?? '') == 'Poppins' ? 'selected' : ''); ?>>Poppins</option>
+                                <option value="Montserrat" <?php echo e(($settings['branding']['font_family'] ?? '') == 'Montserrat' ? 'selected' : ''); ?>>Montserrat</option>
                             </select>
                         </div>
                         
@@ -892,29 +894,30 @@
                         <h5><i class="fas fa-bars me-2"></i>Navigation Bar</h5>
                     </div>
                     
-                    <form id="navbarForm" method="POST" action="{{ route('smartprep.admin.settings.update.navbar') }}" enctype="multipart/form-data">
-                        @csrf
+                    <form id="navbarForm" method="POST" action="<?php echo e(route('smartprep.admin.settings.update.navbar')); ?>" enctype="multipart/form-data">
+                        <?php echo csrf_field(); ?>
                         
-                        @if(session('success'))
+                        <?php if(session('success')): ?>
                             <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                                <i class="fas fa-check-circle me-2"></i><?php echo e(session('success')); ?>
+
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
-                        @endif
+                        <?php endif; ?>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Brand Name</label>
-                            <input type="text" class="form-control" name="navbar_brand_name" value="{{ $settings['navbar']['brand_name'] ?? 'SmartPrep Admin' }}" placeholder="Brand name">
+                            <input type="text" class="form-control" name="navbar_brand_name" value="<?php echo e($settings['navbar']['brand_name'] ?? 'SmartPrep Admin'); ?>" placeholder="Brand name">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Brand Logo</label>
                             <input type="file" class="form-control" name="navbar_brand_logo" accept="image/*">
                             <small class="form-text text-muted">Upload a logo for the navigation bar. Recommended: 40px height, PNG format with transparent background</small>
-                            @if(isset($settings['navbar']['brand_logo']) && $settings['navbar']['brand_logo'])
+                            <?php if(isset($settings['navbar']['brand_logo']) && $settings['navbar']['brand_logo']): ?>
                                 <div class="mt-2">
                                     <small class="text-muted">Current logo:</small><br>
-                                    @php
+                                    <?php
                                         $rawLogo = $settings['navbar']['brand_logo'] ?? null;
                                         if ($rawLogo && str_starts_with($rawLogo, 'storage/')) {
                                             $rawLogo = substr($rawLogo, 8);
@@ -924,15 +927,15 @@
                                             $rawLogo = substr($rawLogo, 8);
                                         }
                                         $logoUrl = $rawLogo ? \App\Helpers\StorageHelper::url($rawLogo) : null;
-                                    @endphp
-                                    <img src="{{ $logoUrl }}" alt="Current brand logo" style="max-height: 40px;" class="img-thumbnail">
+                                    ?>
+                                    <img src="<?php echo e($logoUrl); ?>" alt="Current brand logo" style="max-height: 40px;" class="img-thumbnail">
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                         
                         <div class="form-group mb-3">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="show_login_button" value="1" {{ ($settings['navbar']['show_login_button'] ?? '1') == '1' ? 'checked' : '' }}>
+                                <input class="form-check-input" type="checkbox" name="show_login_button" value="1" <?php echo e(($settings['navbar']['show_login_button'] ?? '1') == '1' ? 'checked' : ''); ?>>
                                 <label class="form-check-label">Show Login Button</label>
                             </div>
                         </div>
@@ -949,16 +952,16 @@
                         <h5><i class="fas fa-home me-2"></i>Homepage Content</h5>
                     </div>
                     
-                    <form id="homepageForm" method="POST" action="{{ route('smartprep.admin.settings.update.homepage') }}" enctype="multipart/form-data" onsubmit="updateHomepage(event)">
-                        @csrf
+                    <form id="homepageForm" method="POST" action="<?php echo e(route('smartprep.admin.settings.update.homepage')); ?>" enctype="multipart/form-data" onsubmit="updateHomepage(event)">
+                        <?php echo csrf_field(); ?>
                         <div class="form-group mb-3">
                             <label class="form-label">Hero Title</label>
-                            <input type="text" class="form-control" name="hero_title" value="{{ $settings['homepage']['hero_title'] ?? 'Review Smarter. Learn Better. Succeed Faster.' }}" placeholder="Main headline">
+                            <input type="text" class="form-control" name="hero_title" value="<?php echo e($settings['homepage']['hero_title'] ?? 'Review Smarter. Learn Better. Succeed Faster.'); ?>" placeholder="Main headline">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Hero Subtitle</label>
-                            <textarea class="form-control" name="hero_subtitle" rows="3" placeholder="Hero description">{{ $settings['homepage']['hero_subtitle'] ?? 'Your premier destination for comprehensive review programs and professional training.' }}</textarea>
+                            <textarea class="form-control" name="hero_subtitle" rows="3" placeholder="Hero description"><?php echo e($settings['homepage']['hero_subtitle'] ?? 'Your premier destination for comprehensive review programs and professional training.'); ?></textarea>
                         </div>
                         
                         <!-- Section Content Customization -->
@@ -975,13 +978,13 @@
                                     <div class="col-md-6">
                                         <div class="form-group mb-3">
                                             <label class="form-label">Programs Title</label>
-                                            <input type="text" class="form-control" name="programs_title" value="{{ $settings['homepage']['programs_title'] ?? 'Our Programs' }}" placeholder="Programs section title">
+                                            <input type="text" class="form-control" name="programs_title" value="<?php echo e($settings['homepage']['programs_title'] ?? 'Our Programs'); ?>" placeholder="Programs section title">
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group mb-3">
                                             <label class="form-label">Programs Subtitle</label>
-                                            <input type="text" class="form-control" name="programs_subtitle" value="{{ $settings['homepage']['programs_subtitle'] ?? 'Choose from our comprehensive range of review and training programs' }}" placeholder="Programs section subtitle">
+                                            <input type="text" class="form-control" name="programs_subtitle" value="<?php echo e($settings['homepage']['programs_subtitle'] ?? 'Choose from our comprehensive range of review and training programs'); ?>" placeholder="Programs section subtitle">
                                         </div>
                                     </div>
                                 </div>
@@ -994,13 +997,13 @@
                                     <div class="col-md-6">
                                         <div class="form-group mb-3">
                                             <label class="form-label">Modalities Title</label>
-                                            <input type="text" class="form-control" name="modalities_title" value="{{ $settings['homepage']['modalities_title'] ?? 'Learning Modalities' }}" placeholder="Modalities section title">
+                                            <input type="text" class="form-control" name="modalities_title" value="<?php echo e($settings['homepage']['modalities_title'] ?? 'Learning Modalities'); ?>" placeholder="Modalities section title">
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group mb-3">
                                             <label class="form-label">Modalities Subtitle</label>
-                                            <input type="text" class="form-control" name="modalities_subtitle" value="{{ $settings['homepage']['modalities_subtitle'] ?? 'Flexible learning options designed to fit your schedule and learning style' }}" placeholder="Modalities section subtitle">
+                                            <input type="text" class="form-control" name="modalities_subtitle" value="<?php echo e($settings['homepage']['modalities_subtitle'] ?? 'Flexible learning options designed to fit your schedule and learning style'); ?>" placeholder="Modalities section subtitle">
                                         </div>
                                     </div>
                                 </div>
@@ -1013,13 +1016,13 @@
                                     <div class="col-md-6">
                                         <div class="form-group mb-3">
                                             <label class="form-label">About Title</label>
-                                            <input type="text" class="form-control" name="about_title" value="{{ $settings['homepage']['about_title'] ?? 'About Us' }}" placeholder="About section title">
+                                            <input type="text" class="form-control" name="about_title" value="<?php echo e($settings['homepage']['about_title'] ?? 'About Us'); ?>" placeholder="About section title">
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group mb-3">
                                             <label class="form-label">About Text</label>
-                                            <textarea class="form-control" name="about_subtitle" rows="2" placeholder="About section description">{{ $settings['homepage']['about_subtitle'] ?? 'We are committed to providing high-quality education and training' }}</textarea>
+                                            <textarea class="form-control" name="about_subtitle" rows="2" placeholder="About section description"><?php echo e($settings['homepage']['about_subtitle'] ?? 'We are committed to providing high-quality education and training'); ?></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -1046,8 +1049,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Hero Background Color</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['homepage']['hero_bg_color'] ?? '#667eea' }}" onchange="updatePreviewColor('hero_bg', this.value)">
-                                                <input type="text" class="form-control" name="homepage_hero_bg_color" value="{{ $settings['homepage']['hero_bg_color'] ?? '#667eea' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['homepage']['hero_bg_color'] ?? '#667eea'); ?>" onchange="updatePreviewColor('hero_bg', this.value)">
+                                                <input type="text" class="form-control" name="homepage_hero_bg_color" value="<?php echo e($settings['homepage']['hero_bg_color'] ?? '#667eea'); ?>">
                                             </div>
                                             <small class="form-text text-muted">Background color for hero section</small>
                                         </div>
@@ -1056,8 +1059,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Hero Title Color</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['homepage']['hero_title_color'] ?? '#ffffff' }}" onchange="updatePreviewColor('hero_title', this.value)">
-                                                <input type="text" class="form-control" name="homepage_hero_title_color" value="{{ $settings['homepage']['hero_title_color'] ?? '#ffffff' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['homepage']['hero_title_color'] ?? '#ffffff'); ?>" onchange="updatePreviewColor('hero_title', this.value)">
+                                                <input type="text" class="form-control" name="homepage_hero_title_color" value="<?php echo e($settings['homepage']['hero_title_color'] ?? '#ffffff'); ?>">
                                             </div>
                                             <small class="form-text text-muted">Color for hero title text</small>
                                         </div>
@@ -1073,8 +1076,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Programs Title Color</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['homepage']['programs_title_color'] ?? '#667eea' }}" onchange="updatePreviewColor('programs_title', this.value)">
-                                                <input type="text" class="form-control" name="homepage_programs_title_color" value="{{ $settings['homepage']['programs_title_color'] ?? '#667eea' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['homepage']['programs_title_color'] ?? '#667eea'); ?>" onchange="updatePreviewColor('programs_title', this.value)">
+                                                <input type="text" class="form-control" name="homepage_programs_title_color" value="<?php echo e($settings['homepage']['programs_title_color'] ?? '#667eea'); ?>">
                                             </div>
                                             <small class="form-text text-muted">"Our Programs" heading color</small>
                                         </div>
@@ -1083,8 +1086,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Programs Subtitle Color</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['homepage']['programs_subtitle_color'] ?? '#6c757d' }}" onchange="updatePreviewColor('programs_subtitle', this.value)">
-                                                <input type="text" class="form-control" name="homepage_programs_subtitle_color" value="{{ $settings['homepage']['programs_subtitle_color'] ?? '#6c757d' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['homepage']['programs_subtitle_color'] ?? '#6c757d'); ?>" onchange="updatePreviewColor('programs_subtitle', this.value)">
+                                                <input type="text" class="form-control" name="homepage_programs_subtitle_color" value="<?php echo e($settings['homepage']['programs_subtitle_color'] ?? '#6c757d'); ?>">
                                             </div>
                                             <small class="form-text text-muted">Programs description text color</small>
                                         </div>
@@ -1094,16 +1097,16 @@
                                 <div class="form-group mb-3">
                                     <label class="form-label">Programs Section Gradient Color</label>
                                     <div class="color-picker-group">
-                                        <input type="color" class="color-input" value="{{ $settings['homepage']['gradient_color'] ?? '#764ba2' }}" onchange="updatePreviewColor('homepage_gradient', this.value)">
-                                        <input type="text" class="form-control" name="homepage_gradient_color" value="{{ $settings['homepage']['gradient_color'] ?? '#764ba2' }}">
+                                        <input type="color" class="color-input" value="<?php echo e($settings['homepage']['gradient_color'] ?? '#764ba2'); ?>" onchange="updatePreviewColor('homepage_gradient', this.value)">
+                                        <input type="text" class="form-control" name="homepage_gradient_color" value="<?php echo e($settings['homepage']['gradient_color'] ?? '#764ba2'); ?>">
                                     </div>
                                     <small class="form-text text-muted">Second color for programs section gradient effect</small>
                                 </div>
                                 <div class="form-group mb-3">
                                     <label class="form-label">Programs Section Background Color</label>
                                     <div class="color-picker-group">
-                                        <input type="color" class="color-input" value="{{ $settings['homepage']['programs_section_bg_color'] ?? '#667eea' }}" onchange="updatePreviewColor('programs_section_bg', this.value)">
-                                        <input type="text" class="form-control" name="homepage_programs_section_bg_color" value="{{ $settings['homepage']['programs_section_bg_color'] ?? '#667eea' }}">
+                                        <input type="color" class="color-input" value="<?php echo e($settings['homepage']['programs_section_bg_color'] ?? '#667eea'); ?>" onchange="updatePreviewColor('programs_section_bg', this.value)">
+                                        <input type="text" class="form-control" name="homepage_programs_section_bg_color" value="<?php echo e($settings['homepage']['programs_section_bg_color'] ?? '#667eea'); ?>">
                                     </div>
                                     <small class="form-text text-muted">Background color for the programs section (creates gradient with secondary color)</small>
                                 </div>
@@ -1118,8 +1121,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Modalities Background Color</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['homepage']['modalities_bg_color'] ?? '#667eea' }}" onchange="updatePreviewColor('modalities_bg', this.value)">
-                                                <input type="text" class="form-control" name="homepage_modalities_bg_color" value="{{ $settings['homepage']['modalities_bg_color'] ?? '#667eea' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['homepage']['modalities_bg_color'] ?? '#667eea'); ?>" onchange="updatePreviewColor('modalities_bg', this.value)">
+                                                <input type="text" class="form-control" name="homepage_modalities_bg_color" value="<?php echo e($settings['homepage']['modalities_bg_color'] ?? '#667eea'); ?>">
                                             </div>
                                             <small class="form-text text-muted">Background color for modalities section</small>
                                         </div>
@@ -1128,8 +1131,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Modalities Text Color</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['homepage']['modalities_text_color'] ?? '#ffffff' }}" onchange="updatePreviewColor('modalities_text', this.value)">
-                                                <input type="text" class="form-control" name="homepage_modalities_text_color" value="{{ $settings['homepage']['modalities_text_color'] ?? '#ffffff' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['homepage']['modalities_text_color'] ?? '#ffffff'); ?>" onchange="updatePreviewColor('modalities_text', this.value)">
+                                                <input type="text" class="form-control" name="homepage_modalities_text_color" value="<?php echo e($settings['homepage']['modalities_text_color'] ?? '#ffffff'); ?>">
                                             </div>
                                             <small class="form-text text-muted">Text color for modalities section</small>
                                         </div>
@@ -1145,8 +1148,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">About Background Color</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['homepage']['about_bg_color'] ?? '#ffffff' }}" onchange="updatePreviewColor('about_bg', this.value)">
-                                                <input type="text" class="form-control" name="homepage_about_bg_color" value="{{ $settings['homepage']['about_bg_color'] ?? '#ffffff' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['homepage']['about_bg_color'] ?? '#ffffff'); ?>" onchange="updatePreviewColor('about_bg', this.value)">
+                                                <input type="text" class="form-control" name="homepage_about_bg_color" value="<?php echo e($settings['homepage']['about_bg_color'] ?? '#ffffff'); ?>">
                                             </div>
                                             <small class="form-text text-muted">Background color for about section</small>
                                         </div>
@@ -1155,8 +1158,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">About Title Color</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['homepage']['about_title_color'] ?? '#667eea' }}" onchange="updatePreviewColor('about_title', this.value)">
-                                                <input type="text" class="form-control" name="homepage_about_title_color" value="{{ $settings['homepage']['about_title_color'] ?? '#667eea' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['homepage']['about_title_color'] ?? '#667eea'); ?>" onchange="updatePreviewColor('about_title', this.value)">
+                                                <input type="text" class="form-control" name="homepage_about_title_color" value="<?php echo e($settings['homepage']['about_title_color'] ?? '#667eea'); ?>">
                                             </div>
                                             <small class="form-text text-muted">"About Us" heading color</small>
                                         </div>
@@ -1165,8 +1168,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">About Text Color</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['homepage']['about_text_color'] ?? '#6c757d' }}" onchange="updatePreviewColor('about_text', this.value)">
-                                                <input type="text" class="form-control" name="homepage_about_text_color" value="{{ $settings['homepage']['about_text_color'] ?? '#6c757d' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['homepage']['about_text_color'] ?? '#6c757d'); ?>" onchange="updatePreviewColor('about_text', this.value)">
+                                                <input type="text" class="form-control" name="homepage_about_text_color" value="<?php echo e($settings['homepage']['about_text_color'] ?? '#6c757d'); ?>">
                                             </div>
                                             <small class="form-text text-muted">About description text color</small>
                                         </div>
@@ -1179,19 +1182,19 @@
                             <label class="form-label">Hero Background Image</label>
                             <input type="file" class="form-control" name="hero_background" accept="image/*">
                             <small class="form-text text-muted">Recommended: 1920x1080px</small>
-                            @if(isset($settings['homepage']['hero_background_image']) && $settings['homepage']['hero_background_image'])
+                            <?php if(isset($settings['homepage']['hero_background_image']) && $settings['homepage']['hero_background_image']): ?>
                                 <div class="mt-2">
                                     <small class="text-muted">Current image:</small><br>
-                                    @php
+                                    <?php
                                         $rawHero = $settings['homepage']['hero_background_image'] ?? null;
                                         if ($rawHero && str_starts_with($rawHero, 'storage/')) {
                                             $rawHero = substr($rawHero, 8);
                                         }
                                         $heroUrl = $rawHero ? \Illuminate\Support\Facades\Storage::url($rawHero) : null;
-                                    @endphp
-                                    <img src="{{ $heroUrl }}" alt="Current hero background" style="max-width: 200px; max-height: 100px;" class="img-thumbnail">
+                                    ?>
+                                    <img src="<?php echo e($heroUrl); ?>" alt="Current hero background" style="max-width: 200px; max-height: 100px;" class="img-thumbnail">
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                         
                         <div class="form-group mb-3">
@@ -1202,7 +1205,7 @@
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Copyright Text</label>
-                            <input type="text" class="form-control" name="copyright" value="{{ $settings['homepage']['copyright'] ?? '© Copyright Ascendo Review and Training Center. All Rights Reserved.' }}" placeholder="Footer copyright">
+                            <input type="text" class="form-control" name="copyright" value="<?php echo e($settings['homepage']['copyright'] ?? '© Copyright Ascendo Review and Training Center. All Rights Reserved.'); ?>" placeholder="Footer copyright">
                         </div>
                         
                         <button type="submit" class="btn btn-primary">
@@ -1217,15 +1220,16 @@
                         <h5><i class="fas fa-user-graduate me-2"></i>Student Portal</h5>
                     </div>
                     
-                    <form id="studentForm" method="POST" action="{{ route('smartprep.admin.settings.update.student') }}">
-                        @csrf
+                    <form id="studentForm" method="POST" action="<?php echo e(route('smartprep.admin.settings.update.student')); ?>">
+                        <?php echo csrf_field(); ?>
                         
-                        @if(session('student_success'))
+                        <?php if(session('student_success')): ?>
                             <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                <i class="fas fa-check-circle me-2"></i>{{ session('student_success') }}
+                                <i class="fas fa-check-circle me-2"></i><?php echo e(session('student_success')); ?>
+
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
-                        @endif
+                        <?php endif; ?>
                         
                         <!-- Dashboard Colors -->
                         <div class="card mb-4">
@@ -1238,8 +1242,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Dashboard Header Background</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['dashboard_header_bg'] ?? '#0d6efd' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="dashboard_header_bg" value="{{ $settings['student_portal']['dashboard_header_bg'] ?? '#0d6efd' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['dashboard_header_bg'] ?? '#0d6efd'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="dashboard_header_bg" value="<?php echo e($settings['student_portal']['dashboard_header_bg'] ?? '#0d6efd'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1247,8 +1251,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Dashboard Header Text</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['dashboard_header_text'] ?? '#ffffff' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="dashboard_header_text" value="{{ $settings['student_portal']['dashboard_header_text'] ?? '#ffffff' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['dashboard_header_text'] ?? '#ffffff'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="dashboard_header_text" value="<?php echo e($settings['student_portal']['dashboard_header_text'] ?? '#ffffff'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1256,8 +1260,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Sidebar Background</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['sidebar_bg'] ?? '#f8f9fa' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="sidebar_bg" value="{{ $settings['student_portal']['sidebar_bg'] ?? '#f8f9fa' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['sidebar_bg'] ?? '#f8f9fa'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="sidebar_bg" value="<?php echo e($settings['student_portal']['sidebar_bg'] ?? '#f8f9fa'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1265,8 +1269,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Active Menu Item</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['active_menu_color'] ?? '#0d6efd' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="active_menu_color" value="{{ $settings['student_portal']['active_menu_color'] ?? '#0d6efd' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['active_menu_color'] ?? '#0d6efd'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="active_menu_color" value="<?php echo e($settings['student_portal']['active_menu_color'] ?? '#0d6efd'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1285,8 +1289,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Course Card Background</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['course_card_bg'] ?? '#ffffff' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="course_card_bg" value="{{ $settings['student_portal']['course_card_bg'] ?? '#ffffff' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['course_card_bg'] ?? '#ffffff'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="course_card_bg" value="<?php echo e($settings['student_portal']['course_card_bg'] ?? '#ffffff'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1294,8 +1298,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Course Progress Bar</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['progress_bar_color'] ?? '#28a745' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="progress_bar_color" value="{{ $settings['student_portal']['progress_bar_color'] ?? '#28a745' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['progress_bar_color'] ?? '#28a745'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="progress_bar_color" value="<?php echo e($settings['student_portal']['progress_bar_color'] ?? '#28a745'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1303,8 +1307,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Course Title Color</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['course_title_color'] ?? '#212529' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="course_title_color" value="{{ $settings['student_portal']['course_title_color'] ?? '#212529' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['course_title_color'] ?? '#212529'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="course_title_color" value="<?php echo e($settings['student_portal']['course_title_color'] ?? '#212529'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1312,8 +1316,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Assignment Due Date</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['due_date_color'] ?? '#dc3545' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="due_date_color" value="{{ $settings['student_portal']['due_date_color'] ?? '#dc3545' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['due_date_color'] ?? '#dc3545'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="due_date_color" value="<?php echo e($settings['student_portal']['due_date_color'] ?? '#dc3545'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1332,8 +1336,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Primary Button Background</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['primary_btn_bg'] ?? '#0d6efd' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="primary_btn_bg" value="{{ $settings['student_portal']['primary_btn_bg'] ?? '#0d6efd' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['primary_btn_bg'] ?? '#0d6efd'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="primary_btn_bg" value="<?php echo e($settings['student_portal']['primary_btn_bg'] ?? '#0d6efd'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1341,8 +1345,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Primary Button Text</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['primary_btn_text'] ?? '#ffffff' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="primary_btn_text" value="{{ $settings['student_portal']['primary_btn_text'] ?? '#ffffff' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['primary_btn_text'] ?? '#ffffff'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="primary_btn_text" value="<?php echo e($settings['student_portal']['primary_btn_text'] ?? '#ffffff'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1350,8 +1354,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Secondary Button Background</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['secondary_btn_bg'] ?? '#6c757d' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="secondary_btn_bg" value="{{ $settings['student_portal']['secondary_btn_bg'] ?? '#6c757d' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['secondary_btn_bg'] ?? '#6c757d'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="secondary_btn_bg" value="<?php echo e($settings['student_portal']['secondary_btn_bg'] ?? '#6c757d'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1359,8 +1363,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Link Color</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['link_color'] ?? '#0d6efd' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="link_color" value="{{ $settings['student_portal']['link_color'] ?? '#0d6efd' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['link_color'] ?? '#0d6efd'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="link_color" value="<?php echo e($settings['student_portal']['link_color'] ?? '#0d6efd'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1379,8 +1383,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Success Message</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['success_color'] ?? '#28a745' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="success_color" value="{{ $settings['student_portal']['success_color'] ?? '#28a745' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['success_color'] ?? '#28a745'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="success_color" value="<?php echo e($settings['student_portal']['success_color'] ?? '#28a745'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1388,8 +1392,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Warning Message</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['warning_color'] ?? '#ffc107' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="warning_color" value="{{ $settings['student_portal']['warning_color'] ?? '#ffc107' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['warning_color'] ?? '#ffc107'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="warning_color" value="<?php echo e($settings['student_portal']['warning_color'] ?? '#ffc107'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1397,8 +1401,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Error Message</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['error_color'] ?? '#dc3545' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="error_color" value="{{ $settings['student_portal']['error_color'] ?? '#dc3545' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['error_color'] ?? '#dc3545'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="error_color" value="<?php echo e($settings['student_portal']['error_color'] ?? '#dc3545'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1406,8 +1410,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Info Message</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['student_portal']['info_color'] ?? '#17a2b8' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="info_color" value="{{ $settings['student_portal']['info_color'] ?? '#17a2b8' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['student_portal']['info_color'] ?? '#17a2b8'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="info_color" value="<?php echo e($settings['student_portal']['info_color'] ?? '#17a2b8'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1493,15 +1497,16 @@
                         <h5><i class="fas fa-chalkboard-teacher me-2"></i>Professor Panel</h5>
                     </div>
                     
-                    <form id="professorForm" method="POST" action="{{ route('smartprep.admin.settings.update.professor') }}">
-                        @csrf
+                    <form id="professorForm" method="POST" action="<?php echo e(route('smartprep.admin.settings.update.professor')); ?>">
+                        <?php echo csrf_field(); ?>
                         
-                        @if(session('professor_success'))
+                        <?php if(session('professor_success')): ?>
                             <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                <i class="fas fa-check-circle me-2"></i>{{ session('professor_success') }}
+                                <i class="fas fa-check-circle me-2"></i><?php echo e(session('professor_success')); ?>
+
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
-                        @endif
+                        <?php endif; ?>
                         
                         <!-- Sidebar Colors -->
                         <div class="card mb-4">
@@ -1514,8 +1519,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Sidebar Background</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['professor_panel']['sidebar_bg'] ?? '#f8f9fa' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="sidebar_bg" value="{{ $settings['professor_panel']['sidebar_bg'] ?? '#f8f9fa' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['professor_panel']['sidebar_bg'] ?? '#f8f9fa'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="sidebar_bg" value="<?php echo e($settings['professor_panel']['sidebar_bg'] ?? '#f8f9fa'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1523,8 +1528,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Sidebar Text Color</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['professor_panel']['sidebar_text'] ?? '#212529' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="sidebar_text" value="{{ $settings['professor_panel']['sidebar_text'] ?? '#212529' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['professor_panel']['sidebar_text'] ?? '#212529'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="sidebar_text" value="<?php echo e($settings['professor_panel']['sidebar_text'] ?? '#212529'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1532,8 +1537,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Active Menu Item</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['professor_panel']['active_menu_color'] ?? '#0d6efd' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="active_menu_color" value="{{ $settings['professor_panel']['active_menu_color'] ?? '#0d6efd' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['professor_panel']['active_menu_color'] ?? '#0d6efd'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="active_menu_color" value="<?php echo e($settings['professor_panel']['active_menu_color'] ?? '#0d6efd'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1541,8 +1546,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Menu Hover Color</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['professor_panel']['menu_hover_color'] ?? '#e9ecef' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="menu_hover_color" value="{{ $settings['professor_panel']['menu_hover_color'] ?? '#e9ecef' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['professor_panel']['menu_hover_color'] ?? '#e9ecef'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="menu_hover_color" value="<?php echo e($settings['professor_panel']['menu_hover_color'] ?? '#e9ecef'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1561,8 +1566,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Header Background</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['professor_panel']['header_bg'] ?? '#0d6efd' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="header_bg" value="{{ $settings['professor_panel']['header_bg'] ?? '#0d6efd' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['professor_panel']['header_bg'] ?? '#0d6efd'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="header_bg" value="<?php echo e($settings['professor_panel']['header_bg'] ?? '#0d6efd'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1570,8 +1575,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Header Text</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['professor_panel']['header_text'] ?? '#ffffff' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="header_text" value="{{ $settings['professor_panel']['header_text'] ?? '#ffffff' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['professor_panel']['header_text'] ?? '#ffffff'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="header_text" value="<?php echo e($settings['professor_panel']['header_text'] ?? '#ffffff'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1579,8 +1584,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Primary Button</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['professor_panel']['primary_btn'] ?? '#28a745' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="primary_btn" value="{{ $settings['professor_panel']['primary_btn'] ?? '#28a745' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['professor_panel']['primary_btn'] ?? '#28a745'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="primary_btn" value="<?php echo e($settings['professor_panel']['primary_btn'] ?? '#28a745'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1588,8 +1593,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Secondary Button</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['professor_panel']['secondary_btn'] ?? '#6c757d' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="secondary_btn" value="{{ $settings['professor_panel']['secondary_btn'] ?? '#6c757d' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['professor_panel']['secondary_btn'] ?? '#6c757d'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="secondary_btn" value="<?php echo e($settings['professor_panel']['secondary_btn'] ?? '#6c757d'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1675,15 +1680,16 @@
                         <h5><i class="fas fa-user-shield me-2"></i>Admin Panel</h5>
                     </div>
                     
-                    <form id="adminForm" method="POST" action="{{ route('smartprep.admin.settings.update.admin') }}">
-                        @csrf
+                    <form id="adminForm" method="POST" action="<?php echo e(route('smartprep.admin.settings.update.admin')); ?>">
+                        <?php echo csrf_field(); ?>
                         
-                        @if(session('admin_success'))
+                        <?php if(session('admin_success')): ?>
                             <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                <i class="fas fa-check-circle me-2"></i>{{ session('admin_success') }}
+                                <i class="fas fa-check-circle me-2"></i><?php echo e(session('admin_success')); ?>
+
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
-                        @endif
+                        <?php endif; ?>
                         
                         <!-- Sidebar Colors -->
                         <div class="card mb-4">
@@ -1696,8 +1702,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Sidebar Background</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['admin_panel']['sidebar_bg'] ?? '#343a40' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="sidebar_bg" value="{{ $settings['admin_panel']['sidebar_bg'] ?? '#343a40' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['admin_panel']['sidebar_bg'] ?? '#343a40'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="sidebar_bg" value="<?php echo e($settings['admin_panel']['sidebar_bg'] ?? '#343a40'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1705,8 +1711,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Sidebar Text Color</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['admin_panel']['sidebar_text'] ?? '#ffffff' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="sidebar_text" value="{{ $settings['admin_panel']['sidebar_text'] ?? '#ffffff' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['admin_panel']['sidebar_text'] ?? '#ffffff'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="sidebar_text" value="<?php echo e($settings['admin_panel']['sidebar_text'] ?? '#ffffff'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1714,8 +1720,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Active Menu Item</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['admin_panel']['active_menu_color'] ?? '#0d6efd' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="active_menu_color" value="{{ $settings['admin_panel']['active_menu_color'] ?? '#0d6efd' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['admin_panel']['active_menu_color'] ?? '#0d6efd'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="active_menu_color" value="<?php echo e($settings['admin_panel']['active_menu_color'] ?? '#0d6efd'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1723,8 +1729,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Menu Hover Color</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['admin_panel']['menu_hover_color'] ?? '#495057' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="menu_hover_color" value="{{ $settings['admin_panel']['menu_hover_color'] ?? '#495057' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['admin_panel']['menu_hover_color'] ?? '#495057'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="menu_hover_color" value="<?php echo e($settings['admin_panel']['menu_hover_color'] ?? '#495057'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1743,8 +1749,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Header Background</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['admin_panel']['header_bg'] ?? '#dc3545' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="header_bg" value="{{ $settings['admin_panel']['header_bg'] ?? '#dc3545' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['admin_panel']['header_bg'] ?? '#dc3545'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="header_bg" value="<?php echo e($settings['admin_panel']['header_bg'] ?? '#dc3545'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1752,8 +1758,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Header Text</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['admin_panel']['header_text'] ?? '#ffffff' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="header_text" value="{{ $settings['admin_panel']['header_text'] ?? '#ffffff' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['admin_panel']['header_text'] ?? '#ffffff'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="header_text" value="<?php echo e($settings['admin_panel']['header_text'] ?? '#ffffff'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1761,8 +1767,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Primary Button</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['admin_panel']['primary_btn'] ?? '#dc3545' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="primary_btn" value="{{ $settings['admin_panel']['primary_btn'] ?? '#dc3545' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['admin_panel']['primary_btn'] ?? '#dc3545'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="primary_btn" value="<?php echo e($settings['admin_panel']['primary_btn'] ?? '#dc3545'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1770,8 +1776,8 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Secondary Button</label>
                                             <div class="color-picker-group">
-                                                <input type="color" class="color-input" value="{{ $settings['admin_panel']['secondary_btn'] ?? '#6c757d' }}" onchange="this.nextElementSibling.value = this.value">
-                                                <input type="text" class="form-control" name="secondary_btn" value="{{ $settings['admin_panel']['secondary_btn'] ?? '#6c757d' }}">
+                                                <input type="color" class="color-input" value="<?php echo e($settings['admin_panel']['secondary_btn'] ?? '#6c757d'); ?>" onchange="this.nextElementSibling.value = this.value">
+                                                <input type="text" class="form-control" name="secondary_btn" value="<?php echo e($settings['admin_panel']['secondary_btn'] ?? '#6c757d'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -1858,7 +1864,7 @@
                     </div>
                     
                     <form id="advancedForm" onsubmit="updateAdvanced(event)">
-                        @csrf
+                        <?php echo csrf_field(); ?>
                         <div class="form-group mb-3">
                             <label class="form-label">Custom CSS</label>
                             <textarea class="form-control" name="custom_css" rows="8" placeholder="/* Add your custom CSS here */" style="font-family: monospace; font-size: 12px;">/* Custom styles for your training center */
@@ -1934,7 +1940,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <button class="preview-btn" onclick="refreshPreview()">
                                 <i class="fas fa-sync-alt me-1"></i>Refresh
                             </button>
-                            <a href="{{ $settings['general']['preview_url'] ?? url('/artc') }}" class="preview-btn" target="_blank" id="openInNewTabLink">
+                            <a href="<?php echo e($settings['general']['preview_url'] ?? url('/artc')); ?>" class="preview-btn" target="_blank" id="openInNewTabLink">
                                 <i class="fas fa-external-link-alt me-1"></i>Open in New Tab
                             </a>
                         </div>
@@ -1948,7 +1954,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <iframe 
                         class="preview-iframe" 
-                        src="{{ $settings['general']['preview_url'] ?? url('/artc') }}" 
+                        src="<?php echo e($settings['general']['preview_url'] ?? url('/artc')); ?>" 
                         title="A.R.T.C Site Preview"
                         id="previewFrame"
                         onload="hideLoading()"
@@ -1962,7 +1968,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script type="text/javascript">
         // Ensure client slug available globally for scripts
-    window.SMARTPREP_CLIENT_SLUG = '{{ $clientSlug ?? "" }}';
+    window.SMARTPREP_CLIENT_SLUG = '<?php echo e($clientSlug ?? ""); ?>';
         // Settings tab navigation with enhanced functionality
         document.addEventListener('DOMContentLoaded', function() {
             const navTabs = document.querySelectorAll('.settings-nav-tab');
@@ -2124,19 +2130,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 let endpoint;
                 switch(settingType) {
                     case 'general':
-                        endpoint = '{{ route("smartprep.admin.settings.update.general") }}';
+                        endpoint = '<?php echo e(route("smartprep.admin.settings.update.general")); ?>';
                         break;
                     case 'branding':
-                        endpoint = '{{ route("smartprep.admin.settings.update.branding") }}';
+                        endpoint = '<?php echo e(route("smartprep.admin.settings.update.branding")); ?>';
                         break;
                     case 'navbar':
-                        endpoint = '{{ route("smartprep.admin.settings.update.navbar") }}';
+                        endpoint = '<?php echo e(route("smartprep.admin.settings.update.navbar")); ?>';
                         break;
                     case 'homepage':
-                        endpoint = '{{ route("smartprep.admin.settings.update.homepage") }}';
+                        endpoint = '<?php echo e(route("smartprep.admin.settings.update.homepage")); ?>';
                         break;
                     default:
-                        endpoint = '{{ route("smartprep.admin.settings.save") }}';
+                        endpoint = '<?php echo e(route("smartprep.admin.settings.save")); ?>';
                 }
                 
                 // Make actual AJAX call
@@ -2227,7 +2233,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let previewUrl = 'http://127.0.0.1:8000/';
             let titleText = 'Live Preview';
             // If a client slug is present (tenant context), build tenant base
-            const clientSlug = '{{ $clientSlug ?? "" }}';
+            const clientSlug = '<?php echo e($clientSlug ?? ""); ?>';
             const tenantBase = clientSlug ? `http://127.0.0.1:8000/t/${clientSlug}` : 'http://127.0.0.1:8000';
             const tenantDraftBase = clientSlug ? `http://127.0.0.1:8000/t/draft/${clientSlug}` : tenantBase;
             
@@ -2266,7 +2272,7 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 iframe.dataset.previewSection = section;
                 iframe.dataset.previewBase = previewUrl;
-                const siteKey = '{{ $selectedWebsite->id ?? ((isset($activeWebsites) && $activeWebsites->count()) ? $activeWebsites->first()->id : "site") }}';
+                const siteKey = '<?php echo e($selectedWebsite->id ?? ((isset($activeWebsites) && $activeWebsites->count()) ? $activeWebsites->first()->id : "site")); ?>';
                 localStorage.setItem('preview_base_admin_' + siteKey, previewUrl);
                 localStorage.setItem('preview_section_admin_' + siteKey, section);
             } catch(e) { /* noop */ }
@@ -2394,7 +2400,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const loading = document.getElementById('previewLoading');
             if (!iframe) return;
 
-            const siteKey = '{{ $selectedWebsite->id ?? "site" }}';
+            const siteKey = '<?php echo e($selectedWebsite->id ?? "site"); ?>';
             // Determine last base & section (dataset > localStorage)
             const storedBase = iframe.dataset.previewBase || localStorage.getItem('preview_base_admin_' + siteKey);
             const storedSection = iframe.dataset.previewSection || localStorage.getItem('preview_section_admin_' + siteKey);
@@ -2403,11 +2409,11 @@ document.addEventListener('DOMContentLoaded', function() {
             iframe.style.opacity = '0.5';
 
             try {
-                const response = await fetch('{{ route("smartprep.api.ui-settings") }}');
+                const response = await fetch('<?php echo e(route("smartprep.api.ui-settings")); ?>');
                 if (response.ok) {
                     const settings = await response.json();
                     applySettingsToPreview(settings.data);
-                    const fallbackUrl = "{{ url('/artc') }}";
+                    const fallbackUrl = "<?php echo e(url('/artc')); ?>";
                     const configured = (settings.data && settings.data.general && settings.data.general.preview_url)
                         ? settings.data.general.preview_url
                         : fallbackUrl;
@@ -2539,10 +2545,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize preview URL from settings
         async function initializePreviewUrl() {
             try {
-                const response = await fetch('{{ route("smartprep.api.ui-settings") }}');
+                const response = await fetch('<?php echo e(route("smartprep.api.ui-settings")); ?>');
                 if (response.ok) {
                     const settings = await response.json();
-                    const fallbackUrlInit = "{{ url('/artc') }}";
+                    const fallbackUrlInit = "<?php echo e(url('/artc')); ?>";
                     const previewUrl = (settings.data && settings.data.general && settings.data.general.preview_url)
                         ? settings.data.general.preview_url
                         : fallbackUrlInit;
@@ -2556,7 +2562,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             try {
                                 const currentUrl = iframe.contentWindow.location.href;
                                 if (/\/smartprep(\/|$)/.test(currentUrl)) {
-                                    iframe.contentWindow.location.replace("{{ url('/artc') }}");
+                                    iframe.contentWindow.location.replace("<?php echo e(url('/artc')); ?>");
                                 }
                             } catch (e) {
                                 // Cross-origin, best-effort only
@@ -2579,7 +2585,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Refresh homepage form with latest data
         async function refreshHomepageForm() {
             try {
-                const response = await fetch('{{ route("smartprep.api.ui-settings") }}');
+                const response = await fetch('<?php echo e(route("smartprep.api.ui-settings")); ?>');
                 if (response.ok) {
                     const settings = await response.json();
                     const homepageSettings = settings.data.homepage;
@@ -3045,6 +3051,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 100);
         });
     </script>
-    <script type="application/json" id="sidebar-settings-json">@json($sidebarSettings ?? [])</script>
+    <script type="application/json" id="sidebar-settings-json"><?php echo json_encode($sidebarSettings ?? [], 15, 512) ?></script>
 </body>
 </html>
+<?php /**PATH C:\xampp\htdocs\A.R.T.C\resources\views/smartprep/admin/admin-settings/index.blade.php ENDPATH**/ ?>

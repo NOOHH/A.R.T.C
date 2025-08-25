@@ -199,7 +199,7 @@
                     @foreach($registrations->take(3) as $registration)
                     <div class="registration-item">
                         <div class="student-info">
-                            <div class="student-name">{{ $registration->firstname }} {{ $registration->lastname }}</div>
+                            <div class="student-name">{{ $registration->user_firstname ?? $registration->firstname ?? 'First' }} {{ $registration->user_lastname ?? $registration->lastname ?? 'Last' }}</div>
                             <div class="student-date">{{ $registration->created_at ? $registration->created_at->format('M d, Y') : 'Jul 02, 2025' }}</div>
                         </div>
                         <a href="{{ route('admin.student.registration.pending') }}" class="review-btn view-btn">Review</a>

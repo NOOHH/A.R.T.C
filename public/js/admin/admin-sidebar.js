@@ -17,9 +17,17 @@
         toggleButton = document.querySelector('.sidebar-toggle');
         mainContent = document.querySelector('.main-content');
         
-        if (!sidebar || !toggleButton) {
-            console.warn('Sidebar elements not found');
+        if (!sidebar) {
+            console.warn('[AdminSidebar] Sidebar element not found - skipping init');
             return;
+        }
+        if (!toggleButton) {
+            // Create a minimal hidden toggle to avoid null refs; feature still works via click-on-sidebar
+            toggleButton = document.createElement('button');
+            toggleButton.type = 'button';
+            toggleButton.style.display = 'none';
+            toggleButton.setAttribute('aria-hidden','true');
+            sidebar.appendChild(toggleButton);
         }
         
         // Restore sidebar state from localStorage
