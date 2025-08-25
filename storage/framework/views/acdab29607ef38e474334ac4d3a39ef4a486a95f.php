@@ -110,7 +110,7 @@
                         
                         <div class="program-stats">
                             <div class="enrollment-count">
-                                Enrolled Students: <?php echo e($program->enrollments->count()); ?>
+                                Enrolled Students: <?php echo e($program->enrollment_count ?? 0); ?>
 
                             </div>
                         </div>
@@ -147,7 +147,7 @@
                     <div class="stat-label">Most Popular Program</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-value"><?php echo e($mostPopularProgram->enrollments_count ?? 0); ?></div>
+                    <div class="stat-value"><?php echo e($mostPopularProgram->enrollment_count ?? 0); ?></div>
                     <div class="stat-label">Enrollments</div>
                 </div>
                 <div class="stat-item">
@@ -182,7 +182,7 @@
     <div class="modal-bg" id="addModalBg">
         <div class="custom-modal">
         <h3>Create New Program</h3>
-        <form action="<?php echo e(route('admin.programs.store')); ?>" method="POST" enctype="multipart/form-data">
+        <form action="<?php echo e(route('tenant.admin.programs.store', ['tenant' => $tenant->slug])); ?>" method="POST" enctype="multipart/form-data">
             <?php echo csrf_field(); ?>
             <input type="text" name="program_name" placeholder="Program Name" required>
             <textarea name="program_description" placeholder="Program Description" rows="4" style="width: 100%; margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>

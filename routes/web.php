@@ -905,9 +905,7 @@ Route::prefix('t')->group(function() {
         return app(\App\Http\Controllers\AdminProfessorController::class)->previewArchived($tenant);
     })->name('tenant.draft.admin.professors.archived');
 
-    Route::get('/draft/{tenant}/admin/programs', function($tenant) {
-        return app(\App\Http\Controllers\AdminProgramController::class)->previewIndex($tenant);
-    })->name('tenant.draft.admin.programs');
+    // REMOVED: These routes are now outside the 't' prefix group to avoid the t/ prefix
 
     Route::get('/draft/{tenant}/admin/modules', function($tenant) {
         return app(\App\Http\Controllers\AdminModuleController::class)->previewIndex($tenant);
@@ -954,9 +952,7 @@ Route::prefix('t')->group(function() {
         return app(\App\Http\Controllers\AdminSettingsController::class)->previewIndex($tenant);
     })->name('tenant.draft.admin.settings');
 
-    Route::get('/draft/{tenant}/admin/packages', function($tenant) {
-        return app(\App\Http\Controllers\AdminPackageController::class)->previewIndex($tenant);
-    })->name('tenant.draft.admin.packages');
+    // REMOVED: These routes are now outside the 't' prefix group to avoid the t/ prefix
 
     Route::get('/draft/{tenant}/admin/directors', function($tenant) {
         return app(\App\Http\Controllers\AdminDirectorController::class)->previewIndex($tenant);
@@ -1061,7 +1057,51 @@ Route::prefix('t')->group(function() {
     Route::get('/draft/{tenant}/admin/announcements/{id}', [App\Http\Controllers\Admin\AnnouncementController::class, 'previewShow'])->name('tenant.draft.admin.announcements.show');
 
     Route::get('/draft/{tenant}/admin/announcements/{id}/edit', [App\Http\Controllers\Admin\AnnouncementController::class, 'previewEdit'])->name('tenant.draft.admin.announcements.edit');
+
+    // TENANT ADMIN ROUTES WITH 't/' PREFIX - Using tenant-specific controllers
+    // Programs routes
+    Route::get('/draft/{tenant}/admin/programs', [App\Http\Controllers\Tenant\TenantAdminProgramController::class, 'index'])->name('tenant.admin.programs.index');
+    Route::post('/draft/{tenant}/admin/programs', [App\Http\Controllers\Tenant\TenantAdminProgramController::class, 'store'])->name('tenant.admin.programs.store');
+    Route::post('/draft/{tenant}/admin/programs/batch-store', [App\Http\Controllers\Tenant\TenantAdminProgramController::class, 'batchStore'])->name('tenant.admin.programs.batch-store');
+    Route::delete('/draft/{tenant}/admin/programs/{id}', [App\Http\Controllers\Tenant\TenantAdminProgramController::class, 'destroy'])->name('tenant.admin.programs.destroy');
+    Route::post('/draft/{tenant}/admin/programs/{id}/toggle-archive', [App\Http\Controllers\Tenant\TenantAdminProgramController::class, 'toggleArchive'])->name('tenant.admin.programs.toggle-archive');
+
+    // Packages routes
+    Route::get('/draft/{tenant}/admin/packages', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'index'])->name('tenant.admin.packages.index');
+    Route::post('/draft/{tenant}/admin/packages', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'store'])->name('tenant.admin.packages.store');
+    Route::get('/draft/{tenant}/admin/packages/{id}', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'show'])->name('tenant.admin.packages.show');
+    Route::put('/draft/{tenant}/admin/packages/{id}', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'update'])->name('tenant.admin.packages.update');
+    Route::delete('/draft/{tenant}/admin/packages/{id}', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'destroy'])->name('tenant.admin.packages.destroy');
+    Route::post('/draft/{tenant}/admin/packages/{id}/archive', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'archive'])->name('tenant.admin.packages.archive');
+    Route::post('/draft/{tenant}/admin/packages/{id}/restore', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'restore'])->name('tenant.admin.packages.restore');
+
+    // API routes for packages
+    Route::get('/draft/{tenant}/admin/packages/program-modules', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'getProgramModules'])->name('tenant.admin.packages.program-modules');
+    Route::get('/draft/{tenant}/admin/packages/module-courses', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'getModuleCourses'])->name('tenant.admin.packages.module-courses');
+
 });
+
+// ADMIN ROUTES - Outside the 't' prefix group to avoid the t/ prefix
+// These routes will be accessible at /draft/{tenant}/admin/* instead of /t/draft/{tenant}/admin/*
+// ADMIN ROUTES - Outside the 't' prefix group to avoid the t/ prefix
+// These routes will be accessible at /draft/{tenant}/admin/* instead of /t/draft/{tenant}/admin/*
+Route::get('/draft/{tenant}/admin/programs', [App\Http\Controllers\Tenant\TenantAdminProgramController::class, 'index'])->name('tenant.draft.admin.programs');
+Route::post('/draft/{tenant}/admin/programs', [App\Http\Controllers\Tenant\TenantAdminProgramController::class, 'store'])->name('tenant.draft.admin.programs.store');
+Route::post('/draft/{tenant}/admin/programs/batch-store', [App\Http\Controllers\Tenant\TenantAdminProgramController::class, 'batchStore'])->name('tenant.draft.admin.programs.batch-store');
+Route::delete('/draft/{tenant}/admin/programs/{id}', [App\Http\Controllers\Tenant\TenantAdminProgramController::class, 'destroy'])->name('tenant.draft.admin.programs.destroy');
+Route::post('/draft/{tenant}/admin/programs/{id}/toggle-archive', [App\Http\Controllers\Tenant\TenantAdminProgramController::class, 'toggleArchive'])->name('tenant.draft.admin.programs.toggle-archive');
+
+Route::get('/draft/{tenant}/admin/packages', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'index'])->name('tenant.draft.admin.packages');
+Route::post('/draft/{tenant}/admin/packages', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'store'])->name('tenant.draft.admin.packages.store');
+Route::get('/draft/{tenant}/admin/packages/{id}', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'show'])->name('tenant.draft.admin.packages.show');
+Route::put('/draft/{tenant}/admin/packages/{id}', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'update'])->name('tenant.draft.admin.packages.update');
+Route::delete('/draft/{tenant}/admin/packages/{id}', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'destroy'])->name('tenant.draft.admin.packages.destroy');
+Route::post('/draft/{tenant}/admin/packages/{id}/archive', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'archive'])->name('tenant.draft.admin.packages.archive');
+Route::post('/draft/{tenant}/admin/packages/{id}/restore', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'restore'])->name('tenant.draft.admin.packages.restore');
+
+// API routes for packages
+Route::get('/draft/{tenant}/admin/packages/program-modules', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'getProgramModules'])->name('tenant.draft.admin.packages.program-modules');
+Route::get('/draft/{tenant}/admin/packages/module-courses', [App\Http\Controllers\Tenant\TenantAdminPackageController::class, 'getModuleCourses'])->name('tenant.draft.admin.packages.module-courses');
 
 // Legacy root login (fallback) – optionally redirect if tenant query provided
 Route::get('/login', function(Request $request) {
